@@ -1,0 +1,169 @@
+id: TC00_locale_api
+name: 言語設定API契約テスト
+description: |
+  言語設定に関するクライアント-サーバー間の契約を検証するテスト。
+  ウェルカム画面で言語選択した際のAPIリクエスト・レスポンスを検証する。
+
+endpoints:
+  - id: get-available-locales
+    path: /api/v1/locales
+    method: GET
+    description: 利用可能な言語リストを取得するAPI
+    request:
+      headers:
+        Accept: application/json
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          locales:
+            type: array
+            items:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "ja"
+                name:
+                  type: string
+                  example: "日本語"
+                isDefault:
+                  type: boolean
+                  example: true
+              required: [code, name, isDefault]
+        required: [locales]
+      examples:
+        - name: 標準レスポンス
+          value: |
+            {
+              "locales": [
+                {"code": "ja", "name": "日本語", "isDefault": true},
+                {"code": "en", "name": "English", "isDefault": false},
+                {"code": "zh", "name": "中文", "isDefault": false},
+                {"code": "ko", "name": "한국어", "isDefault": false}
+              ]
+            }
+
+  - id: set-user-locale
+    path: /api/v1/users/me/locale
+    method: PUT
+    description: ユーザーの言語設定を更新するAPI
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          localeCode:
+            type: string
+            example: "en"
+        required: [localeCode]
+      examples:
+        - name: 言語を英語に設定
+          value: |
+            {
+              "localeCode": "en"
+            }
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: true
+          user:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "user-123"
+              locale:
+                type: string
+                example: "en"
+            required: [id, locale]
+        required: [success, user]
+      examples:
+        - name: 正常更新レスポンス
+          value: |
+            {
+              "success": true,
+              "user": {
+                "id": "user-123",
+                "locale": "en"
+              }
+            }
+
+testCases:
+  - id: get-available-locales
+    name: 利用可能言語リスト取得
+    description: 利用可能な言語リストが正しく取得できること
+    endpoint: get-available-locales
+    setup: {}
+    expectations:
+      - response.status === 200
+      - response.body.locales.length >= 2
+      - response.body.locales.some(l => l.isDefault === true)
+
+  - id: set-valid-locale
+    name: 有効な言語設定
+    description: 有効な言語コードでユーザー設定を更新できること
+    endpoint: set-user-locale
+    setup:
+      request:
+        body:
+          localeCode: "en"
+    expectations:
+      - response.status === 200
+      - response.body.success === true
+      - response.body.user.locale === "en"
+
+  - id: set-invalid-locale
+    name: 無効な言語設定
+    description: 無効な言語コードでエラーが返ること
+    endpoint: set-user-locale
+    setup:
+      request:
+        body:
+          localeCode: "invalid-code"
+    expectations:
+      - response.status === 400
+      - response.body.error.code === "INVALID_LOCALE"
+
+  - id: locale-persistence
+    name: 言語設定の永続化
+    description: 設定した言語がユーザー再ログイン後も保持されること
+    endpoints: [set-user-locale, get-user]
+    setup:
+      steps:
+        - endpoint: set-user-locale
+          request:
+            body:
+              localeCode: "zh"
+        - endpoint: logout
+        - endpoint: login
+          request:
+            body:
+              email: "test@example.com"
+              password: "password123"
+        - endpoint: get-user
+    expectations:
+      - response.status === 200
+      - response.body.user.locale === "zh"
+
+clientImplementation:
+  file: src/packages/api/localeApi.ts
+  methods:
+    - name: getAvailableLocales
+      endpoint: get-available-locales
+    - name: setUserLocale
+      endpoint: set-user-locale
+
+consumers:
+  - id: welcome-screen
+    file: src/ui/screens/S00_welcome/WelcomeScreen.tsx
+    endpoints: [get-available-locales, set-user-locale] 

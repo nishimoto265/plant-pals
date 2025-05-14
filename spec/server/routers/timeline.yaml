@@ -1,0 +1,565 @@
+id: timeline_router
+name: TimelineRouter
+description: |
+  アプリ内SNS機能のタイムライン管理APIルーター。
+  投稿の取得・作成・編集・削除、いいね、コメント、フォロー関連の機能を提供します。
+
+endpoints:
+  - id: get_timeline
+    path: /api/timeline
+    method: GET
+    summary: タイムラインの投稿を取得する
+    description: |
+      ユーザーのタイムラインを取得します。
+      timelineTypeに応じて、フォロー中のユーザー投稿（home）、
+      全ユーザー投稿（public）、特定のユーザー投稿（user）を返却します。
+    parameters:
+      - name: timelineType
+        in: query
+        description: タイムラインの種類
+        required: true
+        schema:
+          type: string
+          enum: [home, public, user]
+      - name: userId
+        in: query
+        description: 特定のユーザーID (timelineType=userの場合必須)
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: ページ番号 (1から開始)
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        description: 1ページあたりの件数
+        required: false
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: filter
+        in: query
+        description: 投稿のフィルター種別
+        required: false
+        schema:
+          type: string
+          enum: [all, image, video, ar]
+          default: all
+    responses:
+      '200':
+        description: タイムライン投稿一覧
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                posts:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Post'
+                pagination:
+                  type: object
+                  properties:
+                    totalCount:
+                      type: integer
+                    totalPages:
+                      type: integer
+                    currentPage:
+                      type: integer
+                    hasNext:
+                      type: boolean
+      '400':
+        description: リクエスト不正
+      '401':
+        description: 認証エラー
+      '403':
+        description: アクセス権限なし
+
+  - id: create_post
+    path: /api/posts
+    method: POST
+    summary: 新規投稿を作成する
+    description: 植物の写真や動画、AR体験などを投稿します。
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - content
+            properties:
+              content:
+                type: string
+                description: 投稿テキスト
+                maxLength: 500
+              mediaFiles:
+                type: array
+                items:
+                  type: string
+                  format: binary
+                description: 画像または動画ファイル (最大5ファイル)
+              mediaType:
+                type: string
+                enum: [image, video, ar_experience]
+                description: メディアの種類
+              plantIds:
+                type: array
+                items:
+                  type: string
+                description: 関連する植物のID
+              location:
+                type: object
+                properties:
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  name:
+                    type: string
+                description: 位置情報（オプション）
+              isPublic:
+                type: boolean
+                default: true
+                description: 公開設定（true=公開、false=フォロワーのみ）
+    responses:
+      '201':
+        description: 投稿作成成功
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      '400':
+        description: リクエスト不正
+      '401':
+        description: 認証エラー
+      '413':
+        description: ファイルサイズ超過
+
+  - id: get_post
+    path: /api/posts/{postId}
+    method: GET
+    summary: 投稿詳細を取得する
+    description: 特定の投稿の詳細情報を取得します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 投稿詳細
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      '404':
+        description: 投稿が見つからない
+      '401':
+        description: 認証エラー
+
+  - id: update_post
+    path: /api/posts/{postId}
+    method: PUT
+    summary: 投稿を更新する
+    description: 既存の投稿を更新します。テキストと公開設定のみ変更可能です。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              content:
+                type: string
+                maxLength: 500
+              isPublic:
+                type: boolean
+    responses:
+      '200':
+        description: 投稿更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      '400':
+        description: リクエスト不正
+      '401':
+        description: 認証エラー
+      '403':
+        description: 更新権限なし
+      '404':
+        description: 投稿が見つからない
+
+  - id: delete_post
+    path: /api/posts/{postId}
+    method: DELETE
+    summary: 投稿を削除する
+    description: 投稿を削除します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '204':
+        description: 削除成功
+      '401':
+        description: 認証エラー
+      '403':
+        description: 削除権限なし
+      '404':
+        description: 投稿が見つからない
+
+  - id: like_post
+    path: /api/posts/{postId}/like
+    method: POST
+    summary: 投稿にいいねする
+    description: 投稿にいいねを付けます。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: いいね成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                liked:
+                  type: boolean
+                likeCount:
+                  type: integer
+      '401':
+        description: 認証エラー
+      '404':
+        description: 投稿が見つからない
+
+  - id: unlike_post
+    path: /api/posts/{postId}/like
+    method: DELETE
+    summary: 投稿のいいねを取り消す
+    description: 投稿のいいねを取り消します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: いいね取り消し成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                liked:
+                  type: boolean
+                likeCount:
+                  type: integer
+      '401':
+        description: 認証エラー
+      '404':
+        description: 投稿が見つからない
+
+  - id: get_comments
+    path: /api/posts/{postId}/comments
+    method: GET
+    summary: 投稿のコメント一覧を取得する
+    description: 特定の投稿に対するコメント一覧を取得します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+    responses:
+      '200':
+        description: コメント一覧
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Comment'
+                pagination:
+                  type: object
+                  properties:
+                    totalCount:
+                      type: integer
+                    totalPages:
+                      type: integer
+                    currentPage:
+                      type: integer
+                    hasNext:
+                      type: boolean
+      '404':
+        description: 投稿が見つからない
+
+  - id: add_comment
+    path: /api/posts/{postId}/comments
+    method: POST
+    summary: 投稿にコメントを追加する
+    description: 投稿にコメントを追加します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - content
+            properties:
+              content:
+                type: string
+                maxLength: 200
+                description: コメント内容
+    responses:
+      '201':
+        description: コメント追加成功
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      '400':
+        description: リクエスト不正
+      '401':
+        description: 認証エラー
+      '404':
+        description: 投稿が見つからない
+
+  - id: follow_user
+    path: /api/users/{userId}/follow
+    method: POST
+    summary: ユーザーをフォローする
+    description: 指定したユーザーをフォローします。
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: フォロー成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                following:
+                  type: boolean
+                followerCount:
+                  type: integer
+      '401':
+        description: 認証エラー
+      '404':
+        description: ユーザーが見つからない
+
+  - id: unfollow_user
+    path: /api/users/{userId}/follow
+    method: DELETE
+    summary: ユーザーのフォローを解除する
+    description: 指定したユーザーのフォローを解除します。
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: フォロー解除成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                following:
+                  type: boolean
+                followerCount:
+                  type: integer
+      '401':
+        description: 認証エラー
+      '404':
+        description: ユーザーが見つからない
+
+  - id: report_post
+    path: /api/posts/{postId}/report
+    method: POST
+    summary: 投稿を報告する
+    description: 不適切な投稿を報告します。
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reason
+            properties:
+              reason:
+                type: string
+                enum: [spam, harassment, inappropriate_content, copyright, other]
+              description:
+                type: string
+                maxLength: 500
+                description: 詳細な理由
+    responses:
+      '200':
+        description: 報告成功
+      '400':
+        description: リクエスト不正
+      '401':
+        description: 認証エラー
+      '404':
+        description: 投稿が見つからない
+
+components:
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+        userAvatar:
+          type: string
+        content:
+          type: string
+        mediaUrls:
+          type: array
+          items:
+            type: string
+        mediaType:
+          type: string
+          enum: [image, video, ar_experience]
+        plantIds:
+          type: array
+          items:
+            type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+            name:
+              type: string
+        isPublic:
+          type: boolean
+        likeCount:
+          type: integer
+        commentCount:
+          type: integer
+        liked:
+          type: boolean
+          description: 現在のユーザーがいいねしているかどうか
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+        userAvatar:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        likeCount:
+          type: integer
+        liked:
+          type: boolean
+
+dependencies:
+  - supabase
+  - postgrest
+  - realtime-js
+
+securityDefinitions:
+  JWTAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: Supabase JWT認証トークン
+
+monitoring:
+  metrics:
+    - name: "posts_per_day"
+      description: "1日あたりの投稿数"
+    - name: "likes_per_post_avg"
+      description: "投稿あたりの平均いいね数"
+    - name: "api_latency"
+      description: "APIレスポンス時間"
+      target: "< 300ms"
+  alerts:
+    - name: "high_report_rate"
+      condition: "reports > 50 in 1h"
+      severity: "warning"
+    - name: "service_latency"
+      condition: "p95_latency > 1s for 5m"
+      severity: "critical"

@@ -1,0 +1,221 @@
+id: health_router
+name: HealthCheckRouter
+description: |
+  システム健全性チェックと監視のためのAPIルーター。
+  各コンポーネントやサービスの状態を確認し、
+  メトリクス収集やパフォーマンスモニタリングを提供します。
+
+endpoints:
+  - id: check_health
+    path: /api/health
+    method: GET
+    summary: システム全体の健全性を確認する
+    description: |
+      アプリケーションの全コンポーネントの健全性をチェックし、
+      詳細なステータス情報を返します。
+    security: []  # 認証なしでアクセス可能
+    parameters:
+      - name: detail
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: 詳細情報を含めるかどうか
+    responses:
+      '200':
+        description: システムは正常に稼働中
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, degraded, unhealthy]
+                version:
+                  type: string
+                  description: アプリケーションのバージョン
+                timestamp:
+                  type: string
+                  format: date-time
+                uptime:
+                  type: integer
+                  description: サーバーの起動時間（秒）
+                components:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [up, down, degraded]
+                      responseTime:
+                        type: number
+                        format: float
+                      message:
+                        type: string
+                metrics:
+                  type: object
+                  properties:
+                    cpu:
+                      type: number
+                      format: float
+                    memory:
+                      type: number
+                      format: float
+                    activeConnections:
+                      type: integer
+      '500':
+        description: システム障害
+
+  - id: check_component
+    path: /api/health/{component}
+    method: GET
+    summary: 特定コンポーネントの健全性を確認する
+    description: |
+      指定したコンポーネント（database, storage, ai-service など）の
+      健全性ステータスを詳細に確認します。
+    security: []  # 認証なしでアクセス可能
+    parameters:
+      - name: component
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [database, storage, ai-service, auth, notification, edge]
+        description: チェック対象のコンポーネント名
+    responses:
+      '200':
+        description: コンポーネントのステータス情報
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                component:
+                  type: string
+                status:
+                  type: string
+                  enum: [up, down, degraded]
+                responseTime:
+                  type: number
+                  format: float
+                lastChecked:
+                  type: string
+                  format: date-time
+                details:
+                  type: object
+                  description: コンポーネント固有の詳細情報
+      '404':
+        description: 指定されたコンポーネントが見つからない
+      '500':
+        description: コンポーネントのチェックに失敗
+
+  - id: metrics
+    path: /api/metrics
+    method: GET
+    summary: メトリクスデータを取得する
+    description: |
+      Prometheus形式のメトリクスデータを取得します。
+      監視システムやダッシュボードで利用できます。
+    security:
+      - ApiKeyAuth: []  # メトリクス取得には認証が必要
+    responses:
+      '200':
+        description: メトリクスデータ
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: |
+                # HELP api_requests_total Total number of API requests
+                # TYPE api_requests_total counter
+                api_requests_total{path="/api/identify/species",method="POST"} 1234
+                # HELP api_request_duration_seconds API request duration in seconds
+                # TYPE api_request_duration_seconds histogram
+                api_request_duration_seconds_bucket{path="/api/identify/species",method="POST",le="0.1"} 1000
+      '401':
+        description: 認証エラー
+
+  - id: liveness
+    path: /api/health/liveness
+    method: GET
+    summary: Kubernetesライブネスプローブ用エンドポイント
+    description: |
+      Kubernetesのライブネスプローブが使用するエンドポイント。
+      アプリケーションが応答可能かを確認します。
+    security: []  # 認証なしでアクセス可能
+    responses:
+      '200':
+        description: アプリケーションは応答可能
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [alive]
+                timestamp:
+                  type: string
+                  format: date-time
+      '500':
+        description: アプリケーションは応答不可
+
+  - id: readiness
+    path: /api/health/readiness
+    method: GET
+    summary: Kubernetesレディネスプローブ用エンドポイント
+    description: |
+      Kubernetesのレディネスプローブが使用するエンドポイント。
+      アプリケーションがリクエストを処理する準備ができているかを確認します。
+    security: []  # 認証なしでアクセス可能
+    responses:
+      '200':
+        description: アプリケーションはリクエスト処理可能
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ready]
+                timestamp:
+                  type: string
+                  format: date-time
+                dependencies:
+                  type: object
+                  additionalProperties:
+                    type: boolean
+      '503':
+        description: アプリケーションはリクエスト処理不可
+
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-API-Key
+    description: メトリクス取得用のAPI Key
+
+dependencies:
+  - prometheus_client
+  - psutil
+  - fastapi
+
+monitoring:
+  logging:
+    level: "INFO"
+    retention: "7d"
+  alerts:
+    - name: "health_check_failure"
+      condition: "health_check{status='down'} == 1"
+      severity: "critical"
+    - name: "component_degraded"
+      condition: "health_component{status='degraded'} > 0 for 5m"
+      severity: "warning"
+  dashboards:
+    - name: "system_health"
+      description: "システム健全性ダッシュボード"
+      url: "/dashboards/system_health"

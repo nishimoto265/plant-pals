@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plant Pals Infrastructure Stack Schema",
+  "description": "JSONスキーマ定義：インフラ構成管理（AWS、Supabase、Cloudflare）",
+  "type": "object",
+  "required": ["version", "environments", "aws", "supabase", "cloudflare"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "スタック定義のバージョン",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "environments": {
+      "type": "array",
+      "description": "デプロイ環境一覧",
+      "items": {
+        "type": "string",
+        "enum": ["development", "staging", "production"]
+      },
+      "minItems": 1
+    },
+    "aws": {
+      "type": "object",
+      "required": ["region", "services"],
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "AWSリージョン"
+        },
+        "services": {
+          "type": "object",
+          "properties": {
+            "vpc": {
+              "type": "object",
+              "properties": {
+                "cidr": { "type": "string" },
+                "azs": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "eks": {
+              "type": "object",
+              "properties": {
+                "version": { "type": "string" },
+                "nodeGroups": { "type": "array", "items": { "type": "object" } }
+              }
+            },
+            "rds": {
+              "type": "object",
+              "properties": {
+                "engine": { "type": "string" },
+                "version": { "type": "string" },
+                "instances": { "type": "integer" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "supabase": {
+      "type": "object",
+      "required": ["project", "features"],
+      "properties": {
+        "project": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "organization": { "type": "string" }
+          }
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "auth": { "type": "boolean" },
+            "storage": { "type": "boolean" },
+            "realtime": { "type": "boolean" },
+            "edgeFunctions": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "cloudflare": {
+      "type": "object",
+      "properties": {
+        "zone": { "type": "string" },
+        "services": {
+          "type": "object",
+          "properties": {
+            "images": { "type": "boolean" },
+            "workers": { "type": "boolean" },
+            "pages": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

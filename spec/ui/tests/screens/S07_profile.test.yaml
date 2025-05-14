@@ -1,0 +1,400 @@
+id: TS07_profile
+name: プロフィール画面テスト
+target:
+  screen: S07_profile
+  path: src/ui/screens/S07_profile/ProfileScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: プロフィール画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのプロフィール画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/timeline.png
+            - asset: assets/icons/settings.png
+            - asset: assets/icons/edit.png
+            - asset: assets/images/default_avatar.png
+            - asset: assets/illustrations/empty_garden.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#profile-header"
+          - type: element-exists
+            target: "#user-info"
+          - type: element-exists
+            target: "#tab-bar"
+          - type: element-exists
+            target: "#garden-grid"
+
+      - id: profile-loaded
+        name: プロフィール読み込み
+        description: ユーザーデータが読み込まれた状態でのプロフィール画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/timeline.png
+            - asset: assets/icons/settings.png
+            - asset: assets/icons/edit.png
+            - asset: assets/images/user_avatar.jpg
+          state:
+            user:
+              id: "user123"
+              username: "植物好きさん"
+              displayName: "植物好き太郎"
+              bio: "観葉植物コレクター。モンステラとパキラが好きです。"
+              avatarUrl: "https://example.com/user_avatars/profile123.jpg"
+              plantsCount: 5
+              followersCount: 120
+              followingCount: 85
+              badgesCount: 8
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                avatarUrl: "https://example.com/avatars/monstera123.png"
+              - id: "p789012"
+                name: "パキらん"
+                species: "pachira_aquatica"
+                avatarUrl: "https://example.com/avatars/pachira456.png"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-text
+            target: "#display-name"
+            value: "植物好き太郎"
+          - type: element-text
+            target: "#username"
+            value: "@植物好きさん"
+          - type: element-text
+            target: "#bio"
+            value: "観葉植物コレクター。モンステラとパキラが好きです。"
+          - type: element-count
+            target: ".plant-thumbnail"
+            count: 2
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: camera-navigation
+        name: カメラ画面遷移
+        description: カメラボタンをタップするとカメラ画面に遷移すること
+        steps:
+          - action: press
+            target: "#camera-button"
+        assertions:
+          - type: navigation
+            route: "S03_camera"
+
+      - id: timeline-navigation
+        name: タイムライン画面遷移
+        description: タイムラインボタンをタップするとタイムライン画面に遷移すること
+        steps:
+          - action: press
+            target: "#timeline-button"
+        assertions:
+          - type: navigation
+            route: "S05_timeline"
+
+      - id: settings-navigation
+        name: 設定画面遷移
+        description: 設定ボタンをタップすると設定画面に遷移すること
+        steps:
+          - action: press
+            target: "#settings-button"
+        assertions:
+          - type: navigation
+            route: "S08_settings"
+
+      - id: edit-profile-navigation
+        name: プロフィール編集画面遷移
+        description: 編集ボタンをタップするとプロフィール編集画面に遷移すること
+        steps:
+          - action: press
+            target: "#edit-profile-button"
+        assertions:
+          - type: navigation
+            route: "EditProfile"
+
+      - id: plant-detail-navigation
+        name: 植物詳細画面遷移
+        description: 植物サムネイルをタップすると植物詳細画面に遷移すること
+        setup:
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+        steps:
+          - action: press
+            target: "#plant-thumbnail-m123456"
+        assertions:
+          - type: navigation
+            route: "PlantDetail"
+            params:
+              plantId: "m123456"
+
+      - id: badge-center-navigation
+        name: バッジセンター画面遷移
+        description: バッジセクションをタップするとバッジセンター画面に遷移すること
+        steps:
+          - action: press
+            target: "#badges-section"
+        assertions:
+          - type: navigation
+            route: "S09_badge_center"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: toggle-view
+        name: ビュー切り替え
+        description: タブを切り替えると表示内容が変わること
+        setup:
+          state:
+            activeView: "plants"
+            user:
+              id: "user123"
+              username: "植物好きさん"
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+            posts:
+              - id: "post123"
+                content: "モンちゃんの新芽が出てきました！"
+        steps:
+          - action: press
+            target: "#posts-tab"
+        assertions:
+          - type: state-change
+            target: "activeView"
+            value: "posts"
+          - type: element-exists
+            target: "#posts-grid"
+          - type: element-not-exists
+            target: "#garden-grid"
+
+      - id: refresh-profile
+        name: プロフィール更新
+        description: プルダウン操作でプロフィールデータが更新されること
+        steps:
+          - action: scroll
+            target: "#profile-container"
+            direction: "down"
+            distance: 100
+        assertions:
+          - type: function-called
+            target: "refreshProfile"
+          - type: element-visible
+            target: "#refresh-indicator"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-plants
+        name: 植物なし
+        description: 植物が登録されていない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            activeView: "plants"
+            plants: []
+        assertions:
+          - type: element-visible
+            target: "#empty-garden"
+          - type: element-exists
+            target: "#add-plant-button"
+          - type: element-text
+            target: "#empty-garden-message"
+            value: "まだ植物が登録されていません"
+
+      - id: no-posts
+        name: 投稿なし
+        description: 投稿がない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            activeView: "posts"
+            posts: []
+        assertions:
+          - type: element-visible
+            target: "#empty-posts"
+          - type: element-exists
+            target: "#create-post-button"
+          - type: element-text
+            target: "#empty-posts-message"
+            value: "まだ投稿がありません"
+
+      - id: no-badges
+        name: バッジなし
+        description: バッジを獲得していない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            badges: []
+        assertions:
+          - type: element-text
+            target: "#badges-count"
+            value: "0"
+          - type: element-visible
+            target: "#empty-badges"
+          - type: element-text
+            target: "#empty-badges-message"
+            value: "まだバッジを獲得していません"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#user-info"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load profile data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "プロフィールの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load profile data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadProfile"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: user_stats
+    name: ユーザー統計テスト
+    description: ユーザー統計情報の表示を検証
+    type: functional
+    cases:
+      - id: stats-display
+        name: 統計表示
+        description: ユーザーの統計情報が正しく表示されること
+        setup:
+          state:
+            user:
+              plantsCount: 5
+              followersCount: 120
+              followingCount: 85
+              badgesCount: 8
+        assertions:
+          - type: element-text
+            target: "#plants-count"
+            value: "5"
+          - type: element-text
+            target: "#followers-count"
+            value: "120"
+          - type: element-text
+            target: "#following-count"
+            value: "85"
+          - type: element-text
+            target: "#badges-count"
+            value: "8"
+
+      - id: followers-navigation
+        name: フォロワー画面遷移
+        description: フォロワー数をタップするとフォロワー一覧画面に遷移すること
+        setup:
+          state:
+            user:
+              id: "user123"
+              followersCount: 120
+        steps:
+          - action: press
+            target: "#followers-section"
+        assertions:
+          - type: navigation
+            route: "Followers"
+            params:
+              userId: "user123"
+
+      - id: following-navigation
+        name: フォロー中画面遷移
+        description: フォロー中数をタップするとフォロー中一覧画面に遷移すること
+        setup:
+          state:
+            user:
+              id: "user123"
+              followingCount: 85
+        steps:
+          - action: press
+            target: "#following-section"
+        assertions:
+          - type: navigation
+            route: "Following"
+            params:
+              userId: "user123"
+
+accessibility:
+  - test: color-contrast
+    description: プロフィールテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのユーザー情報と操作ボタンが音声読み上げに対応している
+  - test: focus-navigation
+    description: タブとボタンがキーボードフォーカス順に適切に並んでいること
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

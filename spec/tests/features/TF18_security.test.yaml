@@ -1,0 +1,326 @@
+id: TF18_security
+name: アプリセキュリティ機能テスト
+description: アプリのセキュリティ機能と対策を包括的に検証するテスト
+
+components:
+  - authentication_system
+  - authorization_service
+  - data_encryption
+  - api_security_layer
+  - privacy_controls
+
+testSuites:
+  - id: authentication
+    name: 認証テスト
+    description: ユーザー認証システムの安全性と堅牢性を検証する
+    cases:
+      - id: secure_login
+        name: 安全なログイン
+        description: ログイン機能が安全に実装されていることを確認
+        setup:
+          testUsers:
+            - username: "test_user"
+              password: "SecureP@ssword123"
+            - username: "locked_user"
+              password: "WrongPassword123"
+              status: "locked"
+        assertions:
+          - type: tls-version
+            condition: ">= TLS 1.2"
+          - type: secure-headers
+            expected: 
+              - "Strict-Transport-Security"
+              - "Content-Security-Policy"
+              - "X-Content-Type-Options: nosniff"
+          - type: password-transmission
+            encrypted: true
+
+      - id: password_policy
+        name: パスワードポリシー
+        description: 安全なパスワードポリシーが実装されていることを確認
+        input:
+          passwords:
+            - value: "short"
+              expected: "rejected"
+            - value: "onlylowercase"
+              expected: "rejected"
+            - value: "ONLYUPPERCASE"
+              expected: "rejected"
+            - value: "NoSpecialChars123"
+              expected: "rejected"
+            - value: "No_Numbers!"
+              expected: "rejected"
+            - value: "Secure_P@ssword123"
+              expected: "accepted"
+        assertions:
+          - type: policy-enforcement
+            condition: true
+          - type: password-strength
+            minStrength: "strong"
+          - type: password-requirements
+            minLength: 8
+            requiresUppercase: true
+            requiresLowercase: true
+            requiresNumbers: true
+            requiresSpecialChars: true
+
+      - id: failed_login_attempts
+        name: ログイン失敗制限
+        description: 連続ログイン失敗に対する制限が実装されていることを確認
+        steps:
+          - action: "login"
+            username: "test_user"
+            password: "WrongPassword1"
+            repeat: 5
+        assertions:
+          - type: account-status
+            condition: "rate-limited" or "temporary-lockout"
+          - type: notification
+            condition: "warning-displayed"
+          - type: security-log
+            condition: "suspicious-activity-recorded"
+
+      - id: oauth_security
+        name: OAuth認証セキュリティ
+        description: OAuth認証が安全に実装されていることを確認
+        setup:
+          oauthProviders:
+            - provider: "google"
+            - provider: "apple"
+            - provider: "facebook"
+        assertions:
+          - type: csrf-protection
+            condition: true
+          - type: state-parameter
+            condition: "validated"
+          - type: redirect-uri
+            condition: "validated"
+          - type: scope-limitation
+            condition: "minimal-permissions"
+
+  - id: data_protection
+    name: データ保護テスト
+    description: ユーザーデータと植物データの保護機能を検証する
+    cases:
+      - id: data_encryption_at_rest
+        name: 保存データの暗号化
+        description: 保存されているデータが適切に暗号化されていることを確認
+        assertions:
+          - type: database-encryption
+            condition: true
+          - type: encryption-algorithm
+            condition: "AES-256 or better"
+          - type: key-management
+            condition: "secure"
+
+      - id: data_encryption_in_transit
+        name: 通信データの暗号化
+        description: 通信中のデータが適切に暗号化されていることを確認
+        assertions:
+          - type: api-calls
+            encrypted: true
+          - type: websocket-connections
+            encrypted: true
+          - type: certificate-pinning
+            implemented: true
+          - type: weak-cipher-detection
+            weakCiphersAllowed: false
+
+      - id: secure_storage
+        name: 安全なストレージ
+        description: センシティブデータが安全に保存されていることを確認
+        assertions:
+          - type: credential-storage
+            condition: "secure-enclave or keychain"
+          - type: session-tokens
+            condition: "securely-stored"
+          - type: data-isolation
+            condition: true
+          - type: cache-security
+            condition: "sensitive-data-excluded"
+
+  - id: authorization
+    name: 認可テスト
+    description: ユーザー権限と認可制御を検証する
+    cases:
+      - id: role_based_access
+        name: ロールベースアクセス制御
+        description: ユーザーロールに基づくアクセス制御が正しく実装されていることを確認
+        setup:
+          testUsers:
+            - username: "admin_user"
+              role: "admin"
+            - username: "regular_user"
+              role: "user"
+        assertions:
+          - type: access-control
+            user: "admin_user"
+            resource: "/admin/dashboard"
+            expected: "allowed"
+          - type: access-control
+            user: "regular_user"
+            resource: "/admin/dashboard"
+            expected: "denied"
+          - type: access-control
+            user: "regular_user"
+            resource: "/user/profile"
+            expected: "allowed"
+
+      - id: family_sharing_permissions
+        name: ファミリー共有権限
+        description: ファミリー共有機能での権限管理が正しく実装されていることを確認
+        setup:
+          family:
+            id: "family001"
+            members:
+              - userId: "user001"
+                role: "owner"
+              - userId: "user002" 
+                role: "admin"
+              - userId: "user003"
+                role: "member"
+            sharedPlants:
+              - id: "plant001"
+                ownerId: "user001"
+        assertions:
+          - type: permission-check
+            user: "user001"
+            action: "delete_family"
+            expected: "allowed"
+          - type: permission-check
+            user: "user002"
+            action: "delete_family"
+            expected: "denied"
+          - type: permission-check
+            user: "user002"
+            action: "add_member"
+            expected: "allowed"
+          - type: permission-check
+            user: "user003" 
+            action: "add_member"
+            expected: "denied"
+
+      - id: api_access_control
+        name: APIアクセス制御
+        description: APIエンドポイントのアクセス制御が適切に実装されていることを確認
+        assertions:
+          - type: api-authorization
+            endpoint: "/api/user/profile"
+            authentication: "required"
+          - type: api-authorization
+            endpoint: "/api/plants/{id}"
+            ownershipCheck: true
+          - type: api-authorization
+            endpoint: "/api/family/{id}/members"
+            membershipCheck: true
+
+  - id: secure_coding
+    name: セキュアコーディング実装テスト
+    description: セキュアコーディングプラクティスが適切に実装されていることを検証
+    cases:
+      - id: input_validation
+        name: 入力値検証
+        description: ユーザー入力の適切な検証と無害化が行われていることを確認
+        input:
+          testPayloads:
+            - field: "username"
+              value: "<script>alert('XSS')</script>"
+            - field: "plantName"
+              value: "'; DROP TABLE plants; --"
+            - field: "searchTerm"
+              value: "%' OR '1'='1"
+        assertions:
+          - type: xss-protection
+            condition: "input-sanitized"
+          - type: sql-injection-protection
+            condition: "parameterized-queries"
+          - type: input-boundary-check
+            condition: true
+
+      - id: api_rate_limiting
+        name: APIレート制限
+        description: APIに対する過剰なリクエストを制限する機能が実装されていることを確認
+        steps:
+          - action: "api-call"
+            endpoint: "/api/plants"
+            repeat: 100
+            interval: "1s"
+        assertions:
+          - type: rate-limit
+            condition: "enforced"
+          - type: response-headers
+            expected:
+              - "X-RateLimit-Limit"
+              - "X-RateLimit-Remaining"
+              - "X-RateLimit-Reset"
+          - type: throttling
+            condition: "429-response after threshold"
+
+  - id: privacy_controls
+    name: プライバシー制御テスト
+    description: ユーザープライバシーに関する設定と制御を検証
+    cases:
+      - id: privacy_consent
+        name: プライバシー同意
+        description: プライバシー同意が適切に取得・記録されていることを確認
+        steps:
+          - action: "sign-up"
+            skipPrivacyConsent: true
+        assertions:
+          - type: privacy-consent
+            required: true
+          - type: consent-ui
+            elements: ["clear-explanation", "opt-in-checkboxes", "policy-link"]
+          - type: consent-record
+            stored: true
+
+      - id: data_export
+        name: データエクスポート
+        description: ユーザーデータのエクスポート機能が適切に実装されていることを確認
+        steps:
+          - action: "request-data-export"
+            userId: "user001"
+        assertions:
+          - type: export-format
+            condition: ["json", "csv", "pdf"] contains format
+          - type: export-completeness
+            condition: "all-required-data-included"
+          - type: export-protection
+            condition: "password-protected"
+
+      - id: data_deletion
+        name: データ削除
+        description: ユーザーデータの削除機能が適切に実装されていることを確認
+        steps:
+          - action: "request-account-deletion"
+            userId: "user001"
+            confirmation: true
+        assertions:
+          - type: deletion-verification
+            condition: "account-nonexistent-after-deletion"
+          - type: cascading-deletion
+            condition: "related-data-deleted"
+          - type: deletion-logging
+            condition: true
+
+security:
+  - test: dependency-scanning
+    description: 既知の脆弱性を持つ依存ライブラリがないことを確認
+  - test: obfuscation
+    description: モバイルアプリのコードが適切に難読化されていることを確認
+  - test: secure-backend
+    description: バックエンドシステムが適切にセキュリティ強化されていることを確認
+
+compliance:
+  - standard: GDPR
+    description: ヨーロッパのデータ保護規制に準拠
+  - standard: CCPA
+    description: カリフォルニア州消費者プライバシー法に準拠
+
+platforms:
+  - os: iOS
+    versions: ["15.0", "16.0"]
+  - os: Android
+    versions: ["11", "12", "13"]
+  - os: Web
+    browsers: ["Chrome", "Safari", "Firefox"] 

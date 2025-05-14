@@ -1,0 +1,329 @@
+id: S03_camera
+route: /camera
+name: Camera
+purpose: 植物撮影とAI識別
+description: |
+  植物を撮影して品種識別・個体識別を行うカメラ画面。
+  Swin-V2モデルによる植物品種の高精度識別と、ArcFace × ConvNeXt-Tiny Embeddingによる
+  個体識別を行うためのユーザーインターフェースを提供。
+
+layout:
+  type: View
+  style:
+    flex: 1
+    backgroundColor: "#000000"
+  children:
+    - type: View # カメラプレビュー
+      style:
+        flex: 1
+        position: relative
+    - type: View # 撮影UIコントロール
+      style:
+        height: 120
+        backgroundColor: "rgba(0, 0, 0, 0.75)"
+
+components:
+  - id: camera-preview
+    type: Camera
+    style:
+      flex: 1
+    props:
+      type: "back"
+      ratio: "4:3"
+      autoFocus: true
+      flashMode: "auto"
+      zoom: 0
+      whiteBalance: "auto"
+
+  - id: guide-frame-container
+    type: View
+    style:
+      position: absolute
+      top: 0
+      left: 0
+      right: 0
+      bottom: 120
+      justifyContent: center
+      alignItems: center
+    children:
+      - id: guide-frame
+        type: View
+        style:
+          width: "80%"
+          aspectRatio: 1
+          borderWidth: 2
+          borderColor: "#FFFFFF"
+          borderRadius: 16
+          borderStyle: "dashed"
+          justifyContent: center
+          alignItems: center
+      - id: guide-text
+        type: Text
+        text: "植物全体が見えるように撮影"
+        style:
+          position: absolute
+          bottom: 24
+          color: "#FFFFFF"
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          paddingVertical: 6
+          paddingHorizontal: 16
+          borderRadius: 20
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          overflow: "hidden"
+
+  - id: header-controls
+    type: View
+    style:
+      position: absolute
+      top: 0
+      left: 0
+      right: 0
+      height: 80
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      paddingHorizontal: 20
+      paddingTop: 40
+    children:
+      - id: close-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          borderRadius: 20
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          justifyContent: center
+          alignItems: center
+        onPress: "handleClose"
+        children:
+          - id: close-icon
+            type: Icon
+            name: "close"
+            style:
+              fontSize: 24
+              color: "#FFFFFF"
+      - id: flash-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          borderRadius: 20
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          justifyContent: center
+          alignItems: center
+        onPress: "toggleFlash"
+        children:
+          - id: flash-icon
+            type: Icon
+            name: "flash-auto" # flash-on, flash-off
+            style:
+              fontSize: 22
+              color: "#FFFFFF"
+
+  - id: bottom-controls
+    type: View
+    style:
+      position: absolute
+      bottom: 0
+      left: 0
+      right: 0
+      height: 120
+      flexDirection: row
+      justifyContent: space-around
+      alignItems: center
+      backgroundColor: "rgba(0, 0, 0, 0.75)"
+      paddingHorizontal: 20
+    children:
+      - id: gallery-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          borderRadius: 20
+          backgroundColor: "#1A1A1A"
+          justifyContent: center
+          alignItems: center
+          borderWidth: 1
+          borderColor: "#FFFFFF"
+        onPress: "openGallery"
+        children:
+          - id: gallery-icon
+            type: Icon
+            name: "image"
+            style:
+              fontSize: 22
+              color: "#FFFFFF"
+      
+      - id: capture-button
+        type: TouchableOpacity
+        style:
+          width: 70
+          height: 70
+          borderRadius: 35
+          backgroundColor: "#FFFFFF"
+          justifyContent: center
+          alignItems: center
+          borderWidth: 4
+          borderColor: "rgba(255, 255, 255, 0.5)"
+        onPress: "capturePhoto"
+        children:
+          - id: inner-circle
+            type: View
+            style:
+              width: 60
+              height: 60
+              borderRadius: 30
+              backgroundColor: "#FFFFFF"
+              
+      - id: switch-camera-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          borderRadius: 20
+          backgroundColor: "#1A1A1A"
+          justifyContent: center
+          alignItems: center
+        onPress: "switchCamera"
+        children:
+          - id: switch-icon
+            type: Icon
+            name: "camera-flip"
+            style:
+              fontSize: 22
+              color: "#FFFFFF"
+
+  - id: plant-identification-overlay
+    type: View
+    style:
+      position: absolute
+      left: 0
+      right: 0
+      bottom: 120
+      paddingHorizontal: 20
+      paddingVertical: 20
+    props:
+      visible: false # 撮影後にtrueに変更
+    children:
+      - id: identification-card
+        type: View
+        style:
+          backgroundColor: "rgba(255, 255, 255, 0.9)"
+          borderRadius: 16
+          padding: 16
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.2
+          shadowRadius: 4
+          elevation: 5
+        children:
+          - id: identification-header
+            type: View
+            style:
+              flexDirection: row
+              alignItems: center
+              marginBottom: 12
+            children:
+              - id: ai-icon
+                type: Icon
+                name: "brain"
+                style:
+                  fontSize: 18
+                  color: "#2C6E49"
+                  marginRight: 8
+              - id: identification-title
+                type: Text
+                text: "植物識別中..."
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 16
+                  color: "#2C6E49"
+                  
+          - id: identification-results
+            type: View
+            style:
+              marginTop: 8
+            children:
+              - id: loading-indicator
+                type: ActivityIndicator
+                style:
+                  marginVertical: 8
+                props:
+                  color: "#2C6E49"
+                  size: "small"
+              
+              # 以下は識別結果表示用（初期状態では非表示）
+              - id: species-name
+                type: Text
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 18
+                  color: "#333333"
+                  marginBottom: 4
+              - id: confidence-level
+                type: Text
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#666666"
+              - id: action-buttons
+                type: View
+                style:
+                  flexDirection: row
+                  justifyContent: space-between
+                  marginTop: 16
+                children:
+                  - id: retry-button
+                    type: TouchableOpacity
+                    style:
+                      paddingHorizontal: 16
+                      paddingVertical: 8
+                      borderRadius: 16
+                      borderWidth: 1
+                      borderColor: "#2C6E49"
+                    children:
+                      - id: retry-text
+                        type: Text
+                        text: "撮り直す"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#2C6E49"
+                  - id: confirm-button
+                    type: TouchableOpacity
+                    style:
+                      paddingHorizontal: 16
+                      paddingVertical: 8
+                      borderRadius: 16
+                      backgroundColor: "#2C6E49"
+                    children:
+                      - id: confirm-text
+                        type: Text
+                        text: "この結果で続ける"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#FFFFFF"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    white: "#FFFFFF"
+    black: "#000000"
+    darkGray: "#1A1A1A"
+    overlay: "rgba(0, 0, 0, 0.5)"
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - カメラプレビューは全画面表示で、上下のコントロールオーバーレイは半透明
+  - 撮影ガイドは点線フレームで、植物全体が収まるよう促す
+  - 撮影ボタンは大きく、タップしやすいデザイン
+  - 撮影後は識別結果オーバーレイが下から表示され、結果を確認
+  - 識別精度を「確度：高」「確度：中」などと視覚的に表示
+  - カメラ権限がない場合は、権限リクエスト画面を表示し、ギャラリーからの選択も可能に

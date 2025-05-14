@@ -1,0 +1,313 @@
+id: TF19_accessibility
+name: アクセシビリティ機能テスト
+description: アプリのアクセシビリティ準拠性と機能を包括的に検証するテスト
+
+components:
+  - screen_reader_compatibility
+  - keyboard_navigation
+  - visual_accessibility
+  - audio_cues
+  - assistive_technology_support
+
+testSuites:
+  - id: wcag_compliance
+    name: WCAG準拠テスト
+    description: Web Content Accessibility Guidelines (WCAG) 2.1 AA準拠を検証
+    cases:
+      - id: perceivable_content
+        name: 知覚可能なコンテンツ
+        description: すべてのコンテンツが複数の方法で提供され、知覚可能であることを確認
+        assertions:
+          - type: text-alternatives
+            condition: "all-images-have-alt-text"
+          - type: captions
+            condition: "all-videos-have-captions"
+          - type: content-adaptation
+            condition: "content-resizable-without-loss"
+          - type: contrast-ratio
+            condition: ">= 4.5:1 for normal text"
+            condition: ">= 3:1 for large text"
+          - type: text-spacing
+            condition: "customizable"
+
+      - id: operable_interface
+        name: 操作可能なインターフェース
+        description: すべてのインターフェース要素が操作可能であることを確認
+        assertions:
+          - type: keyboard-accessible
+            condition: "all-features-keyboard-accessible"
+          - type: timing
+            condition: "adjustable-timing"
+          - type: navigation
+            condition: "multiple-ways-to-locate"
+          - type: focus
+            condition: "visible-focus-indicator"
+          - type: target-size
+            condition: ">= 44x44 pixels"
+
+      - id: understandable_operation
+        name: 理解可能な操作
+        description: インターフェースの操作が一貫して理解可能であることを確認
+        assertions:
+          - type: language
+            condition: "language-programmatically-determined"
+          - type: predictable
+            condition: "consistent-navigation-patterns"
+          - type: input-assistance
+            condition: "error-identification-and-suggestions"
+          - type: labels
+            condition: "all-form-elements-labeled"
+
+      - id: robust_content
+        name: 堅牢なコンテンツ
+        description: コンテンツが様々な支援技術で解釈可能であることを確認
+        assertions:
+          - type: parse
+            condition: "valid-markup"
+          - type: names-roles-values
+            condition: "correct-accessibility-tree"
+          - type: status-messages
+            condition: "programmatically-determinable"
+
+  - id: screen_reader
+    name: スクリーンリーダー対応テスト
+    description: 主要なスクリーンリーダーでのアプリ操作を検証
+    cases:
+      - id: voiceover_compatibility
+        name: VoiceOver互換性
+        description: iOS VoiceOverでのアプリ操作が可能であることを確認
+        setup:
+          device: "iPhone 13"
+          os: "iOS 15.5"
+          assistiveTech: "VoiceOver"
+          languageSetting: "日本語"
+        test_flows:
+          - name: "ログインフロー"
+            steps:
+              - swipe: "right"
+                expected_announcement: "ユーザー名、テキストフィールド"
+              - double_tap: true
+                expected_result: "テキスト入力モード"
+              - swipe: "right" 
+                expected_announcement: "パスワード、セキュアテキストフィールド"
+              - double_tap: true
+                expected_result: "テキスト入力モード"
+              - swipe: "right"
+                expected_announcement: "ログイン、ボタン"
+              - double_tap: true
+                expected_result: "ホーム画面に移動"
+        assertions:
+          - type: announcement
+            condition: "all-elements-announced"
+          - type: navigation
+            condition: "can-complete-all-actions"
+          - type: focus-order
+            condition: "logical-sequence"
+
+      - id: talkback_compatibility
+        name: TalkBack互換性
+        description: Android TalkBackでのアプリ操作が可能であることを確認
+        setup:
+          device: "Pixel 6"
+          os: "Android 12"
+          assistiveTech: "TalkBack"
+          languageSetting: "日本語"
+        test_flows:
+          - name: "植物詳細表示フロー"
+            steps:
+              - swipe: "right"
+                expected_announcement: "植物一覧"
+              - double_tap: true
+                expected_result: "植物一覧画面"
+              - swipe: "right" 
+                expected_announcement: "モンステラ、植物"
+              - double_tap: true
+                expected_result: "植物詳細画面"
+              - explore_by_touch: "上から下"
+                expected_announcements: 
+                  - "モンステラ、見出し"
+                  - "学名: Monstera deliciosa"
+                  - "育成難易度: 初級"
+        assertions:
+          - type: announcement
+            condition: "all-elements-announced"
+          - type: navigation
+            condition: "can-complete-all-actions"
+          - type: content-description
+            condition: "all-controls-described"
+
+  - id: keyboard_navigation
+    name: キーボード操作テスト
+    description: キーボードのみを使用したアプリ操作を検証
+    cases:
+      - id: tab_navigation
+        name: タブナビゲーション
+        description: Tabキーでのフォーカス移動が論理的順序であることを確認
+        setup:
+          platform: "Web"
+          browser: "Chrome"
+        test_flows:
+          - name: "フォーム入力フロー"
+            steps:
+              - key: "Tab"
+                expected_focus: "ユーザー名フィールド"
+              - key: "Tab"
+                expected_focus: "パスワードフィールド"
+              - key: "Tab"
+                expected_focus: "ログインボタン"
+              - key: "Enter"
+                expected_result: "ログイン処理実行"
+        assertions:
+          - type: tab-order
+            condition: "logical-sequence"
+          - type: focus-indicator
+            condition: "clearly-visible"
+          - type: keyboard-trap
+            condition: "no-trapping"
+
+      - id: shortcut_keys
+        name: ショートカットキー
+        description: キーボードショートカットが適切に動作することを確認
+        setup:
+          platform: "Web"
+          browser: "Chrome"
+        assertions:
+          - type: shortcut-availability
+            condition: "common-actions-have-shortcuts"
+          - type: shortcut-documentation
+            condition: "shortcuts-documented"
+          - type: shortcut-consistency
+            condition: "consistent-across-app"
+          - type: shortcut-conflicts
+            condition: "no-conflicts-with-assistive-tech"
+
+  - id: visual_accessibility
+    name: 視覚アクセシビリティテスト
+    description: 視覚的なアクセシビリティ機能を検証
+    cases:
+      - id: color_contrast
+        name: 色のコントラスト
+        description: テキストと背景のコントラスト比が基準を満たしていることを確認
+        assertions:
+          - type: text-contrast
+            condition: "text-to-background ratio >= 4.5:1"
+          - type: ui-element-contrast
+            condition: "interactive-elements-ratio >= 3:1"
+          - type: critical-info
+            condition: "not-conveyed-by-color-alone"
+
+      - id: text_resize
+        name: テキストサイズ変更
+        description: テキストサイズを変更してもレイアウトが維持されることを確認
+        steps:
+          - action: "set-font-size"
+            value: "200%"
+        assertions:
+          - type: content-overflow
+            condition: "no-clipping"
+          - type: layout-stability
+            condition: "maintains-readability"
+          - type: scroll-requirement
+            condition: "only-one-direction-required"
+
+      - id: dark_mode
+        name: ダークモード
+        description: ダークモードでの表示が適切であることを確認
+        steps:
+          - action: "toggle-dark-mode"
+            value: true
+        assertions:
+          - type: theme-contrast
+            condition: "maintains-required-contrast"
+          - type: readability
+            condition: "text-remains-readable"
+          - type: ui-elements
+            condition: "all-elements-visible"
+
+      - id: motion_sensitivity
+        name: モーション感度
+        description: モーション設定に応じて動きのあるUIが調整されることを確認
+        setup:
+          userPreference: "reduced-motion"
+        assertions:
+          - type: animation
+            condition: "reduced-or-eliminated"
+          - type: auto-playing
+            condition: "disabled-or-minimal"
+          - type: transitions
+            condition: "simplified"
+
+  - id: assistive_features
+    name: 支援機能テスト
+    description: アプリ内の追加的な支援機能を検証
+    cases:
+      - id: voice_control
+        name: 音声制御
+        description: 音声制御による操作が可能であることを確認
+        setup:
+          assistiveTech: "Voice Control"
+          platform: "iOS"
+        assertions:
+          - type: command-recognition
+            condition: "common-commands-recognized"
+          - type: interactive-elements
+            condition: "all-interactable-by-voice"
+          - type: feedback
+            condition: "provides-voice-action-feedback"
+
+      - id: haptic_feedback
+        name: 触覚フィードバック
+        description: 触覚フィードバックが適切に提供されることを確認
+        assertions:
+          - type: action-confirmation
+            condition: "provides-haptic-feedback"
+          - type: error-notification
+            condition: "distinct-error-pattern"
+          - type: customization
+            condition: "user-adjustable"
+
+      - id: text_to_speech
+        name: テキスト読み上げ
+        description: アプリ内のテキスト読み上げ機能が適切に動作することを確認
+        test_flows:
+          - name: "植物ケア指示の読み上げ"
+            steps:
+              - action: "tap-speaker-icon"
+                element: "#care-instructions"
+            expected:
+              - type: "audio-output"
+                content: "matches-displayed-text"
+        assertions:
+          - type: pronunciation
+            condition: "correct-for-language"
+          - type: speed-control
+            condition: "adjustable"
+          - type: interruption
+            condition: "can-be-paused-resumed"
+
+performance:
+  - test: screen-reader-response
+    threshold: "< 100ms delay"
+  - test: animation-fps
+    threshold: "smooth at reduced settings"
+  - test: gesture-recognition
+    threshold: "> 95% accuracy"
+
+compliance:
+  - standard: WCAG 2.1 AA
+    description: ウェブコンテンツアクセシビリティガイドライン2.1 AAレベル
+  - standard: iOS Accessibility Guidelines
+    description: Appleのアクセシビリティガイドライン
+  - standard: Android Accessibility Guidelines
+    description: Googleのアクセシビリティガイドライン
+
+platforms:
+  - os: iOS
+    versions: ["15.0", "16.0"]
+    assistiveTech: ["VoiceOver", "Switch Control", "Voice Control"]
+  - os: Android
+    versions: ["11", "12", "13"]
+    assistiveTech: ["TalkBack", "Voice Access", "Switch Access"]
+  - os: Web
+    browsers: ["Chrome", "Safari", "Firefox"]
+    assistiveTech: ["JAWS", "NVDA", "VoiceOver"] 

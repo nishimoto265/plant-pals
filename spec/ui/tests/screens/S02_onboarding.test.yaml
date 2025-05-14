@@ -1,0 +1,252 @@
+id: TS02_onboarding
+name: オンボーディング画面テスト
+target:
+  screen: S02_onboarding
+  path: src/ui/screens/S02_onboarding/OnboardingScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: オンボーディング画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのオンボーディング画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/illustrations/onboarding_welcome.png
+            - asset: assets/illustrations/onboarding_camera.png
+            - asset: assets/illustrations/onboarding_ar.png
+            - asset: assets/illustrations/onboarding_reminder.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#carousel"
+          - type: element-exists
+            target: "#pagination"
+          - type: element-exists
+            target: "#skip-button"
+          - type: element-exists
+            target: "#next-button"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: カルーセル内のページ切り替えと操作ボタン動作を検証
+    type: interaction
+    cases:
+      - id: next-button
+        name: 次へボタン
+        description: 次へボタンをタップするとカルーセルが次のページに移動すること
+        steps:
+          - action: press
+            target: "#next-button"
+        assertions:
+          - type: function-called
+            target: "carouselRef.snapToNext"
+          - type: state-change
+            target: "currentPage"
+            value: 1
+
+      - id: last-page-next
+        name: 最終ページの次へボタン
+        description: 最終ページで次へボタンをタップするとオンボーディングが完了すること
+        setup:
+          state:
+            currentPage: 3 # 最終ページ（0基点）
+        steps:
+          - action: press
+            target: "#next-button"
+        assertions:
+          - type: function-called
+            target: "completeOnboarding"
+          - type: navigation
+            route: "S04_home"
+          - type: storage-value
+            key: "onboarding.completed"
+            value: true
+
+      - id: skip-button
+        name: スキップボタン
+        description: スキップボタンをタップするとオンボーディングがスキップされること
+        steps:
+          - action: press
+            target: "#skip-button"
+        assertions:
+          - type: function-called
+            target: "skipOnboarding"
+          - type: navigation
+            route: "S04_home"
+          - type: storage-value
+            key: "onboarding.skipped"
+            value: true
+          - type: storage-value
+            key: "onboarding.completed"
+            value: true
+
+      - id: carousel-swipe-left
+        name: カルーセル左スワイプ
+        description: カルーセルを左横スワイプすると次のページに移動すること
+        steps:
+          - action: swipe
+            target: "#carousel"
+            direction: left
+          - action: wait
+            duration: 500
+        assertions:
+          - type: state-change
+            target: "currentPage"
+            value: 1
+
+      - id: carousel-swipe-right
+        name: カルーセル右スワイプ
+        description: カルーセルを右横スワイプすると前のページに移動すること
+        setup:
+          state:
+            currentPage: 1
+        steps:
+          - action: swipe
+            target: "#carousel"
+            direction: right
+          - action: wait
+            duration: 500
+        assertions:
+          - type: state-change
+            target: "currentPage"
+            value: 0
+
+  - id: permissions
+    name: 権限リクエストテスト
+    description: 権限リクエストボタンの動作を検証
+    type: interaction
+    cases:
+      - id: camera-permission
+        name: カメラ権限リクエスト
+        description: カメラ権限リクエストが適切に動作すること
+        setup:
+          state:
+            currentPage: 1 # カメラ権限のページ
+        steps:
+          - action: press
+            target: "#permission-button"
+        assertions:
+          - type: function-called
+            target: "requestCameraPermission"
+
+      - id: notifications-permission
+        name: 通知権限リクエスト
+        description: 通知権限リクエストが適切に動作すること
+        setup:
+          state:
+            currentPage: 3 # 通知権限のページ
+        steps:
+          - action: press
+            target: "#permission-button"
+        assertions:
+          - type: function-called
+            target: "requestNotificationPermission"
+
+  - id: content
+    name: コンテンツ表示テスト
+    description: 各ページの内容が適切に表示されることを検証
+    type: functional
+    cases:
+      - id: page-content
+        name: ページコンテンツ
+        description: カルーセルの各ページに適切な内容が表示されること
+        setup:
+          state:
+            currentPage: 0
+        steps:
+          - assertions:
+              - type: element-text
+                target: "#title"
+                value: "Plant Palsへようこそ！"
+          - action: press
+            target: "#next-button"
+          - assertions:
+              - type: element-text
+                target: "#title"
+                value: "植物をカメラで撮影"
+              - type: element-visible
+                target: "#permission-button"
+          - action: press
+            target: "#next-button"
+          - assertions:
+              - type: element-text
+                target: "#title"
+                value: "ARで楽しむ"
+          - action: press
+            target: "#next-button"
+          - assertions:
+              - type: element-text
+                target: "#title"
+                value: "水やりリマインダー"
+              - type: element-visible
+                target: "#permission-button"
+              - type: element-text
+                target: "#next-text"
+                value: "始める"
+
+  - id: ui-state
+    name: UI状態テスト
+    description: 現在のページに応じたUI表示状態を検証
+    type: interaction
+    cases:
+      - id: pagination-indicators
+        name: ページネーション表示
+        description: カルーセル現在ページとページネーション表示が連動していること
+        steps:
+          - action: press
+            target: "#next-button"
+          - action: wait
+            duration: 500
+          - assertions:
+              - type: prop-value
+                target: "pagination"
+                prop: "activeDotIndex"
+                value: 1
+          - action: press
+            target: "#next-button"
+          - action: wait
+            duration: 500
+          - assertions:
+              - type: prop-value
+                target: "pagination"
+                prop: "activeDotIndex"
+                value: 2
+          - action: press
+            target: "#next-button"
+          - action: wait
+            duration: 500
+          - assertions:
+              - type: prop-value
+                target: "pagination"
+                prop: "activeDotIndex"
+                value: 3
+              - type: element-text
+                target: "#next-text"
+                value: "始める"
+
+accessibility:
+  - test: color-contrast
+    description: テキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: スクリーンリーダーで全要素にアクセス可能
+  - test: swipe-navigation
+    description: スワイプジェスチャーでカルーセル操作が可能
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet 
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

@@ -1,0 +1,360 @@
+id: TE01_auth_flow
+name: 認証フローE2Eテスト
+description: |
+  認証関連のエンドツーエンドテスト。
+  ユーザー登録、ログイン、ログアウトなどの主要認証フローを検証する。
+
+testSuites:
+  - id: signup
+    name: 新規登録フロー
+    description: ユーザー新規登録の一連のフローを検証
+    type: e2e
+    cases:
+      - id: signup-email-success
+        name: メールで新規登録
+        description: メールとパスワードで正常に登録できること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button" # Welcome画面の「はじめる」ボタン
+          - action: wait
+            duration: 1000
+          - action: type
+            target: "#email-input"
+            value: "test-e2e@example.com"
+          - action: type
+            target: "#password-input"
+            value: "TestPass123!"
+          - action: tap
+            target: "#submit-button"
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: screen-visible
+            screenId: S02_onboarding
+          - type: storage-value
+            key: "auth.user"
+            exists: true
+
+      - id: signup-validation
+        name: 入力バリデーション
+        description: 不正な入力時にエラーメッセージが表示されること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: type
+            target: "#email-input"
+            value: "invalid-email"
+          - action: type
+            target: "#password-input"
+            value: "123"
+          - action: tap
+            target: "#submit-button"
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: element-visible
+            target: "#email-input-container .error-message"
+          - type: element-visible
+            target: "#password-input-container .error-message"
+          - type: screen-visible
+            screenId: S01_auth
+
+  - id: login
+    name: ログインフロー
+    description: 既存ユーザーのログイン動作を検証
+    type: e2e
+    cases:
+      - id: login-success
+        name: ログイン成功
+        description: 既存アカウントで正常にログインできること
+        setup:
+          clearStorage: true
+          resetApp: true
+          users:
+            - email: "existing@example.com"
+              password: "ExistingPass123!"
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: type
+            target: "#email-input"
+            value: "existing@example.com"
+          - action: type
+            target: "#password-input"
+            value: "ExistingPass123!"
+          - action: tap
+            target: "#submit-button"
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: screen-visible
+            screenId: S04_home
+          - type: element-visible
+            target: "#user-avatar"
+
+      - id: login-failure
+        name: ログイン失敗
+        description: 誤った認証情報ではエラーが表示されること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: type
+            target: "#email-input"
+            value: "existing@example.com"
+          - action: type
+            target: "#password-input"
+            value: "WrongPassword123"
+          - action: tap
+            target: "#submit-button"
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: element-visible
+            target: "#login-error-message"
+          - type: element-text
+            target: "#login-error-message"
+            contains: "認証情報が無効です"
+
+  - id: social-login
+    name: ソーシャルログインフロー
+    description: 各種ソーシャルログインの動作を検証
+    type: e2e
+    cases:
+      - id: google-login
+        name: Googleログイン
+        description: Googleアカウントで正常にログインできること
+        setup:
+          clearStorage: true
+          resetApp: true
+          mocks:
+            - service: GoogleSignIn
+              method: signIn
+              response:
+                success: true
+                idToken: "mock-google-token"
+                user:
+                  email: "google@example.com"
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: tap
+            target: "#google-button"
+          - action: wait
+            duration: 3000
+        assertions:
+          - type: screen-visible
+            screenId: S04_home
+          - type: storage-value
+            key: "auth.user.email"
+            value: "google@example.com"
+
+      - id: apple-login
+        name: Appleログイン
+        description: Appleアカウントで正常にログインできること
+        setup:
+          clearStorage: true
+          resetApp: true
+          mocks:
+            - service: AppleAuthentication
+              method: signInAsync
+              response:
+                success: true
+                identityToken: "mock-apple-token"
+                email: "apple@example.com"
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: tap
+            target: "#apple-button"
+          - action: wait
+            duration: 3000
+        assertions:
+          - type: screen-visible
+            screenId: S04_home
+          - type: storage-value
+            key: "auth.user.email"
+            value: "apple@example.com"
+
+  - id: guest-mode
+    name: ゲストモードフロー
+    description: ゲストモードでの使用を検証
+    type: e2e
+    cases:
+      - id: guest-login
+        name: ゲストログイン
+        description: ゲストモードで正常にログインできること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: tap
+            target: "#guest-button"
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: screen-visible
+            screenId: S02_onboarding
+          - type: storage-value
+            key: "auth.user.isGuest"
+            value: true
+
+      - id: guest-restrictions
+        name: ゲストモード制限
+        description: ゲストモードでは特定機能が制限されること
+        setup:
+          clearStorage: true
+          resetApp: true
+          loggedInAsGuest: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: navigate
+            to: S04_home
+          - action: wait
+            duration: 1000
+          - action: navigate
+            to: S05_timeline
+          - action: wait
+            duration: 1000
+          - action: tap
+            target: "#create-post-button"
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: element-visible
+            target: "#guest-mode-restriction-dialog"
+          - type: element-text
+            target: "#guest-mode-restriction-dialog"
+            contains: "アカウント登録が必要です"
+
+  - id: logout
+    name: ログアウトフロー
+    description: ログアウト処理を検証
+    type: e2e
+    cases:
+      - id: logout-success
+        name: ログアウト成功
+        description: ログアウトが正常に行われること
+        setup:
+          clearStorage: true
+          resetApp: true
+          loggedIn: true
+          user:
+            email: "logged-in@example.com"
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: navigate
+            to: S07_profile
+          - action: wait
+            duration: 1000
+          - action: scroll
+            target: "#profile-scroll-view"
+            direction: down
+          - action: tap
+            target: "#logout-button"
+          - action: wait
+            duration: 1000
+          - action: tap
+            target: "#confirm-logout-button"
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: screen-visible
+            screenId: S00_welcome
+          - type: storage-value
+            key: "auth.accessToken"
+            exists: false
+
+  - id: persistent-login
+    name: ログイン永続化フロー
+    description: アプリ再起動後もログイン状態が保持されることを検証
+    type: e2e
+    cases:
+      - id: refresh-token-works
+        name: リフレッシュトークン動作確認
+        description: リフレッシュトークンでログイン状態が保持されること
+        setup:
+          clearStorage: true
+          resetApp: true
+          loggedIn: true
+          user:
+            email: "persistent@example.com"
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+          - action: background-app
+            duration: 5000
+          - action: foreground-app
+          - action: wait
+            duration: 2000
+          - action: restart-app
+          - action: wait
+            duration: 3000
+        assertions:
+          - type: screen-visible
+            screenId: S04_home
+          - type: element-text
+            target: "#user-email"
+            value: "persistent@example.com"
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21"]
+
+environments:
+  - type: development
+    baseUrl: "http://localhost:8000"
+  - type: testing
+    baseUrl: "https://test.plant-pals.example.com" 

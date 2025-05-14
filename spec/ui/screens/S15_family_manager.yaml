@@ -1,0 +1,724 @@
+id: S15_family_manager
+route: /family_manager
+name: FamilyManager
+purpose: 家族メンバー招待・管理・権限設定
+description: |
+  植物の世話を家族や友人と共有するための管理画面。
+  メンバーの招待、権限設定（オーナー/編集者/閲覧者）、
+  QRコードでの招待機能、活動履歴の確認などを提供します。
+  「ゆるふわBotanic Garden」テーマに沿った親しみやすいデザインで、
+  ユーザー間のコラボレーションを促進します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "家族・共有設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: placeholder
+        type: View
+        style:
+          width: 40
+          height: 40
+
+  # 現在のステータス表示
+  - id: status-card
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      marginBottom: 24
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    children:
+      - id: status-header
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: family-icon
+            type: Icon
+            name: "account-group"
+            style:
+              fontSize: 24
+              color: "#2C6E49"
+              marginRight: 12
+          - id: status-title
+            type: Text
+            text: "あなたのガーデンファミリー"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#333333"
+      - id: status-info
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          padding: 12
+          borderRadius: 8
+        children:
+          - id: status-text
+            type: Text
+            text: "isOwner ? 'あなたはオーナーです' : 'あなたは編集者です'"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+          - id: members-count
+            type: Text
+            text: "メンバー数: " + familyMembers.length
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+
+  # メンバーリストセクション
+  - id: members-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+    children:
+      - id: section-header
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: section-title
+            type: Text
+            text: "メンバー"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#333333"
+          - id: add-member-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              backgroundColor: "#2C6E49"
+              paddingHorizontal: 12
+              paddingVertical: 6
+              borderRadius: 16
+              display: "isOwner ? 'flex' : 'none'"
+            onPress: "showInviteModal"
+            children:
+              - id: add-icon
+                type: Icon
+                name: "account-plus"
+                style:
+                  fontSize: 16
+                  color: "#FFFFFF"
+                  marginRight: 4
+              - id: add-text
+                type: Text
+                text: "招待"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#FFFFFF"
+      
+      # メンバーリスト
+      - id: members-list
+        type: FlatList
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          overflow: "hidden"
+        props:
+          data: "familyMembers"
+          renderItem: "renderMemberItem"
+          keyExtractor: "item => item.id"
+          scrollEnabled: false
+          ItemSeparatorComponent: "renderSeparator"
+
+  # メンバーアイテムテンプレート
+  - id: member-item-template
+    type: View
+    style:
+      flexDirection: row
+      alignItems: center
+      padding: 16
+    children:
+      - id: member-avatar
+        type: Image
+        style:
+          width: 50
+          height: 50
+          borderRadius: 25
+          marginRight: 12
+        props:
+          source: "item.avatarUrl || 'assets/images/default_avatar.png'"
+          resizeMode: "cover"
+      - id: member-info
+        type: View
+        style:
+          flex: 1
+          justifyContent: center
+        children:
+          - id: member-name
+            type: Text
+            text: "item.displayName"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#333333"
+              marginBottom: 2
+          - id: role-container
+            type: View
+            style:
+              flexDirection: row
+              alignItems: center
+            children:
+              - id: role-badge
+                type: View
+                style:
+                  backgroundColor: "item.role === 'owner' ? 'rgba(255, 209, 102, 0.2)' : item.role === 'editor' ? 'rgba(151, 188, 98, 0.2)' : 'rgba(77, 157, 224, 0.2)'"
+                  borderRadius: 4
+                  paddingHorizontal: 6
+                  paddingVertical: 2
+                  marginRight: 8
+                children:
+                  - id: role-text
+                    type: Text
+                    text: "item.role === 'owner' ? 'オーナー' : item.role === 'editor' ? '編集者' : '閲覧者'"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 12
+                      color: "item.role === 'owner' ? '#FFD166' : item.role === 'editor' ? '#97BC62' : '#4D9DE0'"
+              - id: last-active
+                type: Text
+                text: "formatLastActive(item.lastActive)"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#999999"
+      
+      # メンバー設定ボタン（オーナーのみ表示）
+      - id: member-settings
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          display: "isOwner && item.role !== 'owner' ? 'flex' : 'none'"
+        onPress: "() => openMemberOptions(item.id)"
+        children:
+          - id: settings-icon
+            type: Icon
+            name: "dots-vertical"
+            style:
+              fontSize: 20
+              color: "#666666"
+
+  # 植物ごとの権限セクション
+  - id: plants-permissions-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+      display: "isOwner ? 'flex' : 'none'"
+    children:
+      - id: plants-header
+        type: View
+        style:
+          marginBottom: 12
+        children:
+          - id: plants-title
+            type: Text
+            text: "植物ごとの設定"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#333333"
+              marginBottom: 4
+          - id: plants-subtitle
+            type: Text
+            text: "植物ごとにアクセス権を設定できます"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+              
+      # 植物リスト
+      - id: plants-list
+        type: FlatList
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          overflow: "hidden"
+        props:
+          data: "userPlants"
+          renderItem: "renderPlantItem"
+          keyExtractor: "item => item.id"
+          scrollEnabled: false
+          ItemSeparatorComponent: "renderSeparator"
+
+  # 植物アイテムテンプレート
+  - id: plant-item-template
+    type: View
+    style:
+      flexDirection: row
+      alignItems: center
+      padding: 16
+    children:
+      - id: plant-thumbnail
+        type: Image
+        style:
+          width: 50
+          height: 50
+          borderRadius: 8
+          marginRight: 12
+        props:
+          source: "item.thumbnailUrl"
+          resizeMode: "cover"
+      - id: plant-info
+        type: View
+        style:
+          flex: 1
+          justifyContent: center
+        children:
+          - id: plant-name
+            type: Text
+            text: "item.nickname || item.speciesName"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#333333"
+              marginBottom: 2
+          - id: access-status
+            type: Text
+            text: "item.sharedWithAll ? '全員と共有中' : '個別設定'"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+      - id: plant-settings
+        type: TouchableOpacity
+        style:
+          paddingHorizontal: 12
+          paddingVertical: 6
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          borderRadius: 16
+        onPress: "() => openPlantPermissions(item.id)"
+        children:
+          - id: settings-text
+            type: Text
+            text: "設定"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#2C6E49"
+
+  # 活動履歴セクション
+  - id: activity-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+    children:
+      - id: activity-header
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: activity-title
+            type: Text
+            text: "最近の活動"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#333333"
+          - id: view-all-button
+            type: TouchableOpacity
+            onPress: "viewAllActivity"
+            children:
+              - id: view-all-text
+                type: Text
+                text: "すべて見る"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#2C6E49"
+      
+      # 活動リスト
+      - id: activity-list
+        type: View
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          padding: 16
+        children:
+          - id: activity-flatlist
+            type: FlatList
+            style:
+              maxHeight: 200
+            props:
+              data: "recentActivities"
+              renderItem: "renderActivityItem"
+              keyExtractor: "item => item.id"
+              scrollEnabled: false
+              ListEmptyComponent: "EmptyActivityList"
+
+  # 活動アイテムテンプレート
+  - id: activity-item-template
+    type: View
+    style:
+      flexDirection: row
+      alignItems: center
+      marginBottom: 12
+    children:
+      - id: activity-icon
+        type: Icon
+        name: "item.type === 'watering' ? 'water' : item.type === 'edit' ? 'pencil' : 'eye'"
+        style:
+          fontSize: 16
+          color: "item.type === 'watering' ? '#4D9DE0' : item.type === 'edit' ? '#97BC62' : '#666666'"
+          backgroundColor: "item.type === 'watering' ? 'rgba(77, 157, 224, 0.1)' : item.type === 'edit' ? 'rgba(151, 188, 98, 0.1)' : 'rgba(0, 0, 0, 0.05)'"
+          width: 28
+          height: 28
+          borderRadius: 14
+          textAlign: center
+          lineHeight: 28
+          marginRight: 12
+      - id: activity-content
+        type: View
+        style:
+          flex: 1
+        children:
+          - id: activity-text
+            type: Text
+            text: "item.userName + ' ' + item.actionText"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+              marginBottom: 2
+          - id: activity-time
+            type: Text
+            text: "formatTime(item.timestamp)"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#999999"
+
+  # メンバー招待モーダル
+  - id: invite-modal
+    type: Modal
+    props:
+      visible: "inviteModalVisible"
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: modal-overlay
+        type: View
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.4)"
+          justifyContent: "center"
+          alignItems: "center"
+        children:
+          - id: modal-content
+            type: View
+            style:
+              width: "85%"
+              backgroundColor: "#FFFFFF"
+              borderRadius: 24
+              padding: 24
+              alignItems: "center"
+              shadowColor: "#000"
+              shadowOffset: { width: 0, height: 4 }
+              shadowOpacity: 0.25
+              shadowRadius: 8
+              elevation: 8
+            children:
+              - id: modal-title
+                type: Text
+                text: "メンバーを招待"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 20
+                  color: "#333333"
+                  marginBottom: 16
+                  textAlign: "center"
+              
+              # QRコード
+              - id: qr-container
+                type: View
+                style:
+                  padding: 16
+                  backgroundColor: "#FFFFFF"
+                  borderRadius: 12
+                  marginBottom: 16
+                  borderWidth: 1
+                  borderColor: "rgba(151, 188, 98, 0.3)"
+                children:
+                  - id: qr-code
+                    type: Image
+                    style:
+                      width: 200
+                      height: 200
+                      marginBottom: 8
+                    props:
+                      source: "inviteQRCode"
+                      resizeMode: "contain"
+                  - id: qr-instruction
+                    type: Text
+                    text: "このQRコードを友達に読み取ってもらいましょう"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 12
+                      color: "#666666"
+                      textAlign: "center"
+
+              # リンク共有
+              - id: invite-link-container
+                type: View
+                style:
+                  flexDirection: row
+                  alignItems: center
+                  marginBottom: 24
+                  backgroundColor: "rgba(151, 188, 98, 0.1)"
+                  borderRadius: 8
+                  paddingHorizontal: 12
+                  paddingVertical: 8
+                  width: "100%"
+                children:
+                  - id: link-text
+                    type: Text
+                    text: "inviteLink"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#666666"
+                      flex: 1
+                  - id: copy-button
+                    type: TouchableOpacity
+                    style:
+                      width: 40
+                      height: 40
+                      justifyContent: center
+                      alignItems: center
+                    onPress: "copyInviteLink"
+                    children:
+                      - id: copy-icon
+                        type: Icon
+                        name: "content-copy"
+                        style:
+                          fontSize: 20
+                          color: "#2C6E49"
+
+              # ボタン
+              - id: buttons-container
+                type: View
+                style:
+                  flexDirection: row
+                  justifyContent: "space-between"
+                  width: "100%"
+                children:
+                  - id: share-button
+                    type: TouchableOpacity
+                    style:
+                      flex: 1
+                      backgroundColor: "#F2EFEA"
+                      paddingVertical: 12
+                      borderRadius: 24
+                      alignItems: "center"
+                      marginRight: 8
+                      borderWidth: 1
+                      borderColor: "#97BC62"
+                    onPress: "shareInvite"
+                    children:
+                      - id: share-text
+                        type: Text
+                        text: "共有"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 16
+                          color: "#2C6E49"
+                  - id: close-button
+                    type: TouchableOpacity
+                    style:
+                      flex: 1
+                      backgroundColor: "#2C6E49"
+                      paddingVertical: 12
+                      borderRadius: 24
+                      alignItems: "center"
+                      marginLeft: 8
+                    onPress: "closeInviteModal"
+                    children:
+                      - id: close-text
+                        type: Text
+                        text: "閉じる"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 16
+                          color: "#FFFFFF"
+
+  # メンバーオプションモーダル
+  - id: member-options-modal
+    type: Modal
+    props:
+      visible: "memberOptionsVisible"
+      transparent: true
+      animationType: "fade"
+    children:
+      - id: options-overlay
+        type: TouchableOpacity
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.4)"
+          justifyContent: "center"
+          alignItems: "center"
+        onPress: "closeMemberOptions"
+        children:
+          - id: options-content
+            type: TouchableWithoutFeedback # 内部タップはモーダルを閉じない
+            children:
+              - id: options-menu
+                type: View
+                style:
+                  width: 240
+                  backgroundColor: "#FFFFFF"
+                  borderRadius: 12
+                  overflow: "hidden"
+                  shadowColor: "#000"
+                  shadowOffset: { width: 0, height: 4 }
+                  shadowOpacity: 0.2
+                  shadowRadius: 8
+                  elevation: 6
+                children:
+                  - id: edit-role-option
+                    type: TouchableOpacity
+                    style:
+                      flexDirection: "row"
+                      alignItems: "center"
+                      paddingVertical: 14
+                      paddingHorizontal: 16
+                      borderBottomWidth: 1
+                      borderBottomColor: "rgba(151, 188, 98, 0.1)"
+                    onPress: "openRoleEditor"
+                    children:
+                      - id: edit-role-icon
+                        type: Icon
+                        name: "account-cog"
+                        style:
+                          fontSize: 20
+                          color: "#97BC62"
+                          marginRight: 12
+                      - id: edit-role-text
+                        type: Text
+                        text: "権限を変更"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#333333"
+                  - id: remove-member-option
+                    type: TouchableOpacity
+                    style:
+                      flexDirection: "row"
+                      alignItems: "center"
+                      paddingVertical: 14
+                      paddingHorizontal: 16
+                    onPress: "confirmRemoveMember"
+                    children:
+                      - id: remove-icon
+                        type: Icon
+                        name: "account-remove"
+                        style:
+                          fontSize: 20
+                          color: "#EF476F"
+                          marginRight: 12
+                      - id: remove-text
+                        type: Text
+                        text: "削除"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#333333"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - オーナー、編集者、閲覧者の権限区分を色と視覚的に区別
+  - QRコードとリンク共有による簡単な招待プロセス
+  - 植物ごとのアクセス権設定で柔軟な共有コントロールを提供
+  - 活動履歴の視覚的表現で誰がいつどのような操作を行ったかを明確に
+  - 全体的に「ゆるふわ」テーマに沿った丸みのある要素と優しい配色
+  - オーナー/非オーナーで異なるUIを表示し、権限に応じた操作性を確保

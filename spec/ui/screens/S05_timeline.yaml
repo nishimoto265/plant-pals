@@ -1,0 +1,443 @@
+id: S05_timeline
+route: /timeline
+name: Timeline
+purpose: SNS機能「みんなの庭」（植物育成の様子を共有・交流）
+description: |
+  ユーザー間で植物キャラクターや育成の様子を共有・交流するSNS機能。
+  画像や動画の投稿、いいね、コメント、フォロー機能を備え、
+  ユーザー同士のコミュニティ形成を促進します。
+  「ゆるふわBotanic Garden」コンセプトに沿った温かみのあるデザインで、
+  植物愛好家のための特化型SNSとして機能します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: FlatList # タイムラインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 16
+    - type: View # 投稿ボタン（フローティング）
+      style:
+        position: absolute
+        bottom: 16
+        right: 16
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: header-title
+        type: Text
+        text: "みんなの庭"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-actions
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+        children:
+          - id: search-button
+            type: TouchableOpacity
+            style:
+              width: 40
+              height: 40
+              justifyContent: center
+              alignItems: center
+              marginRight: 8
+            onPress: "openSearch"
+            children:
+              - id: search-icon
+                type: Icon
+                name: "magnify"
+                style:
+                  fontSize: 24
+                  color: "#2C6E49" # 深緑（メインカラー）
+          - id: filter-button
+            type: TouchableOpacity
+            style:
+              width: 40
+              height: 40
+              justifyContent: center
+              alignItems: center
+            onPress: "openFilter"
+            children:
+              - id: filter-icon
+                type: Icon
+                name: "filter-variant"
+                style:
+                  fontSize: 24
+                  color: "#2C6E49" # 深緑（メインカラー）
+
+  - id: timeline-list
+    type: FlatList
+    style:
+      flex: 1
+    props:
+      data: "posts" # 状態管理から投稿データを取得
+      renderItem: "renderPost"
+      keyExtractor: "item => item.id"
+      showsVerticalScrollIndicator: false
+      onRefresh: "refreshTimeline"
+      refreshing: false
+      onEndReached: "loadMorePosts"
+      onEndReachedThreshold: 0.5
+      ListHeaderComponent: "TimelineHeader"
+      ListEmptyComponent: "EmptyTimeline"
+      ItemSeparatorComponent: "PostSeparator"
+
+  # 投稿カードのテンプレート（renderPost関数内でレンダリング）
+  - id: post-card-template
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginVertical: 8
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    children:
+      - id: post-header
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: user-avatar
+            type: Image
+            style:
+              width: 40
+              height: 40
+              borderRadius: 20
+              marginRight: 12
+            props:
+              source: "post.user.avatarUrl"
+          - id: user-info
+            type: View
+            style:
+              flex: 1
+            children:
+              - id: username
+                type: Text
+                text: "post.user.displayName"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 14
+                  color: "#333333"
+              - id: post-time
+                type: Text
+                text: "post.createdAt"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#888888"
+          - id: post-menu
+            type: TouchableOpacity
+            style:
+              width: 32
+              height: 32
+              justifyContent: center
+              alignItems: center
+            onPress: "openPostMenu"
+            children:
+              - id: menu-icon
+                type: Icon
+                name: "dots-vertical"
+                style:
+                  fontSize: 20
+                  color: "#97BC62" # 若葉（サブカラー）
+                  
+      - id: post-content
+        type: View
+        style:
+          marginBottom: 12
+        children:
+          - id: post-text
+            type: Text
+            text: "post.text"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+              lineHeight: 20
+              marginBottom: 12
+              
+      - id: post-media
+        type: View
+        style:
+          borderRadius: 12
+          overflow: hidden
+          marginBottom: 16
+          height: 240
+        children:
+          - id: media-content
+            type: MediaContent # 画像または動画を表示するコンポーネント
+            style:
+              width: "100%"
+              height: "100%"
+            props:
+              source: "post.mediaUrl"
+              type: "post.mediaType" # image または video
+              
+      - id: post-footer
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+        children:
+          - id: like-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+            onPress: "handleLike"
+            children:
+              - id: like-icon
+                type: Icon
+                name: "heart-outline" # post.isLiked ? "heart" : "heart-outline"
+                style:
+                  fontSize: 22
+                  color: "#EF476F" # アクセントカラー2
+                  marginRight: 4
+              - id: like-count
+                type: Text
+                text: "post.likesCount"
+                style:
+                  fontSize: 14
+                  color: "#666666"
+                  
+          - id: comment-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              marginHorizontal: 16
+            onPress: "openComments"
+            children:
+              - id: comment-icon
+                type: Icon
+                name: "comment-outline"
+                style:
+                  fontSize: 22
+                  color: "#97BC62" # 若葉（サブカラー）
+                  marginRight: 4
+              - id: comment-count
+                type: Text
+                text: "post.commentsCount"
+                style:
+                  fontSize: 14
+                  color: "#666666"
+                  
+          - id: share-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+            onPress: "handleShare"
+            children:
+              - id: share-icon
+                type: Icon
+                name: "share-variant"
+                style:
+                  fontSize: 22
+                  color: "#2C6E49" # 深緑（メインカラー）
+                  marginRight: 4
+
+  # 投稿作成ボタン（フローティング）
+  - id: create-post-button
+    type: TouchableOpacity
+    style:
+      position: absolute
+      bottom: 16
+      right: 16
+      width: 60
+      height: 60
+      borderRadius: 30
+      backgroundColor: "#2C6E49" # 深緑（メインカラー）
+      justifyContent: center
+      alignItems: center
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 3 }
+      shadowOpacity: 0.27
+      shadowRadius: 4.65
+      elevation: 6
+    onPress: "navigateToCreatePost"
+    children:
+      - id: create-post-icon
+        type: Icon
+        name: "plus"
+        style:
+          fontSize: 28
+          color: "#FFFFFF"
+
+  # タイムラインヘッダー（フィルターオプション）
+  - id: timeline-header
+    type: View
+    style:
+      paddingHorizontal: 16
+      paddingVertical: 12
+    children:
+      - id: filter-tabs
+        type: View
+        style:
+          flexDirection: row
+          borderRadius: 8
+          backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+          padding: 4
+          marginBottom: 8
+        children:
+          - id: tab-following
+            type: TouchableOpacity
+            style:
+              flex: 1
+              paddingVertical: 8
+              borderRadius: 6
+              backgroundColor: "selectedTab === 'following' ? '#FFFFFF' : 'transparent'"
+              alignItems: center
+            onPress: "setSelectedTab('following')"
+            children:
+              - id: following-text
+                type: Text
+                text: "フォロー中"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "selectedTab === 'following' ? '#2C6E49' : '#97BC62'"
+                  
+          - id: tab-discover
+            type: TouchableOpacity
+            style:
+              flex: 1
+              paddingVertical: 8
+              borderRadius: 6
+              backgroundColor: "selectedTab === 'discover' ? '#FFFFFF' : 'transparent'"
+              alignItems: center
+            onPress: "setSelectedTab('discover')"
+            children:
+              - id: discover-text
+                type: Text
+                text: "発見する"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "selectedTab === 'discover' ? '#2C6E49' : '#97BC62'"
+                  
+          - id: tab-popular
+            type: TouchableOpacity
+            style:
+              flex: 1
+              paddingVertical: 8
+              borderRadius: 6
+              backgroundColor: "selectedTab === 'popular' ? '#FFFFFF' : 'transparent'"
+              alignItems: center
+            onPress: "setSelectedTab('popular')"
+            children:
+              - id: popular-text
+                type: Text
+                text: "人気"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "selectedTab === 'popular' ? '#2C6E49' : '#97BC62'"
+  
+  # 空のタイムライン表示
+  - id: empty-timeline
+    type: View
+    style:
+      flex: 1
+      justifyContent: center
+      alignItems: center
+      padding: 24
+      marginTop: 80
+    children:
+      - id: empty-illustration
+        type: Image
+        source: "assets/illustrations/empty_timeline.png"
+        style:
+          width: 180
+          height: 180
+          marginBottom: 24
+      - id: empty-title
+        type: Text
+        text: "まだ投稿がありません"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 8
+          textAlign: center
+      - id: empty-description
+        type: Text
+        text: "フォローしているユーザーがいないか、まだ誰も投稿していません。人気の投稿を見るか、新しいユーザーをフォローしてみましょう。"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#666666"
+          textAlign: center
+          lineHeight: 20
+          marginBottom: 24
+      - id: discover-users-button
+        type: TouchableOpacity
+        style:
+          paddingHorizontal: 20
+          paddingVertical: 12
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 24
+        onPress: "discoverUsers"
+        children:
+          - id: discover-button-text
+            type: Text
+            text: "ユーザーを探す"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 14
+              color: "#FFFFFF"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - 「みんなの庭」というコンセプトで、植物愛好家のコミュニティを表現
+  - 投稿カードは白背景に軽い影で浮かび上がるデザイン
+  - ヘッダーのフィルタータブでフォロー中/発見する/人気の投稿を切り替え可能
+  - 投稿には画像または短い動画（最大60秒）を添付可能
+  - いいね、コメント、シェア機能は視覚的にわかりやすく配置
+  - 新規投稿ボタンは目立つ緑色の円形ボタンで、常に画面右下に表示
+  - 動画は自動再生せず、タップで再生開始（データ節約）
+  - 空のタイムライン状態ではイラストと案内文を表示
+  - すべてのインタラクションにはマイクロアニメーションを実装（タップ時の反応など）

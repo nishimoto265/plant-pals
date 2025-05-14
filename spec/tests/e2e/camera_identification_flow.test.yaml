@@ -1,0 +1,173 @@
+id: TE02_camera_identification_flow
+name: カメラ撮影から識別・アバター生成までのフロー
+description: ユーザーがカメラで植物を撮影し、識別、アバター生成までの一連の流れをテスト
+
+steps:
+  - id: login
+    name: ログイン
+    description: テストユーザーでログイン
+    screen: S01_auth
+    actions:
+      - type: input
+        target: "#email-input"
+        value: "test@example.com"
+      - type: input
+        target: "#password-input"
+        value: "Password123!"
+      - type: press
+        target: "#login-button"
+    assertions:
+      - type: navigation
+        target: "S04_home"
+        timeout: 2000
+
+  - id: navigate_to_camera
+    name: カメラ画面へ遷移
+    description: ホーム画面からカメラ画面へ遷移
+    screen: S04_home
+    actions:
+      - type: press
+        target: "#camera-button"
+    assertions:
+      - type: navigation
+        target: "S03_camera"
+        timeout: 1000
+
+  - id: take_plant_photo
+    name: 植物の写真撮影
+    description: カメラで植物の写真を撮影
+    screen: S03_camera
+    mocks:
+      - camera:
+          mockImage: "test_assets/plant_monstera.jpg"
+    actions:
+      - type: press
+        target: "#shutter-button"
+    assertions:
+      - type: function-called
+        target: "takePicture"
+      - type: navigation
+        target: "PlantIdentification"
+        timeout: 2000
+        params:
+          imageUri: "{{containsString:plant_monstera}}"
+
+  - id: plant_identification
+    name: 植物識別
+    description: 撮影した植物の識別処理
+    screen: PlantIdentification
+    mocks:
+      - api:
+          endpoint: "/api/identify/plant"
+          response:
+            success: true
+            plantId: "monstera_deliciosa"
+            confidence: 0.95
+            commonName: "モンステラ"
+            scientificName: "Monstera deliciosa"
+    actions:
+      - type: wait
+        duration: 2000
+    assertions:
+      - type: element-text
+        target: "#plant-name"
+        value: "モンステラ"
+      - type: element-exists
+        target: "#continue-button"
+      - type: press
+        target: "#continue-button"
+      - type: navigation
+        target: "IndividualIdentification"
+        timeout: 1000
+
+  - id: individual_identification
+    name: 個体識別
+    description: 植物の個体識別と健康状態評価
+    screen: IndividualIdentification
+    mocks:
+      - api:
+          endpoint: "/api/identify/individual"
+          response:
+            success: true
+            individualId: "m123456"
+            healthStatus: "healthy"
+            estimatedAge: "2y5m"
+            careRecommendations:
+              - "週に1回水やりをしましょう"
+              - "直射日光は避けましょう"
+    actions:
+      - type: wait
+        duration: 1500
+    assertions:
+      - type: element-text
+        target: "#health-status"
+        value: "健康状態: 良好"
+      - type: element-exists
+        target: "#generate-avatar-button"
+      - type: press
+        target: "#generate-avatar-button"
+      - type: navigation
+        target: "AvatarGeneration"
+        timeout: 1000
+
+  - id: avatar_generation
+    name: アバター生成
+    description: 植物のキャラクターアバターを生成
+    screen: AvatarGeneration
+    mocks:
+      - api:
+          endpoint: "/api/generate/avatar"
+          response:
+            success: true
+            avatarId: "av789012"
+            avatarUrl: "https://example.com/avatars/monstera123.png"
+            characterName: "モンちゃん"
+            personality: "元気いっぱい"
+    actions:
+      - type: wait
+        duration: 3000
+    assertions:
+      - type: element-text
+        target: "#character-name"
+        value: "モンちゃん"
+      - type: element-exists
+        target: "#avatar-image"
+      - type: element-exists
+        target: "#finish-button"
+      - type: press
+        target: "#finish-button"
+      - type: navigation
+        target: "S04_home"
+        timeout: 1000
+
+  - id: verify_home_update
+    name: ホーム画面の更新確認
+    description: ホーム画面に新しいアバターが追加されていることを確認
+    screen: S04_home
+    actions:
+      - type: wait
+        duration: 1000
+    assertions:
+      - type: element-exists
+        target: "#avatar-monstera_deliciosa-m123456"
+      - type: element-text
+        target: "#avatar-name-m123456"
+        value: "モンちゃん"
+
+device_coverage:
+  - os: iOS
+    version: "15.0"
+    device: "iPhone 12"
+  - os: Android
+    version: "12"
+    device: "Pixel 6"
+
+dependencies:
+  - type: api
+    services:
+      - plant_identification
+      - individual_identification
+      - avatar_generation
+  - type: permission
+    permissions:
+      - camera 

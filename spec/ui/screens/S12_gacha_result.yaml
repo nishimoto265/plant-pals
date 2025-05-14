@@ -1,0 +1,353 @@
+id: S12_gacha_result
+route: /gacha_result
+name: GachaResult
+purpose: ガチャ結果表示・演出
+description: |
+  ガチャを引いた結果を表示する画面。
+  カードめくりのようなアニメーションで演出効果を高め、
+  獲得したアイテムの詳細を表示します。
+  「ゆるふわBotanic Garden」テーマに沿った祝福演出で
+  ユーザーの達成感を高め、継続的な利用を促進します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # メインコンテンツ
+      style:
+        flex: 1
+        justifyContent: center
+        alignItems: center
+        paddingHorizontal: 20
+
+components:
+  # 結果表示エリア
+  - id: result-container
+    type: View
+    style:
+      flex: 1
+      width: "100%"
+      justifyContent: "center"
+      alignItems: "center"
+    children:
+      # 背景演出エフェクト
+      - id: confetti-animation
+        type: Lottie
+        style:
+          position: "absolute"
+          width: "100%"
+          height: "100%"
+          opacity: "isRare ? 1 : 0.5"
+        props:
+          source: "isRare ? 'assets/animations/confetti_gold.json' : 'assets/animations/confetti_normal.json'"
+          autoPlay: true
+          loop: false
+          resizeMode: "cover"
+          
+      # ガチャ演出カード
+      - id: card-container
+        type: View
+        style:
+          width: 300
+          height: 400
+          perspective: 1000
+        children:
+          - id: card-flipper
+            type: Animated.View # フリップアニメーション用
+            style:
+              width: "100%"
+              height: "100%"
+              position: "relative"
+              transform: "cardFlipped ? [{ rotateY: '180deg' }] : [{ rotateY: '0deg' }]"
+              transformStyle: "preserve-3d"
+            animation:
+              type: "flip"
+              property: "rotateY"
+              duration: 800
+              easing: "easeInOutQuad"
+              
+            children:
+              # カード表面（裏向き）
+              - id: card-back
+                type: View
+                style:
+                  position: "absolute"
+                  width: "100%"
+                  height: "100%"
+                  backfaceVisibility: "hidden"
+                  borderRadius: 16
+                  backgroundColor: "#FFFFFF"
+                  justifyContent: "center"
+                  alignItems: "center"
+                  shadowColor: "#000"
+                  shadowOffset: { width: 0, height: 4 }
+                  shadowOpacity: 0.2
+                  shadowRadius: 8
+                  elevation: 8
+                children:
+                  - id: card-back-pattern
+                    type: Image
+                    style:
+                      width: "90%"
+                      height: "90%"
+                      opacity: 0.2
+                    props:
+                      source: "assets/images/leaf_pattern.png"
+                      resizeMode: "repeat"
+                  - id: card-back-logo
+                    type: Image
+                    style:
+                      width: 120
+                      height: 120
+                    props:
+                      source: "assets/images/plant_pals_logo.png"
+                      resizeMode: "contain"
+                      
+              # カード裏面（アイテム表示）
+              - id: card-front
+                type: View
+                style:
+                  position: "absolute"
+                  width: "100%"
+                  height: "100%"
+                  backfaceVisibility: "hidden"
+                  borderRadius: 16
+                  backgroundColor: "#FFFFFF"
+                  transform: [{ rotateY: "180deg" }]
+                  padding: 16
+                  alignItems: "center"
+                  shadowColor: "#000"
+                  shadowOffset: { width: 0, height: 4 }
+                  shadowOpacity: 0.2
+                  shadowRadius: 8
+                  elevation: 8
+                children:
+                  # レア度表示
+                  - id: rarity-banner
+                    type: View
+                    style:
+                      position: "absolute"
+                      top: 0
+                      left: 0
+                      right: 0
+                      height: 40
+                      backgroundColor: "isRare ? '#FFD166' : '#97BC62'" # アクセントカラー1 または 若葉色
+                      borderTopLeftRadius: 16
+                      borderTopRightRadius: 16
+                      justifyContent: "center"
+                      alignItems: "center"
+                      flexDirection: "row"
+                    children:
+                      - id: star-icon
+                        type: Icon
+                        name: "star"
+                        style:
+                          fontSize: 20
+                          color: "#FFFFFF"
+                          marginRight: 6
+                      - id: rarity-text
+                        type: Text
+                        text: "isRare ? 'レア' : 'ノーマル'"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 16
+                          fontWeight: "bold"
+                          color: "#FFFFFF"
+
+                  # アイテム画像
+                  - id: item-image
+                    type: Image
+                    style:
+                      width: 180
+                      height: 180
+                      marginTop: 56
+                      marginBottom: 16
+                    props:
+                      source: "gachaResult.itemImageUrl"
+                      resizeMode: "contain"
+                  
+                  # アイテム名
+                  - id: item-name
+                    type: Text
+                    text: "gachaResult.itemName"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 22
+                      color: "#333333"
+                      marginBottom: 8
+                      textAlign: "center"
+                      
+                  # アイテム説明
+                  - id: item-description
+                    type: Text
+                    text: "gachaResult.itemDescription"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#666666"
+                      textAlign: "center"
+                      marginBottom: 12
+      
+      # フリップ促進テキスト（カードがフリップされる前のみ表示）
+      - id: tap-to-flip
+        type: View
+        style:
+          position: "absolute"
+          bottom: 120
+          alignItems: "center"
+          opacity: "cardFlipped ? 0 : 1"
+        animation:
+          type: "pulse"
+          duration: 1500
+          loop: true
+        children:
+          - id: tap-icon
+            type: Icon
+            name: "gesture-tap"
+            style:
+              fontSize: 32
+              color: "#2C6E49" # 深緑（メインカラー）
+              marginBottom: 8
+          - id: tap-text
+            type: Text
+            text: "タップして確認"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  # アクションボタン群 （カードが表示された後に表示）
+  - id: action-buttons
+    type: View
+    style:
+      position: "absolute"
+      bottom: 40
+      left: 0
+      right: 0
+      flexDirection: "row"
+      justifyContent: "center"
+      opacity: "cardFlipped ? 1 : 0"
+    children:
+      - id: share-button
+        type: TouchableOpacity
+        style:
+          width: 60
+          height: 60
+          borderRadius: 30
+          backgroundColor: "#F2EFEA"
+          borderWidth: 2
+          borderColor: "#97BC62"
+          justifyContent: "center"
+          alignItems: "center"
+          marginHorizontal: 10
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 3
+          elevation: 2
+        onPress: "handleShare"
+        children:
+          - id: share-icon
+            type: Icon
+            name: "share"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+              
+      - id: home-button
+        type: TouchableOpacity
+        style:
+          width: 60
+          height: 60
+          borderRadius: 30
+          backgroundColor: "#F2EFEA"
+          borderWidth: 2
+          borderColor: "#97BC62"
+          justifyContent: "center"
+          alignItems: "center"
+          marginHorizontal: 10
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 3
+          elevation: 2
+        onPress: "navigateToHome"
+        children:
+          - id: home-icon
+            type: Icon
+            name: "home"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+              
+      - id: play-again-button
+        type: TouchableOpacity
+        style:
+          width: 60
+          height: 60
+          borderRadius: 30
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          justifyContent: "center"
+          alignItems: "center"
+          marginHorizontal: 10
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.2
+          shadowRadius: 4
+          elevation: 3
+        onPress: "playAgain"
+        children:
+          - id: play-again-icon
+            type: Icon
+            name: "refresh"
+            style:
+              fontSize: 24
+              color: "#FFFFFF"
+
+  # ヘッダー（閉じるボタン）
+  - id: header
+    type: View
+    style:
+      position: "absolute"
+      top: 20
+      right: 20
+      zIndex: 10
+    children:
+      - id: close-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          borderRadius: 20
+          backgroundColor: "rgba(0, 0, 0, 0.1)"
+          justifyContent: "center"
+          alignItems: "center"
+        onPress: "navigateToHome"
+        children:
+          - id: close-icon
+            type: Icon
+            name: "close"
+            style:
+              fontSize: 20
+              color: "#333333"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - カードめくりアニメーションで期待感を高める演出
+  - レア度に応じて背景エフェクトの派手さを変える（金色のきらきらエフェクト）
+  - タップして確認するインタラクションで能動的参加感を創出
+  - アイテム獲得後はシェア・ホーム・もう一度の3つの選択肢を提供
+  - 全体的に「ゆるふわ」テーマを維持しつつ、ガチャらしい高揚感も演出
+  - カードの裏表でコントラストを付け、驚きを演出

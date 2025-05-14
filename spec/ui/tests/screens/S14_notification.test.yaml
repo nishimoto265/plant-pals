@@ -1,0 +1,670 @@
+id: TS14_notification
+name: 通知画面テスト
+target:
+  screen: S14_notification
+  path: src/ui/screens/S14_notification/NotificationScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: 通知画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態での通知画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/settings.png
+            - asset: assets/icons/check.png
+            - asset: assets/icons/notification_water.png
+            - asset: assets/icons/notification_fertilize.png
+            - asset: assets/icons/notification_health.png
+            - asset: assets/icons/notification_achievement.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#notification-header"
+          - type: element-exists
+            target: "#notification-list"
+          - type: element-exists
+            target: "#mark-all-read-button"
+          - type: element-exists
+            target: "#notification-settings-button"
+
+      - id: notifications-loaded
+        name: 通知データ読み込み
+        description: 通知データが読み込まれた状態での通知画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/settings.png
+            - asset: assets/icons/check.png
+            - asset: assets/icons/notification_water.png
+            - asset: assets/icons/notification_fertilize.png
+            - asset: assets/icons/notification_health.png
+            - asset: assets/icons/notification_achievement.png
+            - asset: assets/plants/monstera_thumbnail.jpg
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+                title: "水やりの時間です"
+                message: "モンちゃん（モンステラ）に水をあげてください"
+                plantId: "plant001"
+                plantName: "モンちゃん"
+                plantSpecies: "モンステラ"
+                plantImageUrl: "assets/plants/monstera_thumbnail.jpg"
+                createdAt: "2025-05-12T09:00:00Z"
+                read: false
+              - id: "notif002"
+                type: "fertilize"
+                title: "肥料の時間です"
+                message: "フィカスに肥料をあげてください"
+                plantId: "plant002"
+                plantName: "フィカス"
+                plantSpecies: "フィカス・リラータ"
+                plantImageUrl: null
+                createdAt: "2025-05-11T14:30:00Z"
+                read: true
+              - id: "notif003"
+                type: "achievement"
+                title: "バッジを獲得しました"
+                message: "植物コレクター：10種類の植物を育てました"
+                badgeId: "badge001"
+                badgeName: "植物コレクター"
+                createdAt: "2025-05-10T18:15:00Z"
+                read: false
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-exists
+            target: "#notification-notif002"
+          - type: element-exists
+            target: "#notification-notif003"
+          - type: element-count
+            target: ".notification-item"
+            count: 3
+          - type: element-count
+            target: ".unread"
+            count: 2
+          - type: element-text
+            target: "#notification-title-notif001"
+            value: "水やりの時間です"
+          - type: element-text
+            target: "#notification-message-notif001"
+            value: "モンちゃん（モンステラ）に水をあげてください"
+          - type: element-has-class
+            target: "#notification-notif001"
+            className: "unread"
+          - type: element-not-has-class
+            target: "#notification-notif002"
+            className: "unread"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: settings-navigation
+        name: 通知設定画面遷移
+        description: 設定ボタンをタップすると通知設定画面に遷移すること
+        steps:
+          - action: press
+            target: "#notification-settings-button"
+        assertions:
+          - type: navigation
+            route: "NotificationSettings"
+
+      - id: water-notification-to-plant
+        name: 水やり通知から植物画面遷移
+        description: 水やり通知をタップすると対象の植物詳細画面に遷移すること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+                plantId: "plant001"
+        steps:
+          - action: press
+            target: "#notification-notif001"
+        assertions:
+          - type: navigation
+            route: "PlantDetail"
+          - type: navigation-params
+            key: "plantId"
+            value: "plant001"
+          - type: navigation-params
+            key: "openCareTab"
+            value: true
+
+      - id: achievement-notification-to-badge
+        name: 実績通知からバッジ画面遷移
+        description: 実績通知をタップするとバッジセンターに遷移すること
+        setup:
+          state:
+            notifications:
+              - id: "notif003"
+                type: "achievement"
+                badgeId: "badge001"
+        steps:
+          - action: press
+            target: "#notification-notif003"
+        assertions:
+          - type: navigation
+            route: "S09_badge_center"
+          - type: navigation-params
+            key: "selectedBadgeId"
+            value: "badge001"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: mark-single-notification-read
+        name: 単一通知既読化
+        description: 通知の既読ボタンをタップすると通知が既読になること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                read: false
+        steps:
+          - action: press
+            target: "#read-button-notif001"
+        assertions:
+          - type: function-called
+            target: "markNotificationRead"
+            params:
+              notificationId: "notif001"
+          - type: state-change
+            target: "notifications[0].read"
+            value: true
+          - type: element-not-has-class
+            target: "#notification-notif001"
+            className: "unread"
+          - type: element-has-class
+            target: "#notification-notif001"
+            className: "read"
+
+      - id: mark-all-read
+        name: 全通知既読化
+        description: 「すべて既読にする」ボタンをタップすると全通知が既読になること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                read: false
+              - id: "notif003"
+                read: false
+        steps:
+          - action: press
+            target: "#mark-all-read-button"
+        assertions:
+          - type: function-called
+            target: "markAllNotificationsRead"
+          - type: state-change
+            target: "notifications[0].read"
+            value: true
+          - type: state-change
+            target: "notifications[1].read"
+            value: true
+          - type: element-count
+            target: ".unread"
+            count: 0
+          - type: toast-message
+            message: "すべての通知を既読にしました"
+
+      - id: delete-notification
+        name: 通知削除
+        description: 通知の削除ボタンをタップすると通知が削除されること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+              - id: "notif002"
+        steps:
+          - action: press
+            target: "#delete-button-notif001"
+          - action: press
+            target: "#confirm-delete-button"
+        assertions:
+          - type: function-called
+            target: "deleteNotification"
+            params:
+              notificationId: "notif001"
+          - type: element-not-exists
+            target: "#notification-notif001"
+          - type: element-exists
+            target: "#notification-notif002"
+          - type: element-count
+            target: ".notification-item"
+            count: 1
+
+      - id: swipe-to-delete
+        name: スワイプ削除
+        description: 通知を左にスワイプすると削除アクションが表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif002"
+        steps:
+          - action: swipe
+            target: "#notification-notif002"
+            direction: "left"
+        assertions:
+          - type: element-visible
+            target: "#swipe-actions-notif002"
+          - type: element-exists
+            target: "#delete-action-notif002"
+          - type: element-exists
+            target: "#mark-read-action-notif002"
+
+      - id: pull-to-refresh
+        name: プル更新
+        description: 画面を下に引っ張ると通知が更新されること
+        steps:
+          - action: pull-to-refresh
+            target: "#notification-list"
+        assertions:
+          - type: function-called
+            target: "refreshNotifications"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: notification_display
+    name: 通知表示テスト
+    description: 通知タイプ別の表示を検証
+    type: functional
+    cases:
+      - id: water-notification
+        name: 水やり通知表示
+        description: 水やり通知が適切なアイコンと情報で表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+                title: "水やりの時間です"
+                plantName: "モンちゃん"
+        assertions:
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-attribute
+            target: "#notification-icon-notif001"
+            attribute: "src"
+            value: "assets/icons/notification_water.png"
+          - type: element-has-class
+            target: "#notification-notif001"
+            className: "water-notification"
+
+      - id: fertilize-notification
+        name: 肥料通知表示
+        description: 肥料通知が適切なアイコンと情報で表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif002"
+                type: "fertilize"
+                title: "肥料の時間です"
+                plantName: "フィカス"
+        assertions:
+          - type: element-exists
+            target: "#notification-notif002"
+          - type: element-attribute
+            target: "#notification-icon-notif002"
+            attribute: "src"
+            value: "assets/icons/notification_fertilize.png"
+          - type: element-has-class
+            target: "#notification-notif002"
+            className: "fertilize-notification"
+
+      - id: health-notification
+        name: 健康通知表示
+        description: 健康状態通知が適切なアイコンと情報で表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif004"
+                type: "health"
+                title: "健康状態の悪化"
+                message: "フィカスの葉に異常が見られます"
+                plantName: "フィカス"
+                severity: "warning"
+        assertions:
+          - type: element-exists
+            target: "#notification-notif004"
+          - type: element-attribute
+            target: "#notification-icon-notif004"
+            attribute: "src"
+            value: "assets/icons/notification_health.png"
+          - type: element-has-class
+            target: "#notification-notif004"
+            className: "health-notification"
+          - type: element-has-class
+            target: "#notification-notif004"
+            className: "warning-severity"
+
+      - id: achievement-notification
+        name: 実績通知表示
+        description: 実績通知が適切なアイコンと情報で表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif003"
+                type: "achievement"
+                title: "バッジを獲得しました"
+                badgeName: "植物コレクター"
+        assertions:
+          - type: element-exists
+            target: "#notification-notif003"
+          - type: element-attribute
+            target: "#notification-icon-notif003"
+            attribute: "src"
+            value: "assets/icons/notification_achievement.png"
+          - type: element-has-class
+            target: "#notification-notif003"
+            className: "achievement-notification"
+
+      - id: time-display
+        name: 時間表示
+        description: 通知の時間表示が適切にフォーマットされること
+        setup:
+          state:
+            currentTime: "2025-05-12T12:00:00Z"
+            notifications:
+              - id: "notif001"
+                createdAt: "2025-05-12T09:00:00Z"
+              - id: "notif002"
+                createdAt: "2025-05-11T14:30:00Z"
+              - id: "notif003"
+                createdAt: "2025-05-05T18:15:00Z"
+        assertions:
+          - type: element-text
+            target: "#notification-time-notif001"
+            value: "3時間前"
+          - type: element-text
+            target: "#notification-time-notif002"
+            value: "昨日"
+          - type: element-text
+            target: "#notification-time-notif003"
+            value: "5月5日"
+
+  - id: filter_group
+    name: 通知フィルターテスト
+    description: 通知のフィルタリング機能を検証
+    type: functional
+    cases:
+      - id: filter-by-type
+        name: タイプ別フィルター
+        description: 通知タイプでフィルタリングできること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+              - id: "notif002"
+                type: "fertilize"
+              - id: "notif003"
+                type: "achievement"
+        steps:
+          - action: press
+            target: "#filter-dropdown"
+          - action: press
+            target: "#filter-option-water"
+        assertions:
+          - type: state-change
+            target: "activeFilter"
+            value: "water"
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-not-exists
+            target: "#notification-notif002"
+          - type: element-not-exists
+            target: "#notification-notif003"
+          - type: element-count
+            target: ".notification-item"
+            count: 1
+          - type: element-text
+            target: "#active-filter-label"
+            value: "水やり"
+
+      - id: show-all-notifications
+        name: 全通知表示
+        description: 「すべて表示」を選択すると全通知が表示されること
+        setup:
+          state:
+            activeFilter: "water"
+            notifications:
+              - id: "notif001"
+                type: "water"
+              - id: "notif002"
+                type: "fertilize"
+              - id: "notif003"
+                type: "achievement"
+        steps:
+          - action: press
+            target: "#filter-dropdown"
+          - action: press
+            target: "#filter-option-all"
+        assertions:
+          - type: state-change
+            target: "activeFilter"
+            value: "all"
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-exists
+            target: "#notification-notif002"
+          - type: element-exists
+            target: "#notification-notif003"
+          - type: element-count
+            target: ".notification-item"
+            count: 3
+          - type: element-text
+            target: "#active-filter-label"
+            value: "すべての通知"
+
+      - id: filter-unread
+        name: 未読フィルター
+        description: 「未読のみ」を選択すると未読通知のみ表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                read: false
+              - id: "notif002"
+                read: true
+              - id: "notif003"
+                read: false
+        steps:
+          - action: press
+            target: "#read-status-dropdown"
+          - action: press
+            target: "#filter-option-unread"
+        assertions:
+          - type: state-change
+            target: "readStatusFilter"
+            value: "unread"
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-not-exists
+            target: "#notification-notif002"
+          - type: element-exists
+            target: "#notification-notif003"
+          - type: element-count
+            target: ".notification-item"
+            count: 2
+          - type: element-text
+            target: "#read-status-label"
+            value: "未読のみ"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-notifications
+        name: 通知なし
+        description: 通知データがない場合にメッセージが表示されること
+        setup:
+          state:
+            notifications: []
+            loading: false
+        assertions:
+          - type: element-visible
+            target: "#empty-notifications"
+          - type: element-text
+            target: "#empty-notifications-title"
+            value: "通知はありません"
+          - type: element-text
+            target: "#empty-notifications-message"
+            value: "新しい通知が届くとここに表示されます"
+
+      - id: no-filtered-notifications
+        name: フィルター結果なし
+        description: フィルター条件に合う通知がない場合にメッセージが表示されること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+              - id: "notif002"
+                type: "fertilize"
+            activeFilter: "achievement"
+        assertions:
+          - type: element-visible
+            target: "#no-filter-results"
+          - type: element-text
+            target: "#no-filter-results-message"
+            value: "条件に一致する通知はありません"
+          - type: element-exists
+            target: "#clear-filter-button"
+
+      - id: clear-filters
+        name: フィルタークリア
+        description: フィルタークリアボタンをタップするとフィルターが解除されること
+        setup:
+          state:
+            notifications:
+              - id: "notif001"
+                type: "water"
+              - id: "notif002"
+                type: "fertilize"
+            activeFilter: "achievement"
+        steps:
+          - action: press
+            target: "#clear-filter-button"
+        assertions:
+          - type: state-change
+            target: "activeFilter"
+            value: "all"
+          - type: element-exists
+            target: "#notification-notif001"
+          - type: element-exists
+            target: "#notification-notif002"
+          - type: element-count
+            target: ".notification-item"
+            count: 2
+          - type: element-text
+            target: "#active-filter-label"
+            value: "すべての通知"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#notification-list"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load notifications"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "通知の読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load notifications"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadNotifications"
+          - type: state-change
+            target: "loading"
+            value: true
+
+accessibility:
+  - test: color-contrast
+    description: 通知タイトルとメッセージのテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての通知とアクションボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: 通知リストがキーボードで操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

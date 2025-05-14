@@ -1,0 +1,576 @@
+id: S08_settings
+route: /settings
+name: Settings
+purpose: アプリの言語設定や通知設定など
+description: |
+  アプリのさまざまな設定を変更できる画面。
+  言語選択、通知設定、データ保存、プライバシー設定などのオプションを提供します。
+  「ゆるふわBotanic Garden」テーマに沿った視認性の高いデザインで、
+  ユーザーが簡単に設定を変更できる使いやすさを重視しています。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          marginRight: 8
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+
+  # 言語設定セクション
+  - id: language-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 24
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: language-section-header
+        type: Text
+        text: "言語設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: locale-picker
+        type: LocalePicker
+        style:
+          width: "100%"
+          borderRadius: 12
+          backgroundColor: "rgba(151, 188, 98, 0.05)" # 薄い若葉色背景
+          borderWidth: 1
+          borderColor: "rgba(151, 188, 98, 0.3)"
+          padding: 12
+        props:
+          options:
+            - { value: "ja", label: "日本語" }
+            - { value: "en", label: "English" }
+            - { value: "zh", label: "中文" }
+            - { value: "ko", label: "한국어" }
+          defaultValue: "ja"
+          onChange: "handleLanguageChange"
+
+  # 通知設定セクション
+  - id: notification-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: notification-section-header
+        type: Text
+        text: "通知設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: notification-toggle-list
+        type: ToggleList
+        style:
+          width: "100%"
+        props:
+          items:
+            - id: "watering_reminder"
+              label: "水やりリマインダー"
+              description: "植物への水やりが必要な時に通知します"
+              defaultValue: true
+              onChange: "toggleWateringReminders"
+            - id: "comment_reply"
+              label: "コメント返信"
+              description: "あなたの投稿にコメントがついたときに通知します"
+              defaultValue: true
+              onChange: "toggleCommentReplies"
+            - id: "badge_earned"
+              label: "バッジ獲得"
+              description: "新しいバッジを獲得したときに通知します"
+              defaultValue: true
+              onChange: "toggleBadgeNotifications"
+            - id: "friend_activity"
+              label: "フレンド活動"
+              description: "フォロー中のユーザーの新しい投稿を通知します"
+              defaultValue: false
+              onChange: "toggleFriendActivity"
+
+  # データ設定セクション
+  - id: data-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: data-section-header
+        type: Text
+        text: "データ設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: data-toggle-list
+        type: ToggleList
+        style:
+          width: "100%"
+        props:
+          items:
+            - id: "offline_mode"
+              label: "オフラインモード"
+              description: "データ通信量を節約します（一部機能が制限されます）"
+              defaultValue: false
+              onChange: "toggleOfflineMode"
+            - id: "image_quality"
+              label: "高画質モード"
+              description: "画像をより高解像度で表示します（データ通信量が増加します）"
+              defaultValue: false
+              onChange: "toggleHighQualityImages"
+            - id: "auto_download"
+              label: "自動ダウンロード"
+              description: "Wi-Fi接続時に画像・動画を自動的にダウンロードします"
+              defaultValue: true
+              onChange: "toggleAutoDownload"
+
+  # プライバシー設定セクション
+  - id: privacy-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: privacy-section-header
+        type: Text
+        text: "プライバシー設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: privacy-toggle-list
+        type: ToggleList
+        style:
+          width: "100%"
+        props:
+          items:
+            - id: "location_data"
+              label: "位置情報の使用"
+              description: "植物の育成環境に合わせたアドバイスを提供するため位置情報を使用します"
+              defaultValue: true
+              onChange: "toggleLocationData"
+            - id: "analytics"
+              label: "使用状況の分析"
+              description: "アプリの改善のために匿名の使用データを送信します"
+              defaultValue: true
+              onChange: "toggleAnalytics"
+      - id: privacy-buttons
+        type: View
+        style:
+          marginTop: 16
+        children:
+          - id: privacy-policy-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              paddingVertical: 8
+            onPress: "openPrivacyPolicy"
+            children:
+              - id: privacy-policy-text
+                type: Text
+                text: "プライバシーポリシー"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#2C6E49" # 深緑（メインカラー）
+              - id: privacy-policy-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#2C6E49" # 深緑（メインカラー）
+                  marginLeft: 4
+
+  # アカウント設定セクション
+  - id: account-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: account-section-header
+        type: Text
+        text: "アカウント設定"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: account-options
+        type: View
+        style:
+          width: "100%"
+        children:
+          - id: change-password-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              justifyContent: space-between
+              paddingVertical: 12
+              borderBottomWidth: 1
+              borderBottomColor: "rgba(151, 188, 98, 0.1)"
+            onPress: "navigateToChangePassword"
+            children:
+              - id: change-password-text
+                type: Text
+                text: "パスワード変更"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#333333"
+              - id: change-password-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#97BC62" # 若葉（サブカラー）
+          - id: linked-accounts-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              justifyContent: space-between
+              paddingVertical: 12
+              borderBottomWidth: 1
+              borderBottomColor: "rgba(151, 188, 98, 0.1)"
+            onPress: "navigateToLinkedAccounts"
+            children:
+              - id: linked-accounts-text
+                type: Text
+                text: "連携アカウント管理"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#333333"
+              - id: linked-accounts-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#97BC62" # 若葉（サブカラー）
+          - id: delete-account-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              justifyContent: space-between
+              paddingVertical: 12
+            onPress: "showDeleteAccountConfirmation"
+            children:
+              - id: delete-account-text
+                type: Text
+                text: "アカウント削除"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#EF476F" # アクセントカラー2（警告色）
+              - id: delete-account-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#EF476F" # アクセントカラー2（警告色）
+
+  # アプリ情報セクション
+  - id: app-info-section
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      marginHorizontal: 16
+      marginTop: 16
+      marginBottom: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.05
+      shadowRadius: 3
+      elevation: 1
+    children:
+      - id: app-info-section-header
+        type: Text
+        text: "アプリ情報"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 16
+      - id: app-version
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+          paddingVertical: 8
+          borderBottomWidth: 1
+          borderBottomColor: "rgba(151, 188, 98, 0.1)"
+        children:
+          - id: version-label
+            type: Text
+            text: "バージョン"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+          - id: version-value
+            type: Text
+            text: "1.0.0 (build 42)"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+      - id: app-buttons
+        type: View
+        style:
+          marginTop: 16
+        children:
+          - id: contact-support-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              paddingVertical: 8
+              marginBottom: 8
+            onPress: "contactSupport"
+            children:
+              - id: contact-support-text
+                type: Text
+                text: "サポートに問い合わせる"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#2C6E49" # 深緑（メインカラー）
+              - id: contact-support-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#2C6E49" # 深緑（メインカラー）
+                  marginLeft: 4
+          - id: terms-button
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              paddingVertical: 8
+            onPress: "openTermsOfService"
+            children:
+              - id: terms-text
+                type: Text
+                text: "利用規約"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#2C6E49" # 深緑（メインカラー）
+              - id: terms-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 16
+                  color: "#2C6E49" # 深緑（メインカラー）
+                  marginLeft: 4
+
+# ToggleList コンポーネントの定義
+# 設定項目のトグルスイッチを表示するための共通コンポーネント
+components-definition:
+  - id: ToggleList
+    props:
+      items: 
+        type: array
+        description: "トグルスイッチのリスト"
+    render: |
+      items.map((item) => (
+        <View key={item.id} style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(151, 188, 98, 0.1)"
+        }}>
+          <View style={{flex: 1, paddingRight: 12}}>
+            <Text style={{
+              fontFamily: 'Noto Sans JP',
+              fontSize: 14,
+              color: '#333333',
+              marginBottom: 4
+            }}>{item.label}</Text>
+            {item.description && (
+              <Text style={{
+                fontFamily: 'Noto Sans JP',
+                fontSize: 12,
+                color: '#666666'
+              }}>{item.description}</Text>
+            )}
+          </View>
+          <Switch
+            value={item.defaultValue}
+            onValueChange={(value) => item.onChange(value)}
+            trackColor={{ 
+              false: "#E0E0E0",
+              true: "rgba(151, 188, 98, 0.5)"
+            }}
+            thumbColor={item.defaultValue ? "#2C6E49" : "#FFFFFF"}
+          />
+        </View>
+      ))
+
+  # LocalePicker コンポーネントの定義
+  # 言語選択用のカスタムコンポーネント
+  - id: LocalePicker
+    props:
+      options:
+        type: array
+        description: "言語オプションのリスト"
+      defaultValue:
+        type: string
+        description: "デフォルトの言語"
+      onChange:
+        type: function
+        description: "言語変更時のコールバック"
+    render: |
+      <View style={{borderRadius: 8, overflow: 'hidden'}}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: option.value === defaultValue ? 'rgba(151, 188, 98, 0.1)' : 'transparent',
+              borderBottomWidth: option.value !== options[options.length-1].value ? 1 : 0,
+              borderBottomColor: 'rgba(151, 188, 98, 0.1)'
+            }}
+            onPress={() => onChange(option.value)}
+          >
+            <Text style={{
+              fontFamily: 'Noto Sans JP',
+              fontSize: 14,
+              color: '#333333'
+            }}>{option.label}</Text>
+            {option.value === defaultValue && (
+              <Icon
+                name="check"
+                style={{
+                  fontSize: 18,
+                  color: '#2C6E49'
+                }}
+              />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - カード式セクションでカテゴリごとに設定項目をグルーピング
+  - 「ゆるふわBotanic Garden」テーマの色使いでやわらかい雰囲気を演出
+  - トグルスイッチは大きめに設計し、タップしやすく
+  - 各設定項目には簡潔な説明文を追加し、機能を理解しやすく
+  - 戻るボタンは画面左上に配置し、前の画面に簡単に戻れるよう配慮
+  - 危険な操作（アカウント削除など）は赤色で警告表示
+  - スクロールビューで多くの設定項目も快適に閲覧可能

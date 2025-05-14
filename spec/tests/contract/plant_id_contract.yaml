@@ -1,0 +1,319 @@
+id: plant_id_contract
+name: 植物識別API契約テスト
+description: |
+  モバイル/Webクライアントと植物識別APIサーバー間の契約テスト。
+  APIエンドポイント、リクエスト形式、レスポンス構造が仕様通りであることを検証します。
+
+consumer: plant-pals-mobile-app  # コンシューマー（クライアント）名
+provider: plant-identification-service  # プロバイダー（サーバー）名
+
+contract_version: 1.0.0
+api_version: v1
+
+base_url: https://api.plantpals.app/api
+
+interactions:
+  - id: identify_species
+    description: |
+      植物の種類を識別するAPIリクエスト。
+      クライアントが送信した植物画像に対して、植物種の識別結果と信頼度を返却する。
+    request:
+      method: POST
+      path: /identify/species
+      headers:
+        Content-Type: multipart/form-data
+        Authorization: Bearer {{auth_token}}
+      multipart:
+        - name: image
+          file: test_plant.jpg
+          mime: image/jpeg
+        - name: detectCommonIssues
+          value: "true"
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body:
+        speciesId: "{{string}}"
+        confidence: "{{decimal}}"
+        scientificName: "{{string}}"
+        commonName: "{{string}}"
+        familyName: "{{string}}"
+        careInstructions:
+          watering: "{{string}}"
+          sunlight: "{{string}}"
+          temperature: "{{string}}"
+          humidity: "{{string}}"
+          soil: "{{string}}"
+        alternativeCandidates:
+          - speciesId: "{{string}}"
+            scientificName: "{{string}}"
+            commonName: "{{string}}"
+            confidence: "{{decimal}}"
+          - speciesId: "{{string}}"
+            scientificName: "{{string}}"
+            commonName: "{{string}}"
+            confidence: "{{decimal}}"
+        issues:
+          - type: "{{enum:disease,pest,nutrient_deficiency,overwatering,underwatering,sunburn}}"
+            name: "{{string}}"
+            confidence: "{{decimal}}"
+            treatment: "{{string}}"
+    matchers:
+      json_body:
+        - path: $.speciesId
+          match: type
+        - path: $.confidence
+          match: decimal
+          min: 0.0
+          max: 1.0
+        - path: $.scientificName
+          match: type
+        - path: $.commonName
+          match: type
+        - path: $.alternativeCandidates
+          match: array
+          max: 3
+        - path: $.issues
+          match: array
+          min: 0
+
+  - id: identify_individual
+    description: |
+      同一品種内で個体を識別するAPIリクエスト。
+      特定の植物画像に対して、同一品種内での個体識別結果を返却する。
+    request:
+      method: POST
+      path: /identify/individual
+      headers:
+        Content-Type: multipart/form-data
+        Authorization: Bearer {{auth_token}}
+      multipart:
+        - name: image
+          file: plant_monstera.jpg
+          mime: image/jpeg
+        - name: speciesId
+          value: "sp_12345"
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body:
+        individualId: "{{string}}"
+        embedding:
+          - "{{decimal}}"
+          - "{{decimal}}"
+          # 省略（実際には多次元ベクトル）
+        isNew: "{{boolean}}"
+        similarIndividuals:
+          - individualId: "{{string}}"
+            similarity: "{{decimal}}"
+            lastSeen: "{{date-time}}"
+    matchers:
+      json_body:
+        - path: $.individualId
+          match: type
+        - path: $.embedding
+          match: array
+        - path: $.isNew
+          match: type
+        - path: $.similarIndividuals
+          match: array
+          min: 0
+        - path: $.similarIndividuals[*].similarity
+          match: decimal
+          min: 0.0
+          max: 1.0
+
+  - id: analyze_health
+    description: |
+      植物の健康状態を分析するAPIリクエスト。
+      画像から植物の健康状態を診断し、問題点とケア方法を提案する。
+    request:
+      method: POST
+      path: /identify/health
+      headers:
+        Content-Type: multipart/form-data
+        Authorization: Bearer {{auth_token}}
+      multipart:
+        - name: image
+          file: plant_health.jpg
+          mime: image/jpeg
+        - name: speciesId
+          value: "sp_12345"
+        - name: individualId
+          value: "ind_67890"
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body:
+        overallHealth: "{{enum:excellent,good,fair,poor,critical}}"
+        issues:
+          - type: "{{enum:disease,pest,nutrient_deficiency,overwatering,underwatering,sunburn,other}}"
+            name: "{{string}}"
+            confidence: "{{decimal}}"
+            description: "{{string}}"
+            severity: "{{enum:mild,moderate,severe}}"
+            treatment: "{{string}}"
+            preventionTips:
+              - "{{string}}"
+              - "{{string}}"
+        growthAnalysis:
+          trend: "{{enum:growing_well,slowing,stalled,declining}}"
+          comparison: "{{string}}"
+        recommendedActions:
+          - action: "{{string}}"
+            priority: "{{enum:immediate,soon,routine}}"
+            instructions: "{{string}}"
+    matchers:
+      json_body:
+        - path: $.overallHealth
+          match: enum
+          values: [excellent, good, fair, poor, critical]
+        - path: $.issues[*].type
+          match: enum
+          values: [disease, pest, nutrient_deficiency, overwatering, underwatering, sunburn, other]
+        - path: $.issues[*].severity
+          match: enum
+          values: [mild, moderate, severe]
+        - path: $.growthAnalysis.trend
+          match: enum
+          values: [growing_well, slowing, stalled, declining]
+        - path: $.recommendedActions[*].priority
+          match: enum
+          values: [immediate, soon, routine]
+
+  - id: error_invalid_image
+    description: |
+      不正な画像フォーマットを送信した場合のエラーハンドリング検証。
+    request:
+      method: POST
+      path: /identify/species
+      headers:
+        Content-Type: multipart/form-data
+        Authorization: Bearer {{auth_token}}
+      multipart:
+        - name: image
+          file: invalid_file.txt
+          mime: text/plain
+    response:
+      status: 400
+      headers:
+        Content-Type: application/json
+      body:
+        error: "{{string}}"
+        code: "invalid_image_format"
+        message: "画像フォーマットが不正です"
+    matchers:
+      json_body:
+        - path: $.error
+          match: type
+        - path: $.code
+          match: equality
+          value: "invalid_image_format"
+
+  - id: error_unauthorized
+    description: |
+      認証情報がない場合のエラーハンドリング検証。
+    request:
+      method: POST
+      path: /identify/species
+      headers:
+        Content-Type: multipart/form-data
+        # 認証トークンなし
+      multipart:
+        - name: image
+          file: test_plant.jpg
+          mime: image/jpeg
+    response:
+      status: 401
+      headers:
+        Content-Type: application/json
+      body:
+        error: "{{string}}"
+        code: "unauthorized"
+        message: "認証が必要です"
+    matchers:
+      json_body:
+        - path: $.code
+          match: equality
+          value: "unauthorized"
+
+states:
+  - id: default
+    description: 通常の認証済み状態
+    fixtures:
+      auth_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMzQiLCJuYW1lIjoidGVzdF91c2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+
+  - id: invalid_token
+    description: 不正な認証トークン状態
+    fixtures:
+      auth_token: "invalid_token_value"
+
+  - id: no_species_found
+    description: 植物種が識別できない状態
+    fixtures:
+      auth_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMzQiLCJuYW1lIjoidGVzdF91c2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+
+test_files:
+  - path: test_plant.jpg
+    description: 健康なモンステラの画像
+  - path: plant_monstera.jpg
+    description: 個体識別用の特徴的なモンステラの画像
+  - path: plant_health.jpg
+    description: 葉に褐色の斑点がある不健康な観葉植物の画像
+  - path: invalid_file.txt
+    description: テキストファイル（不正なフォーマット）
+
+provider_verification:
+  state_handlers:
+    - state: default
+      setup: |
+        // 正常系テスト用の認証トークンを設定
+        database.users.create({
+          id: 'user_1234',
+          name: 'test_user',
+          role: 'user'
+        });
+        
+        // テスト用の植物データを登録
+        database.species.create({
+          id: 'sp_12345',
+          scientificName: 'Monstera deliciosa',
+          commonName: 'モンステラ',
+          familyName: 'サトイモ科'
+        });
+        
+        database.individuals.create({
+          id: 'ind_67890',
+          speciesId: 'sp_12345',
+          userId: 'user_1234'
+        });
+      teardown: |
+        database.individuals.delete({ id: 'ind_67890' });
+        database.species.delete({ id: 'sp_12345' });
+        database.users.delete({ id: 'user_1234' });
+
+    - state: no_species_found
+      setup: |
+        // 認証だけ設定し、植物データは登録しない
+        database.users.create({
+          id: 'user_1234',
+          name: 'test_user',
+          role: 'user'
+        });
+      teardown: |
+        database.users.delete({ id: 'user_1234' });
+
+configuration:
+  pact_broker_url: https://pact-broker.plantpals.app
+  publish_verification_results: true
+  provider_version: "${GIT_COMMIT}"
+  provider_branch: "${GIT_BRANCH}"
+
+ci_integration:
+  github_actions:
+    workflow_name: "Contract Tests"
+    on_pull_request: true
+    publish_results: true

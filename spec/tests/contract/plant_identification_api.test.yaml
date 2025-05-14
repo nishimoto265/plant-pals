@@ -1,0 +1,351 @@
+id: TC02_plant_identification_api
+name: 植物識別APIの契約テスト
+description: 植物識別APIのエンドポイントの動作を検証
+
+endpoints:
+  - id: identify_plant
+    path: /api/identify/plant
+    method: POST
+    description: 画像から植物を識別するAPI
+    auth_required: true
+    request:
+      content_type: multipart/form-data
+      parameters:
+        - name: image
+          type: file
+          required: true
+          description: 識別する植物の画像ファイル
+        - name: location
+          type: object
+          required: false
+          description: 撮影場所の位置情報（オプション）
+          properties:
+            - name: latitude
+              type: number
+              description: 緯度
+            - name: longitude
+              type: number
+              description: 経度
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: true
+              description: 処理成功フラグ
+            - name: plantId
+              type: string
+              description: 植物の一意識別子
+            - name: confidence
+              type: number
+              description: 識別の確信度（0-1の範囲）
+            - name: commonName
+              type: string
+              description: 植物の一般名称
+            - name: scientificName
+              type: string
+              description: 植物の学名
+            - name: family
+              type: string
+              description: 植物の科
+            - name: description
+              type: string
+              description: 植物の説明テキスト
+            - name: careInfo
+              type: object
+              description: 植物の育て方情報
+              properties:
+                - name: light
+                  type: string
+                  description: 必要な光量
+                - name: water
+                  type: string
+                  description: 水やりの頻度
+                - name: soil
+                  type: string
+                  description: 適した土壌
+                - name: temperature
+                  type: string
+                  description: 適温範囲
+      error:
+        status: 400
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: false
+              description: 処理失敗フラグ
+            - name: error
+              type: string
+              description: エラーメッセージ
+            - name: errorCode
+              type: string
+              description: エラーコード
+
+  - id: identify_individual
+    path: /api/identify/individual
+    method: POST
+    description: 植物の個体を識別し、健康状態を評価するAPI
+    auth_required: true
+    request:
+      content_type: multipart/form-data
+      parameters:
+        - name: image
+          type: file
+          required: true
+          description: 識別する植物の画像ファイル
+        - name: plantId
+          type: string
+          required: true
+          description: 植物の識別ID
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: true
+              description: 処理成功フラグ
+            - name: individualId
+              type: string
+              description: 植物個体の一意識別子
+            - name: healthStatus
+              type: string
+              description: 健康状態（healthy, moderate, unhealthy）
+            - name: healthScore
+              type: number
+              description: 健康スコア（0-100の範囲）
+            - name: estimatedAge
+              type: string
+              description: 推定樹齢
+            - name: issues
+              type: array
+              description: 検出された問題点のリスト
+              items:
+                type: object
+                properties:
+                  - name: type
+                    type: string
+                    description: 問題の種類
+                  - name: description
+                    type: string
+                    description: 問題の説明
+                  - name: severity
+                    type: string
+                    description: 重症度
+            - name: careRecommendations
+              type: array
+              description: お手入れの推奨事項
+              items:
+                type: string
+      error:
+        status: 400
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: false
+              description: 処理失敗フラグ
+            - name: error
+              type: string
+              description: エラーメッセージ
+            - name: errorCode
+              type: string
+              description: エラーコード
+
+  - id: generate_avatar
+    path: /api/generate/avatar
+    method: POST
+    description: 植物キャラクターアバターを生成するAPI
+    auth_required: true
+    request:
+      content_type: application/json
+      parameters:
+        - name: plantId
+          type: string
+          required: true
+          description: 植物の識別ID
+        - name: individualId
+          type: string
+          required: true
+          description: 植物個体の識別ID
+        - name: userPreferences
+          type: object
+          required: false
+          description: ユーザーの好み設定
+          properties:
+            - name: style
+              type: string
+              description: アートスタイル（cartoon, anime, realistic）
+            - name: colorScheme
+              type: string
+              description: 色調
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: true
+              description: 処理成功フラグ
+            - name: avatarId
+              type: string
+              description: アバターの一意識別子
+            - name: avatarUrl
+              type: string
+              description: アバター画像のURL
+            - name: thumbnailUrl
+              type: string
+              description: アバターサムネイルのURL
+            - name: characterName
+              type: string
+              description: キャラクター名
+            - name: personality
+              type: string
+              description: キャラクターの性格
+            - name: stats
+              type: object
+              description: キャラクターの初期ステータス
+              properties:
+                - name: vitality
+                  type: number
+                  description: 活力ポイント
+                - name: happiness
+                  type: number
+                  description: 幸福度
+                - name: growth
+                  type: number
+                  description: 成長レベル
+      error:
+        status: 400
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            - name: success
+              type: boolean
+              value: false
+              description: 処理失敗フラグ
+            - name: error
+              type: string
+              description: エラーメッセージ
+            - name: errorCode
+              type: string
+              description: エラーコード
+
+test_cases:
+  - id: identify_plant_success
+    endpoint_id: identify_plant
+    description: 正しい画像で植物識別が成功するケース
+    request:
+      parameters:
+        - name: image
+          value: "test_assets/plant_monstera.jpg"
+    assertions:
+      - type: status
+        value: 200
+      - type: schema
+        target: "response"
+      - type: response-time
+        max: 3000
+      - type: json
+        path: "$.success"
+        value: true
+      - type: json
+        path: "$.confidence"
+        operator: ">="
+        value: 0.7
+
+  - id: identify_plant_invalid_image
+    endpoint_id: identify_plant
+    description: 無効な画像形式で植物識別が失敗するケース
+    request:
+      parameters:
+        - name: image
+          value: "test_assets/invalid.txt"
+    assertions:
+      - type: status
+        value: 400
+      - type: schema
+        target: "error"
+      - type: json
+        path: "$.success"
+        value: false
+      - type: json
+        path: "$.errorCode"
+        value: "INVALID_IMAGE_FORMAT"
+
+  - id: identify_individual_success
+    endpoint_id: identify_individual
+    description: 正しい画像と植物IDで個体識別が成功するケース
+    request:
+      parameters:
+        - name: image
+          value: "test_assets/plant_monstera_closeup.jpg"
+        - name: plantId
+          value: "monstera_deliciosa"
+    assertions:
+      - type: status
+        value: 200
+      - type: schema
+        target: "response"
+      - type: json
+        path: "$.success"
+        value: true
+      - type: json
+        path: "$.healthStatus"
+        operator: "in"
+        values: ["healthy", "moderate", "unhealthy"]
+
+  - id: generate_avatar_success
+    endpoint_id: generate_avatar
+    description: 植物IDと個体IDからアバター生成が成功するケース
+    request:
+      parameters:
+        - name: plantId
+          value: "monstera_deliciosa"
+        - name: individualId
+          value: "m123456"
+        - name: userPreferences
+          value:
+            style: "cartoon"
+    assertions:
+      - type: status
+        value: 200
+      - type: schema
+        target: "response"
+      - type: json
+        path: "$.success"
+        value: true
+      - type: json
+        path: "$.avatarUrl"
+        operator: "contains"
+        value: "https://"
+
+environment:
+  - name: development
+    base_url: "https://dev-api.plant-pals.example.com"
+  - name: staging
+    base_url: "https://staging-api.plant-pals.example.com"
+  - name: production
+    base_url: "https://api.plant-pals.example.com"
+
+dependencies:
+  - service: ai_model
+    version: ">=1.5.0"
+  - service: image_processing
+    version: ">=2.1.0" 

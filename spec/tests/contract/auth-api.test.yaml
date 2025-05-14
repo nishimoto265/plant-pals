@@ -1,0 +1,495 @@
+id: TC01_auth_api
+name: 認証API契約テスト
+description: |
+  認証関連のクライアント-サーバー間の契約を検証するテスト。
+  メール認証、ソーシャルログイン、ゲストモードのAPI動作を検証する。
+
+endpoints:
+  - id: signup-email
+    path: /auth/signup
+    method: POST
+    description: メールアドレスとパスワードで新規ユーザー登録
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          email:
+            type: string
+            format: email
+            example: "test@example.com"
+          password:
+            type: string
+            minLength: 8
+            example: "password123"
+        required: [email, password]
+      examples:
+        - name: 新規ユーザー登録
+          value: |
+            {
+              "email": "test@example.com",
+              "password": "password123"
+            }
+    response:
+      status: 201
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          id:
+            type: string
+            example: "user-123"
+          email:
+            type: string
+            example: "test@example.com"
+          createdAt:
+            type: string
+            format: date-time
+            example: "2025-05-12T10:30:00Z"
+          accessToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [id, email, createdAt, accessToken, refreshToken]
+      examples:
+        - name: 正常登録レスポンス
+          value: |
+            {
+              "id": "user-123",
+              "email": "test@example.com",
+              "createdAt": "2025-05-12T10:30:00Z",
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+
+  - id: login-email
+    path: /auth/login
+    method: POST
+    description: メールアドレスとパスワードでログイン
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          email:
+            type: string
+            format: email
+            example: "test@example.com"
+          password:
+            type: string
+            example: "password123"
+        required: [email, password]
+      examples:
+        - name: ログイン
+          value: |
+            {
+              "email": "test@example.com",
+              "password": "password123"
+            }
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          id:
+            type: string
+            example: "user-123"
+          email:
+            type: string
+            example: "test@example.com"
+          accessToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [id, email, accessToken, refreshToken]
+      examples:
+        - name: 正常ログインレスポンス
+          value: |
+            {
+              "id": "user-123",
+              "email": "test@example.com",
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+
+  - id: oauth-login
+    path: /auth/oauth/{provider}
+    method: POST
+    description: OAuth2プロバイダーを使用したソーシャルログイン
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          token:
+            type: string
+            description: OAuthプロバイダから取得した認証トークン
+            example: "oauth-token-123"
+        required: [token]
+      examples:
+        - name: Googleログイン
+          value: |
+            {
+              "token": "google-oauth-token-123"
+            }
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          id:
+            type: string
+            example: "user-456"
+          email:
+            type: string
+            example: "user@gmail.com"
+          provider:
+            type: string
+            enum: [google, apple, github]
+            example: "google"
+          accessToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [id, email, provider, accessToken, refreshToken]
+      examples:
+        - name: 正常OAuthログインレスポンス
+          value: |
+            {
+              "id": "user-456",
+              "email": "user@gmail.com",
+              "provider": "google",
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+
+  - id: guest-login
+    path: /auth/guest
+    method: POST
+    description: ゲストユーザーとしてログイン
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties: {}
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          id:
+            type: string
+            example: "guest-789"
+          isGuest:
+            type: boolean
+            example: true
+          accessToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [id, isGuest, accessToken, refreshToken]
+      examples:
+        - name: 正常ゲストログインレスポンス
+          value: |
+            {
+              "id": "guest-789",
+              "isGuest": true,
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+
+  - id: refresh-token
+    path: /auth/refresh
+    method: POST
+    description: リフレッシュトークンを使用してアクセストークンを更新
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [refreshToken]
+      examples:
+        - name: トークンリフレッシュ
+          value: |
+            {
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          accessToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        required: [accessToken, refreshToken]
+      examples:
+        - name: 正常リフレッシュレスポンス
+          value: |
+            {
+              "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+
+  - id: logout
+    path: /auth/logout
+    method: POST
+    description: ユーザーのログアウト処理
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+        Authorization: Bearer {accessToken}
+      schema:
+        type: object
+        properties: {}
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: true
+        required: [success]
+      examples:
+        - name: 正常ログアウトレスポンス
+          value: |
+            {
+              "success": true
+            }
+
+  - id: forgot-password
+    path: /auth/forgot-password
+    method: POST
+    description: パスワードリセットメールの送信
+    request:
+      headers:
+        Content-Type: application/json
+        Accept: application/json
+      schema:
+        type: object
+        properties:
+          email:
+            type: string
+            format: email
+            example: "test@example.com"
+        required: [email]
+      examples:
+        - name: パスワードリセットメール送信
+          value: |
+            {
+              "email": "test@example.com"
+            }
+    response:
+      status: 200
+      contentType: application/json
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: true
+          message:
+            type: string
+            example: "パスワードリセットメールを送信しました"
+        required: [success, message]
+      examples:
+        - name: 正常リセットメールレスポンス
+          value: |
+            {
+              "success": true,
+              "message": "パスワードリセットメールを送信しました"
+            }
+
+testCases:
+  - id: signup-email-valid
+    name: 有効なメールとパスワードで登録
+    description: 有効なメール・パスワードで新規登録できること
+    endpoint: signup-email
+    setup:
+      request:
+        body:
+          email: "new-user@example.com"
+          password: "SecurePass123!"
+    expectations:
+      - response.status === 201
+      - response.body.email === "new-user@example.com"
+      - typeof response.body.accessToken === "string"
+      - typeof response.body.refreshToken === "string"
+
+  - id: signup-email-invalid-format
+    name: 無効なメールフォーマット
+    description: 無効なメールフォーマットでエラーが返ること
+    endpoint: signup-email
+    setup:
+      request:
+        body:
+          email: "invalid-email"
+          password: "password123"
+    expectations:
+      - response.status === 400
+      - response.body.error.code === "INVALID_EMAIL"
+
+  - id: signup-email-weak-password
+    name: 弱いパスワード
+    description: 弱いパスワードでエラーが返ること
+    endpoint: signup-email
+    setup:
+      request:
+        body:
+          email: "test@example.com"
+          password: "123"
+    expectations:
+      - response.status === 400
+      - response.body.error.code === "WEAK_PASSWORD"
+
+  - id: login-email-valid
+    name: 有効な認証情報でログイン
+    description: 有効なメール・パスワードでログイン成功すること
+    endpoint: login-email
+    setup:
+      request:
+        body:
+          email: "existing@example.com"
+          password: "correct-password"
+    expectations:
+      - response.status === 200
+      - response.body.email === "existing@example.com"
+      - typeof response.body.accessToken === "string"
+      - typeof response.body.refreshToken === "string"
+
+  - id: login-email-invalid
+    name: 無効な認証情報
+    description: 無効なメール・パスワードでエラーが返ること
+    endpoint: login-email
+    setup:
+      request:
+        body:
+          email: "existing@example.com"
+          password: "wrong-password"
+    expectations:
+      - response.status === 401
+      - response.body.error.code === "INVALID_CREDENTIALS"
+
+  - id: oauth-login-google
+    name: Googleログイン
+    description: Googleアカウントでログイン成功すること
+    endpoint: oauth-login
+    setup:
+      request:
+        pathParams:
+          provider: "google"
+        body:
+          token: "valid-google-token"
+    expectations:
+      - response.status === 200
+      - response.body.provider === "google"
+      - typeof response.body.accessToken === "string"
+
+  - id: guest-login-success
+    name: ゲストログイン
+    description: ゲストユーザーとしてログイン成功すること
+    endpoint: guest-login
+    setup:
+      request:
+        body: {}
+    expectations:
+      - response.status === 200
+      - response.body.isGuest === true
+      - typeof response.body.accessToken === "string"
+
+  - id: refresh-token-valid
+    name: 有効なリフレッシュトークン
+    description: 有効なリフレッシュトークンで新しいアクセストークンを取得
+    endpoint: refresh-token
+    setup:
+      request:
+        body:
+          refreshToken: "valid-refresh-token"
+    expectations:
+      - response.status === 200
+      - typeof response.body.accessToken === "string"
+      - typeof response.body.refreshToken === "string"
+
+  - id: refresh-token-invalid
+    name: 無効なリフレッシュトークン
+    description: 無効なリフレッシュトークンでエラーが返ること
+    endpoint: refresh-token
+    setup:
+      request:
+        body:
+          refreshToken: "invalid-refresh-token"
+    expectations:
+      - response.status === 401
+      - response.body.error.code === "INVALID_REFRESH_TOKEN"
+
+  - id: logout-success
+    name: ログアウト成功
+    description: ログアウトが正常に完了すること
+    endpoint: logout
+    setup:
+      request:
+        headers:
+          Authorization: "Bearer valid-access-token"
+    expectations:
+      - response.status === 200
+      - response.body.success === true
+
+clientImplementation:
+  file: src/packages/api/authApi.ts
+  methods:
+    - name: signUp
+      endpoint: signup-email
+    - name: signIn
+      endpoint: login-email
+    - name: oauthSignIn
+      endpoint: oauth-login
+    - name: signInAsGuest
+      endpoint: guest-login
+    - name: refreshToken
+      endpoint: refresh-token
+    - name: logout
+      endpoint: logout
+    - name: forgotPassword
+      endpoint: forgot-password
+
+consumers:
+  - id: auth-screen
+    file: src/ui/screens/S01_auth/AuthScreen.tsx
+    endpoints: [signup-email, login-email, oauth-login, guest-login, forgot-password]
+  - id: auth-hook
+    file: src/ui/hooks/useAuth.ts
+    endpoints: [signup-email, login-email, oauth-login, guest-login, refresh-token, logout]
+  - id: app-wrapper
+    file: src/App.tsx
+    endpoints: [refresh-token, logout] 

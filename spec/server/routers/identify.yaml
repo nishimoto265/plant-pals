@@ -1,0 +1,316 @@
+id: identify_router
+name: PlantIdentificationRouter
+description: |
+  植物識別・個体識別に関するAPI機能を提供するルーター。
+  ユーザーが撮影した植物の種類と個体を特定し、健康状態やケア方法を分析します。
+
+endpoints:
+  - id: plant_identify
+    path: /api/identify/species
+    method: POST
+    summary: 植物の種類を識別する
+    description: |
+      画像から植物の種類（例：モンステラ、サンセベリア）を識別し、
+      詳細な種情報とケア方法を返却します。
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: 植物の画像（JPEG/PNG, 最大10MB）
+              latitude:
+                type: number
+                format: float
+                description: 撮影位置の緯度（オプション）
+              longitude:
+                type: number
+                format: float
+                description: 撮影位置の経度（オプション）
+              detectCommonIssues:
+                type: boolean
+                description: 一般的な問題（病気、害虫等）を検出するかどうか
+                default: false
+    responses:
+      '200':
+        description: 植物識別成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                speciesId:
+                  type: string
+                  description: 識別された植物種のID
+                confidence:
+                  type: number
+                  format: float
+                  description: 信頼度スコア (0-1)
+                scientificName:
+                  type: string
+                  description: 学名
+                commonName:
+                  type: string
+                  description: 和名
+                familyName:
+                  type: string
+                  description: 科名
+                careInstructions:
+                  type: object
+                  properties:
+                    watering:
+                      type: string
+                      description: 水やり方法
+                    sunlight:
+                      type: string
+                      description: 日当たり条件
+                    temperature:
+                      type: string
+                      description: 適温範囲
+                    humidity:
+                      type: string
+                      description: 湿度条件
+                    soil:
+                      type: string
+                      description: 土壌条件
+                alternativeCandidates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      speciesId:
+                        type: string
+                      scientificName:
+                        type: string
+                      commonName:
+                        type: string
+                      confidence:
+                        type: number
+                  description: 候補となる他の植物種（最大3件）
+                issues:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [disease, pest, nutrient_deficiency, overwatering, underwatering, sunburn]
+                      name:
+                        type: string
+                      confidence:
+                        type: number
+                      treatment:
+                        type: string
+                  description: 検出された問題点（detectCommonIssues=trueの場合のみ）
+      '400':
+        description: リクエスト不正
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+      '413':
+        description: ファイルサイズ超過
+
+  - id: individual_identify
+    path: /api/identify/individual
+    method: POST
+    summary: 同一品種内で個体識別する
+    description: |
+      同一品種内で個体を識別するためのエンベディングを生成します。
+      葉の模様や形状などから固有の特徴を抽出し、個体を区別します。
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: 植物の画像（JPEG/PNG, 最大10MB）
+              speciesId:
+                type: string
+                description: 植物種ID（植物識別APIから取得）
+    responses:
+      '200':
+        description: 個体識別成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                individualId:
+                  type: string
+                  description: 生成された個体ID（新規）
+                embedding:
+                  type: array
+                  items:
+                    type: number
+                  description: 個体特徴量ベクトル
+                isNew:
+                  type: boolean
+                  description: 新規個体かどうか
+                similarIndividuals:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      individualId:
+                        type: string
+                      similarity:
+                        type: number
+                        format: float
+                      lastSeen:
+                        type: string
+                        format: date-time
+                  description: 類似する既存個体（存在する場合）
+      '400':
+        description: リクエスト不正
+
+  - id: health_analysis
+    path: /api/identify/health
+    method: POST
+    summary: 植物の健康状態を分析する
+    description: |
+      植物の画像から健康状態を分析し、問題点とケア方法を提案します。
+      葉の色、形状、病斑などから状態を判断します。
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: 植物の画像（JPEG/PNG, 最大10MB）
+              speciesId:
+                type: string
+                description: 植物種ID
+              individualId:
+                type: string
+                description: 個体ID（過去の記録と比較する場合）
+              previousImages:
+                type: array
+                items:
+                  type: string
+                description: 過去の画像URL（時系列分析用、オプション）
+    responses:
+      '200':
+        description: 健康分析成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                overallHealth:
+                  type: string
+                  enum: [excellent, good, fair, poor, critical]
+                  description: 全体的な健康度
+                issues:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [disease, pest, nutrient_deficiency, overwatering, underwatering, sunburn, other]
+                      name:
+                        type: string
+                      confidence:
+                        type: number
+                        format: float
+                      description:
+                        type: string
+                      severity:
+                        type: string
+                        enum: [mild, moderate, severe]
+                      treatment:
+                        type: string
+                      preventionTips:
+                        type: array
+                        items:
+                          type: string
+                  description: 検出された問題点
+                growthAnalysis:
+                  type: object
+                  properties:
+                    trend:
+                      type: string
+                      enum: [growing_well, slowing, stalled, declining]
+                      description: 成長傾向
+                    comparison:
+                      type: string
+                      description: 過去との比較結果
+                  description: 成長分析（過去の画像がある場合）
+                recommendedActions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      action:
+                        type: string
+                      priority:
+                        type: string
+                        enum: [immediate, soon, routine]
+                      instructions:
+                        type: string
+                  description: 推奨されるケア行動
+      '400':
+        description: リクエスト不正
+
+dependencies:
+  - numpy
+  - tensorflow
+  - scikit-learn
+  - opencv-python
+  - pillow
+
+machineRequirements:
+  gpu: true
+  memory: "8Gi"
+  cpuLimit: "4"
+
+monitoring:
+  metrics:
+    - name: "identification_accuracy"
+      description: "識別精度 (top-1)"
+      target: ">= 0.92"
+    - name: "api_latency"
+      description: "レスポンス時間"
+      target: "< 3s"
+    - name: "daily_requests"
+      description: "日次リクエスト数"
+  alerts:
+    - name: "high_error_rate"
+      condition: "error_rate > 0.05 for 5m"
+      severity: "critical"
+    - name: "high_latency"
+      condition: "p95_latency > 5s for 10m"
+      severity: "warning"
+
+modelVersions:
+  plantIdentification:
+    name: "Swin-V2 Large"
+    version: "1.2.0"
+    accuracy: 0.92
+    path: "/models/swin-v2-plant-id"
+  individualIdentification:
+    name: "ConvNeXtTiny+ArcFace"
+    version: "1.0.1"
+    accuracy: 0.95
+    path: "/models/convnext-arcface"
+  healthAnalysis:
+    name: "ResNet-101 FT"
+    version: "0.9.5"
+    accuracy: 0.85
+    path: "/models/resnet-health-analysis"

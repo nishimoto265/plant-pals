@@ -1,0 +1,202 @@
+id: TS03_camera
+name: カメラ画面テスト
+target:
+  screen: S03_camera
+  path: src/ui/screens/S03_camera/CameraScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: カメラ画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのカメラ画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/flash_on.png
+            - asset: assets/icons/flash_off.png
+            - asset: assets/icons/gallery.png
+            - asset: assets/icons/shutter.png
+            - asset: assets/icons/flip_camera.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#camera-view"
+          - type: element-exists
+            target: "#shutter-button"
+          - type: element-exists
+            target: "#flash-toggle"
+          - type: element-exists
+            target: "#gallery-button"
+
+  - id: camera_controls
+    name: カメラ操作テスト
+    description: カメラ操作ボタンの動作を検証
+    type: interaction
+    cases:
+      - id: shutter-press
+        name: シャッターボタン
+        description: シャッターボタンをタップすると写真が撮影されること
+        steps:
+          - action: press
+            target: "#shutter-button"
+        assertions:
+          - type: function-called
+            target: "takePicture"
+
+      - id: flash-toggle
+        name: フラッシュ切替
+        description: フラッシュボタンをタップするとフラッシュモードが切り替わること
+        steps:
+          - action: press
+            target: "#flash-toggle"
+        assertions:
+          - type: state-change
+            target: "flashMode"
+            value: "on"
+          - type: element-property
+            target: "#flash-toggle"
+            property: "icon"
+            value: "flash_on"
+
+      - id: camera-flip
+        name: カメラ切替
+        description: カメラ切替ボタンをタップすると前面/背面カメラが切り替わること
+        steps:
+          - action: press
+            target: "#flip-camera"
+        assertions:
+          - type: state-change
+            target: "cameraType"
+            value: "front"
+          - type: function-called
+            target: "switchCamera"
+
+  - id: permissions
+    name: 権限テスト
+    description: カメラ権限がない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-permission
+        name: 権限なし
+        description: カメラ権限がない場合に適切なメッセージが表示されること
+        setup:
+          mocks:
+            - permission: camera
+              status: denied
+        assertions:
+          - type: element-exists
+            target: "#permission-message"
+          - type: element-text
+            target: "#permission-message"
+            value: "カメラへのアクセスが許可されていません"
+          - type: element-exists
+            target: "#request-permission-button"
+
+      - id: request-permission
+        name: 権限リクエスト
+        description: 権限リクエストボタンをタップすると権限リクエストが行われること
+        setup:
+          mocks:
+            - permission: camera
+              status: denied
+        steps:
+          - action: press
+            target: "#request-permission-button"
+        assertions:
+          - type: function-called
+            target: "requestCameraPermission"
+
+  - id: image_processing
+    name: 画像処理テスト
+    description: 撮影した画像の処理機能を検証
+    type: functional
+    cases:
+      - id: image-capture-success
+        name: 画像撮影成功
+        description: 画像撮影が成功した場合に植物識別画面に遷移すること
+        steps:
+          - action: press
+            target: "#shutter-button"
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: function-called
+            target: "processCapturedImage"
+          - type: navigation
+            route: "PlantIdentification"
+            params:
+              imageUri: "{{capturedImageUri}}"
+
+      - id: image-processing-error
+        name: 画像処理エラー
+        description: 画像処理にエラーが発生した場合にエラーメッセージが表示されること
+        setup:
+          mocks:
+            - function: takePicture
+              throws: true
+              error: "Failed to capture image"
+        steps:
+          - action: press
+            target: "#shutter-button"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "画像の撮影に失敗しました。もう一度お試しください。"
+
+  - id: gallery_access
+    name: ギャラリーアクセステスト
+    description: ギャラリーへのアクセス機能を検証
+    type: navigation
+    cases:
+      - id: open-gallery
+        name: ギャラリーを開く
+        description: ギャラリーボタンをタップするとギャラリーが開くこと
+        steps:
+          - action: press
+            target: "#gallery-button"
+        assertions:
+          - type: function-called
+            target: "openGallery"
+
+      - id: image-select
+        name: 画像選択
+        description: ギャラリーから画像を選択すると植物識別画面に遷移すること
+        setup:
+          mocks:
+            - function: openGallery
+              returns:
+                imageUri: "file:///mock/image/path.jpg"
+        steps:
+          - action: press
+            target: "#gallery-button"
+          - action: wait
+            duration: 500
+        assertions:
+          - type: navigation
+            route: "PlantIdentification"
+            params:
+              imageUri: "file:///mock/image/path.jpg"
+
+accessibility:
+  - test: color-contrast
+    description: シャッターボタンなどの操作要素のコントラストが十分である
+  - test: tap-area
+    description: タップ領域が十分な大きさ（44x44 dp以上）を確保している
+  - test: vibration-feedback
+    description: シャッターボタン押下時に触覚フィードバックを提供する
+  - test: voice-over-support
+    description: すべてのカメラ操作ボタンが音声読み上げに対応している
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"] 

@@ -1,0 +1,630 @@
+id: TS17_error_offline
+name: エラー・オフライン画面テスト
+target:
+  screen: S17_error_offline
+  path: src/ui/screens/S17_error_offline/ErrorOfflineScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: エラー・オフライン画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: offline-render
+        name: オフラインモード表示
+        description: オフラインモード時の画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/wifi_off.png
+            - asset: assets/icons/refresh.png
+            - asset: assets/illustrations/offline.svg
+          state:
+            isOffline: true
+            errorType: "network_offline"
+            lastRoute: "S04_home"
+            hasLocalData: true
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#offline-container"
+          - type: element-exists
+            target: "#offline-illustration"
+          - type: element-exists
+            target: "#offline-title"
+          - type: element-exists
+            target: "#offline-message"
+          - type: element-exists
+            target: "#retry-connection-button"
+          - type: element-exists
+            target: "#continue-offline-button"
+          - type: element-text
+            target: "#offline-title"
+            value: "インターネット接続がありません"
+          - type: element-text
+            target: "#offline-message"
+            value: "インターネット接続を確認してください。一部の機能はオフラインモードで利用できます。"
+
+      - id: generic-error-render
+        name: 一般エラー表示
+        description: 一般的なエラー時の画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/error.png
+            - asset: assets/icons/refresh.png
+            - asset: assets/illustrations/error.svg
+          state:
+            isOffline: false
+            errorType: "general_error"
+            errorCode: "500"
+            errorMessage: "サーバーで問題が発生しました。しばらく経ってからもう一度お試しください。"
+            lastRoute: "S04_home"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#error-container"
+          - type: element-exists
+            target: "#error-illustration"
+          - type: element-exists
+            target: "#error-title"
+          - type: element-exists
+            target: "#error-message"
+          - type: element-exists
+            target: "#error-code"
+          - type: element-exists
+            target: "#retry-button"
+          - type: element-exists
+            target: "#go-home-button"
+          - type: element-text
+            target: "#error-title"
+            value: "エラーが発生しました"
+          - type: element-text
+            target: "#error-message"
+            value: "サーバーで問題が発生しました。しばらく経ってからもう一度お試しください。"
+          - type: element-text
+            target: "#error-code"
+            value: "エラーコード: 500"
+
+      - id: not-found-render
+        name: 404エラー表示
+        description: 404エラー時の画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/error.png
+            - asset: assets/icons/refresh.png
+            - asset: assets/illustrations/not_found.svg
+          state:
+            isOffline: false
+            errorType: "not_found"
+            errorCode: "404"
+            errorMessage: "お探しのページは見つかりませんでした。"
+            lastRoute: "S13_plant_library"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#error-container"
+          - type: element-exists
+            target: "#error-illustration"
+          - type: element-exists
+            target: "#error-title"
+          - type: element-exists
+            target: "#error-message"
+          - type: element-exists
+            target: "#error-code"
+          - type: element-exists
+            target: "#go-home-button"
+          - type: element-text
+            target: "#error-title"
+            value: "ページが見つかりません"
+          - type: element-text
+            target: "#error-message"
+            value: "お探しのページは見つかりませんでした。"
+          - type: element-text
+            target: "#error-code"
+            value: "エラーコード: 404"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#go-home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: retry-navigation
+        name: 再試行による遷移
+        description: 再試行ボタンをタップすると直前のルートに遷移すること
+        setup:
+          state:
+            lastRoute: "S13_plant_library"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: navigation
+            route: "S13_plant_library"
+
+      - id: retry-connection
+        name: 接続再試行
+        description: 接続再試行ボタンをタップするとネットワーク接続確認後に直前のルートに遷移すること
+        setup:
+          state:
+            isOffline: true
+            lastRoute: "S13_plant_library"
+        steps:
+          - action: press
+            target: "#retry-connection-button"
+        assertions:
+          - type: function-called
+            target: "checkNetworkConnection"
+          - type: function-called
+            target: "navigateToRoute"
+            params:
+              route: "S13_plant_library"
+
+      - id: continue-offline
+        name: オフライン継続
+        description: オフラインで続けるボタンをタップするとオフラインモードでホーム画面に遷移すること
+        setup:
+          state:
+            isOffline: true
+            hasLocalData: true
+        steps:
+          - action: press
+            target: "#continue-offline-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+          - type: navigation-params
+            key: "offlineMode"
+            value: true
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: retry-connection-check
+        name: 接続確認動作
+        description: 接続再試行ボタンをタップするとネットワーク接続チェックが行われること
+        setup:
+          state:
+            isOffline: true
+            networkCheckInProgress: false
+          mocks:
+            - api:
+                endpoint: "/api/network/check"
+                response:
+                  online: true
+        steps:
+          - action: press
+            target: "#retry-connection-button"
+        assertions:
+          - type: state-change
+            target: "networkCheckInProgress"
+            value: true
+          - type: function-called
+            target: "checkNetworkConnection"
+          - type: element-attribute
+            target: "#retry-connection-button"
+            attribute: "loading"
+            value: "true"
+
+      - id: connection-check-success
+        name: 接続確認成功
+        description: ネットワーク接続が回復すると元の画面に遷移すること
+        setup:
+          state:
+            isOffline: true
+            networkCheckInProgress: true
+            lastRoute: "S04_home"
+            networkCheckResult:
+              online: true
+        assertions:
+          - type: state-change
+            target: "isOffline"
+            value: false
+          - type: navigation
+            route: "S04_home"
+
+      - id: connection-check-failure
+        name: 接続確認失敗
+        description: ネットワーク接続が回復しないとエラーメッセージが更新されること
+        setup:
+          state:
+            isOffline: true
+            networkCheckInProgress: true
+            networkCheckResult:
+              online: false
+            lastRetryTime: 0
+        assertions:
+          - type: element-text
+            target: "#offline-message"
+            value: "インターネット接続を確認できませんでした。接続が回復してから再試行してください。"
+          - type: state-change
+            target: "networkCheckInProgress"
+            value: false
+          - type: element-attribute
+            target: "#retry-connection-button"
+            attribute: "loading"
+            value: "false"
+
+      - id: error-details-toggle
+        name: エラー詳細表示
+        description: 詳細ボタンをタップするとエラー詳細が表示されること
+        setup:
+          state:
+            errorType: "general_error"
+            errorCode: "500"
+            errorDetails: "Internal Server Error: Transaction failed during database commit."
+            showErrorDetails: false
+        steps:
+          - action: press
+            target: "#show-details-button"
+        assertions:
+          - type: state-change
+            target: "showErrorDetails"
+            value: true
+          - type: element-visible
+            target: "#error-details"
+          - type: element-text
+            target: "#error-details-content"
+            value: "Internal Server Error: Transaction failed during database commit."
+
+      - id: error-details-hide
+        name: エラー詳細非表示
+        description: 詳細非表示ボタンをタップするとエラー詳細が非表示になること
+        setup:
+          state:
+            errorType: "general_error"
+            errorCode: "500"
+            showErrorDetails: true
+        steps:
+          - action: press
+            target: "#hide-details-button"
+        assertions:
+          - type: state-change
+            target: "showErrorDetails"
+            value: false
+          - type: element-not-visible
+            target: "#error-details"
+
+  - id: offline_features
+    name: オフライン機能テスト
+    description: オフラインモード時の機能を検証
+    type: functional
+    cases:
+      - id: available-offline-features
+        name: オフライン利用可能機能表示
+        description: オフラインで利用可能な機能リストが表示されること
+        setup:
+          state:
+            isOffline: true
+            hasLocalData: true
+        assertions:
+          - type: element-visible
+            target: "#available-offline-features"
+          - type: element-exists
+            target: "#offline-feature-list"
+          - type: element-count
+            target: ".offline-feature-item"
+            count: { min: 1 }
+          - type: element-text
+            target: "#available-offline-title"
+            value: "オフラインで利用可能な機能"
+
+      - id: no-offline-data
+        name: オフラインデータなし
+        description: オフラインデータがない場合は適切なメッセージが表示されること
+        setup:
+          state:
+            isOffline: true
+            hasLocalData: false
+        assertions:
+          - type: element-visible
+            target: "#no-offline-data-message"
+          - type: element-text
+            target: "#no-offline-data-title"
+            value: "オフラインデータがありません"
+          - type: element-text
+            target: "#no-offline-data-description"
+            value: "インターネットに接続してアプリを使用するとオフラインでも利用できるデータが保存されます"
+          - type: element-not-exists
+            target: "#continue-offline-button"
+
+      - id: limited-offline-actions
+        name: オフライン制限アクション
+        description: オフラインモードでの制限事項が表示されること
+        setup:
+          state:
+            isOffline: true
+            hasLocalData: true
+        assertions:
+          - type: element-visible
+            target: "#limited-actions"
+          - type: element-exists
+            target: "#limited-actions-list"
+          - type: element-count
+            target: ".limited-action-item"
+            count: { min: 1 }
+
+  - id: error_handling
+    name: エラーハンドリングテスト
+    description: 様々なエラータイプの表示を検証
+    type: functional
+    cases:
+      - id: permission-error
+        name: 権限エラー表示
+        description: 権限エラー（403）の表示が適切であること
+        setup:
+          state:
+            isOffline: false
+            errorType: "permission_denied"
+            errorCode: "403"
+            errorMessage: "このコンテンツへのアクセス権限がありません。"
+        assertions:
+          - type: element-text
+            target: "#error-title"
+            value: "アクセス権限がありません"
+          - type: element-text
+            target: "#error-message"
+            value: "このコンテンツへのアクセス権限がありません。"
+          - type: element-text
+            target: "#error-code"
+            value: "エラーコード: 403"
+          - type: element-exists
+            target: "#go-home-button"
+          - type: element-exists
+            target: "#login-button"
+
+      - id: timeout-error
+        name: タイムアウトエラー表示
+        description: タイムアウトエラーの表示が適切であること
+        setup:
+          state:
+            isOffline: false
+            errorType: "timeout"
+            errorMessage: "サーバーからの応答がありません。ネットワーク接続を確認してください。"
+        assertions:
+          - type: element-text
+            target: "#error-title"
+            value: "接続タイムアウト"
+          - type: element-text
+            target: "#error-message"
+            value: "サーバーからの応答がありません。ネットワーク接続を確認してください。"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: maintenance-error
+        name: メンテナンスエラー表示
+        description: メンテナンスエラーの表示が適切であること
+        setup:
+          state:
+            isOffline: false
+            errorType: "maintenance"
+            errorMessage: "現在システムメンテナンス中です。しばらく経ってからもう一度お試しください。"
+            maintenanceEndTime: "2025-05-12T15:00:00Z"
+        assertions:
+          - type: element-text
+            target: "#error-title"
+            value: "メンテナンス中"
+          - type: element-text
+            target: "#error-message"
+            value: "現在システムメンテナンス中です。しばらく経ってからもう一度お試しください。"
+          - type: element-exists
+            target: "#maintenance-end-time"
+          - type: element-exists
+            target: "#retry-button"
+
+  - id: dynamic_content
+    name: 動的コンテンツテスト
+    description: 状態に応じたコンテンツの表示を検証
+    type: functional
+    cases:
+      - id: retry-count-limit
+        name: 再試行回数制限
+        description: 連続再試行回数が制限に達すると追加情報が表示されること
+        setup:
+          state:
+            errorType: "general_error"
+            retryCount: 5
+            retryLimitReached: true
+        assertions:
+          - type: element-visible
+            target: "#retry-limit-message"
+          - type: element-text
+            target: "#retry-limit-message"
+            value: "何度も問題が発生しています。カスタマーサポートにお問い合わせください。"
+          - type: element-exists
+            target: "#contact-support-button"
+
+      - id: contact-support-button
+        name: サポート問い合わせボタン
+        description: サポート問い合わせボタンをタップするとサポート問い合わせ画面に遷移すること
+        setup:
+          state:
+            retryLimitReached: true
+        steps:
+          - action: press
+            target: "#contact-support-button"
+        assertions:
+          - type: navigation
+            route: "ContactSupport"
+          - type: navigation-params
+            key: "errorInfo"
+            contains: true
+
+      - id: error-timer
+        name: エラータイマー表示
+        description: エラーからの経過時間が表示されること
+        setup:
+          state:
+            errorType: "maintenance"
+            errorStartTime: "2025-05-12T10:00:00Z"
+            currentTime: "2025-05-12T10:05:30Z"
+        assertions:
+          - type: element-visible
+            target: "#error-duration"
+          - type: element-text
+            target: "#error-duration"
+            value: "5分経過"
+
+      - id: animated-illustration
+        name: アニメーションイラスト
+        description: 状況に応じたアニメーションイラストが表示されること
+        setup:
+          state:
+            isOffline: true
+        assertions:
+          - type: element-exists
+            target: "#offline-illustration"
+          - type: element-attribute
+            target: "#offline-illustration"
+            attribute: "animation"
+            value: "playing"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: ネットワーク確認中にローディング表示が出ること
+        setup:
+          state:
+            networkCheckInProgress: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-attribute
+            target: "#retry-connection-button"
+            attribute: "loading"
+            value: "true"
+
+      - id: error-report-sending
+        name: エラー報告送信
+        description: エラー報告送信中に送信状態が表示されること
+        setup:
+          state:
+            errorReportSending: true
+        assertions:
+          - type: element-visible
+            target: "#sending-error-report"
+          - type: element-attribute
+            target: "#send-error-report-button"
+            attribute: "loading"
+            value: "true"
+
+      - id: error-report-sent
+        name: エラー報告送信完了
+        description: エラー報告送信完了後に完了メッセージが表示されること
+        setup:
+          state:
+            errorReportSent: true
+        assertions:
+          - type: element-visible
+            target: "#error-report-sent"
+          - type: element-text
+            target: "#error-report-sent-message"
+            value: "エラーレポートを送信しました。ご協力ありがとうございます。"
+
+  - id: error_reporting
+    name: エラー報告テスト
+    description: エラー報告機能の動作を検証
+    type: functional
+    cases:
+      - id: send-error-report
+        name: エラー報告送信
+        description: エラー報告ボタンをタップするとエラーレポートが送信されること
+        setup:
+          state:
+            errorType: "general_error"
+            errorCode: "500"
+            errorDetails: "Internal Server Error"
+          mocks:
+            - api:
+                endpoint: "/api/error/report"
+                method: "POST"
+                response:
+                  success: true
+        steps:
+          - action: press
+            target: "#send-error-report-button"
+        assertions:
+          - type: function-called
+            target: "sendErrorReport"
+            params:
+              errorType: "general_error"
+              errorCode: "500"
+          - type: state-change
+            target: "errorReportSending"
+            value: true
+
+      - id: error-report-form
+        name: エラー報告フォーム
+        description: 詳細なエラー報告フォームが表示され送信できること
+        setup:
+          state:
+            errorType: "general_error"
+            showErrorReportForm: false
+        steps:
+          - action: press
+            target: "#show-error-report-form-button"
+          - assertions:
+              - type: element-visible
+                target: "#error-report-form"
+              - type: element-exists
+                target: "#error-description-input"
+              - type: element-exists
+                target: "#reproduce-steps-input"
+              - type: element-exists
+                target: "#submit-error-report-button"
+          - action: input
+            target: "#error-description-input"
+            value: "アプリがフリーズしました"
+          - action: input
+            target: "#reproduce-steps-input"
+            value: "植物写真を撮影してアップロードしようとした時"
+          - action: press
+            target: "#submit-error-report-button"
+          - assertions:
+              - type: function-called
+                target: "sendDetailedErrorReport"
+              - type: state-change
+                target: "errorReportSending"
+                value: true
+
+accessibility:
+  - test: color-contrast
+    description: エラーメッセージとボタンのテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのエラー情報とボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: すべてのボタンとフォームがキーボードで操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

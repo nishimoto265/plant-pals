@@ -1,0 +1,65 @@
+id: bottom-tab-navigation
+type: BottomTabNavigator
+style:
+  height: 60
+  backgroundColor: "#FFFFFF"
+  borderTopWidth: 1
+  borderTopColor: "rgba(151, 188, 98, 0.2)"
+  shadowColor: "#000"
+  shadowOffset: { width: 0, height: -2 }
+  shadowOpacity: 0.05
+  shadowRadius: 3
+  elevation: 5
+
+screens:
+  - name: "Home"
+    component: "S04_home"
+    icon: "home-variant"
+    label: "ホーム"
+    
+  - name: "Timeline" 
+    component: "S05_timeline"
+    icon: "account-group"
+    label: "みんなの庭"
+    
+  - name: "BadgeCenter"
+    component: "S09_badge_center"
+    icon: "medal"
+    label: "バッジ"
+    
+  - name: "Profile"
+    component: "S07_profile"
+    icon: "account"
+    label: "マイページ"
+
+tabBarOptions:
+  activeColor: "#2C6E49" # 深緑（メインカラー）
+  inactiveColor: "#97BC62" # 若葉（サブカラー）
+  labelStyle:
+    fontFamily: "Noto Sans JP"
+    fontSize: 10
+  showLabel: true
+
+animations:
+  tabPress:
+    type: "spring"
+    scale: 1.2
+    duration: 200
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+    
+designNotes: |
+  - タイムライン(S05)は「みんなの庭」というラベルでSNS機能を提供
+  - すべてのタブにはアイコンとテキストラベルを表示
+  - タップ時に軽い弾むアニメーションでフィードバック
+  - アクティブなタブは深緑色、非アクティブタブは若葉色で表示
+  - 通知があるタブにはバッジを表示可能（実装時に追加） 

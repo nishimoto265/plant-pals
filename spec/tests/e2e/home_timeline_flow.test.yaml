@@ -1,0 +1,300 @@
+id: TE03_home_timeline_flow
+name: ホーム画面からタイムラインの閲覧・投稿フロー
+description: ユーザーがホーム画面から植物の状態確認とタイムラインでの投稿閲覧・投稿までの一連の流れをテスト
+
+steps:
+  - id: login
+    name: ログイン
+    description: テストユーザーでログイン
+    screen: S01_auth
+    actions:
+      - type: input
+        target: "#email-input"
+        value: "test@example.com"
+      - type: input
+        target: "#password-input"
+        value: "Password123!"
+      - type: press
+        target: "#login-button"
+    assertions:
+      - type: navigation
+        target: "S04_home"
+        timeout: 2000
+
+  - id: view_home
+    name: ホーム画面閲覧
+    description: ホーム画面で植物の状態確認
+    screen: S04_home
+    mocks:
+      - api:
+          endpoint: "/api/plants/list"
+          response:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                avatarUrl: "https://example.com/avatars/monstera123.png"
+                lastWatered: "2025-05-05T10:00:00Z"
+                needsWater: true
+                healthStatus: "healthy"
+              - id: "p789012"
+                name: "パキらん"
+                species: "pachira_aquatica"
+                avatarUrl: "https://example.com/avatars/pachira456.png"
+                lastWatered: "2025-05-08T09:30:00Z"
+                needsWater: false
+                healthStatus: "moderate"
+    actions:
+      - type: wait
+        duration: 1000
+    assertions:
+      - type: element-exists
+        target: "#plant-card-m123456"
+      - type: element-exists
+        target: "#plant-card-p789012"
+      - type: element-exists
+        target: "#water-badge-m123456"
+      - type: element-not-exists
+        target: "#water-badge-p789012"
+
+  - id: water_plant
+    name: 植物の水やり
+    description: 水が必要な植物に水やり
+    screen: S04_home
+    mocks:
+      - api:
+          endpoint: "/api/plants/water"
+          method: "POST"
+          response:
+            success: true
+            plantId: "m123456"
+            lastWatered: "2025-05-12T14:30:00Z"
+            nextWateringDate: "2025-05-19T14:30:00Z"
+    actions:
+      - type: press
+        target: "#water-button-m123456"
+    assertions:
+      - type: element-not-exists
+        target: "#water-badge-m123456"
+      - type: toast-message
+        message: "モンちゃんに水をあげました"
+
+  - id: navigate_to_timeline
+    name: タイムライン画面へ遷移
+    description: ホーム画面からタイムライン画面へ遷移
+    screen: S04_home
+    actions:
+      - type: press
+        target: "#timeline-button"
+    assertions:
+      - type: navigation
+        target: "S05_timeline"
+        timeout: 1000
+
+  - id: view_timeline
+    name: タイムライン閲覧
+    description: タイムラインで投稿を閲覧
+    screen: S05_timeline
+    mocks:
+      - api:
+          endpoint: "/api/posts/timeline"
+          response:
+            posts:
+              - id: "post123"
+                userId: "user456"
+                username: "植物好きさん"
+                avatarUrl: "https://example.com/users/user456.png"
+                plantId: "m654321"
+                plantName: "モンステラくん"
+                plantSpecies: "monstera_deliciosa"
+                imageUrl: "https://example.com/posts/post123.jpg"
+                content: "モンステラくんの新芽が出てきました！"
+                likeCount: 15
+                commentCount: 3
+                createdAt: "2025-05-10T10:00:00Z"
+              - id: "post789"
+                userId: "user012"
+                username: "ガーデナー"
+                avatarUrl: "https://example.com/users/user012.png"
+                plantId: "p654321"
+                plantName: "パキラさん"
+                plantSpecies: "pachira_aquatica"
+                imageUrl: "https://example.com/posts/post789.jpg"
+                content: "パキラさんが元気に育っています"
+                likeCount: 8
+                commentCount: 1
+                createdAt: "2025-05-09T15:30:00Z"
+    actions:
+      - type: wait
+        duration: 1000
+    assertions:
+      - type: element-exists
+        target: "#post-card-post123"
+      - type: element-exists
+        target: "#post-card-post789"
+
+  - id: like_post
+    name: 投稿にいいね
+    description: タイムラインの投稿にいいねをつける
+    screen: S05_timeline
+    mocks:
+      - api:
+          endpoint: "/api/posts/like"
+          method: "POST"
+          response:
+            success: true
+            postId: "post123"
+            likeCount: 16
+    actions:
+      - type: press
+        target: "#like-button-post123"
+    assertions:
+      - type: element-text
+        target: "#like-count-post123"
+        value: "16"
+      - type: element-attribute
+        target: "#like-button-post123"
+        attribute: "liked"
+        value: "true"
+
+  - id: view_post_detail
+    name: 投稿詳細表示
+    description: 投稿をタップして詳細を表示
+    screen: S05_timeline
+    mocks:
+      - api:
+          endpoint: "/api/posts/post123"
+          response:
+            post:
+              id: "post123"
+              userId: "user456"
+              username: "植物好きさん"
+              avatarUrl: "https://example.com/users/user456.png"
+              plantId: "m654321"
+              plantName: "モンステラくん"
+              plantSpecies: "monstera_deliciosa"
+              imageUrl: "https://example.com/posts/post123.jpg"
+              content: "モンステラくんの新芽が出てきました！"
+              likeCount: 16
+              commentCount: 3
+              createdAt: "2025-05-10T10:00:00Z"
+              isLiked: true
+              comments:
+                - id: "comment1"
+                  userId: "user789"
+                  username: "植物博士"
+                  avatarUrl: "https://example.com/users/user789.png"
+                  content: "素晴らしい成長ですね！"
+                  createdAt: "2025-05-10T11:05:00Z"
+                - id: "comment2"
+                  userId: "user234"
+                  username: "ガーデニング初心者"
+                  avatarUrl: "https://example.com/users/user234.png"
+                  content: "どのくらいの頻度で水やりしていますか？"
+                  createdAt: "2025-05-10T12:30:00Z"
+    actions:
+      - type: press
+        target: "#post-card-post123"
+    assertions:
+      - type: navigation
+        target: "PostDetail"
+        params:
+          postId: "post123"
+        timeout: 1000
+      - type: element-text
+        target: "#post-content"
+        value: "モンステラくんの新芽が出てきました！"
+      - type: element-exists
+        target: "#comment-list"
+      - type: element-count
+        target: ".comment-item"
+        count: 2
+
+  - id: add_comment
+    name: コメント追加
+    description: 投稿にコメントを追加
+    screen: PostDetail
+    mocks:
+      - api:
+          endpoint: "/api/posts/comment"
+          method: "POST"
+          response:
+            success: true
+            comment:
+              id: "comment3"
+              userId: "current-user"
+              username: "テストユーザー"
+              avatarUrl: "https://example.com/users/current-user.png"
+              content: "素敵な植物ですね！"
+              createdAt: "2025-05-12T14:45:00Z"
+    actions:
+      - type: input
+        target: "#comment-input"
+        value: "素敵な植物ですね！"
+      - type: press
+        target: "#submit-comment-button"
+    assertions:
+      - type: element-exists
+        target: "#comment-comment3"
+      - type: element-text
+        target: "#comment-content-comment3"
+        value: "素敵な植物ですね！"
+      - type: element-count
+        target: ".comment-item"
+        count: 3
+
+  - id: return_to_timeline
+    name: タイムラインに戻る
+    description: 詳細画面からタイムライン画面に戻る
+    screen: PostDetail
+    actions:
+      - type: press
+        target: "#back-button"
+    assertions:
+      - type: navigation
+        target: "S05_timeline"
+        timeout: 1000
+
+  - id: navigate_to_camera
+    name: カメラ画面へ遷移
+    description: 新しい投稿のためにカメラ画面へ遷移
+    screen: S05_timeline
+    actions:
+      - type: press
+        target: "#camera-button"
+    assertions:
+      - type: navigation
+        target: "S03_camera"
+        timeout: 1000
+
+  - id: return_to_home
+    name: ホームに戻る
+    description: ホーム画面に戻る
+    screen: S03_camera
+    actions:
+      - type: press
+        target: "#close-button"
+      - type: press
+        target: "#home-button"
+    assertions:
+      - type: navigation
+        target: "S04_home"
+        timeout: 1000
+
+device_coverage:
+  - os: iOS
+    version: "15.0"
+    device: "iPhone 12"
+  - os: Android
+    version: "12"
+    device: "Pixel 6"
+
+dependencies:
+  - type: api
+    services:
+      - plants
+      - posts
+      - users
+  - type: permission
+    permissions:
+      - camera 

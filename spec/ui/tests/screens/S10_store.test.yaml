@@ -1,0 +1,720 @@
+id: TS10_store
+name: ストア画面テスト
+target:
+  screen: S10_store
+  path: src/ui/screens/S10_store/StoreScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: ストア画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのストア画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/cart.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/sort.png
+            - asset: assets/icons/coins.png
+            - asset: assets/illustrations/empty_store.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#store-header"
+          - type: element-exists
+            target: "#item-categories"
+          - type: element-exists
+            target: "#item-grid"
+          - type: element-exists
+            target: "#user-balance"
+
+      - id: store-items-loaded
+        name: ストアアイテム読み込み
+        description: アイテムデータが読み込まれた状態でのストア画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/cart.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/sort.png
+            - asset: assets/icons/coins.png
+            - asset: assets/store/pot_terracotta.png
+            - asset: assets/store/pot_ceramic_blue.png
+            - asset: assets/store/pot_modern_white.png
+            - asset: assets/store/decoration_stones.png
+            - asset: assets/store/decoration_moss.png
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                description: "クラシックなテラコッタ素材の植木鉢"
+                imageUrl: "assets/store/pot_terracotta.png"
+                price: 200
+                category: "鉢"
+                isPopular: true
+                isNew: false
+                discountPercent: 0
+              - id: "item002"
+                name: "セラミック鉢（ブルー）"
+                description: "上質なセラミック素材のブルー鉢"
+                imageUrl: "assets/store/pot_ceramic_blue.png"
+                price: 500
+                category: "鉢"
+                isPopular: false
+                isNew: true
+                discountPercent: 0
+              - id: "item003"
+                name: "モダン鉢（ホワイト）"
+                description: "シンプルでモダンなデザインの白色鉢"
+                imageUrl: "assets/store/pot_modern_white.png"
+                price: 800
+                category: "鉢"
+                isPopular: true
+                isNew: false
+                discountPercent: 10
+              - id: "item004"
+                name: "装飾用小石"
+                description: "鉢の上に敷く装飾用の小石セット"
+                imageUrl: "assets/store/decoration_stones.png"
+                price: 150
+                category: "装飾"
+                isPopular: false
+                isNew: false
+                discountPercent: 0
+              - id: "item005"
+                name: "苔マット"
+                description: "鉢の表面を覆う自然な見た目の苔マット"
+                imageUrl: "assets/store/decoration_moss.png"
+                price: 300
+                category: "装飾"
+                isPopular: true
+                isNew: true
+                discountPercent: 0
+            userBalance: 1500
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#item-item001"
+          - type: element-exists
+            target: "#item-item005"
+          - type: element-count
+            target: ".store-item"
+            count: 5
+          - type: element-count
+            target: ".new-badge"
+            count: 2
+          - type: element-text
+            target: "#user-balance-amount"
+            value: "1,500"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: cart-navigation
+        name: カート画面遷移
+        description: カートボタンをタップするとカート画面に遷移すること
+        steps:
+          - action: press
+            target: "#cart-button"
+        assertions:
+          - type: navigation
+            route: "Cart"
+
+      - id: item-detail-navigation
+        name: アイテム詳細画面遷移
+        description: アイテムをタップするとアイテム詳細画面に遷移すること
+        setup:
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+        steps:
+          - action: press
+            target: "#item-item001"
+        assertions:
+          - type: navigation
+            route: "ItemDetail"
+            params:
+              itemId: "item001"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: filter-items
+        name: アイテムフィルター
+        description: フィルターボタンをタップするとフィルターダイアログが表示されること
+        steps:
+          - action: press
+            target: "#filter-button"
+        assertions:
+          - type: element-visible
+            target: "#filter-dialog"
+          - type: element-exists
+            target: "#filter-options"
+
+      - id: apply-filter
+        name: フィルター適用
+        description: フィルターを選択して適用すると結果が絞り込まれること
+        setup:
+          state:
+            filterDialogVisible: true
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                category: "鉢"
+              - id: "item004"
+                name: "装飾用小石"
+                category: "装飾"
+        steps:
+          - action: press
+            target: "#filter-category-鉢"
+          - action: press
+            target: "#apply-filter-button"
+        assertions:
+          - type: element-not-visible
+            target: "#filter-dialog"
+          - type: function-called
+            target: "filterItems"
+            params:
+              category: "鉢"
+          - type: element-exists
+            target: "#item-item001"
+          - type: element-not-exists
+            target: "#item-item004"
+          - type: element-text
+            target: "#active-filter"
+            value: "カテゴリー: 鉢"
+
+      - id: sort-items
+        name: アイテム並び替え
+        description: 並び替えボタンをタップすると並び替えダイアログが表示されること
+        steps:
+          - action: press
+            target: "#sort-button"
+        assertions:
+          - type: element-visible
+            target: "#sort-dialog"
+          - type: element-exists
+            target: "#sort-options"
+
+      - id: apply-sort
+        name: 並び替え適用
+        description: 並び替えオプションを選択して適用すると結果が並び替えられること
+        setup:
+          state:
+            sortDialogVisible: true
+          mocks:
+            - api:
+                endpoint: "/api/store/sort"
+                params:
+                  sortBy: "price"
+                  order: "asc"
+                response:
+                  items:
+                    - id: "item004"
+                      name: "装飾用小石"
+                      price: 150
+                    - id: "item001"
+                      name: "テラコッタ鉢"
+                      price: 200
+                    - id: "item005"
+                      name: "苔マット"
+                      price: 300
+        steps:
+          - action: press
+            target: "#sort-price-asc"
+          - action: press
+            target: "#apply-sort-button"
+        assertions:
+          - type: element-not-visible
+            target: "#sort-dialog"
+          - type: function-called
+            target: "sortItems"
+            params:
+              sortBy: "price"
+              order: "asc"
+          - type: element-text
+            target: "#active-sort"
+            value: "価格（安い順）"
+
+      - id: switch-category
+        name: カテゴリ切り替え
+        description: カテゴリタブをタップするとそのカテゴリのアイテムが表示されること
+        setup:
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                category: "鉢"
+              - id: "item004"
+                name: "装飾用小石"
+                category: "装飾"
+        steps:
+          - action: press
+            target: "#category-tab-装飾"
+        assertions:
+          - type: function-called
+            target: "filterItems"
+            params:
+              category: "装飾"
+          - type: element-attribute
+            target: "#category-tab-装飾"
+            attribute: "selected"
+            value: "true"
+          - type: element-not-exists
+            target: "#item-item001"
+          - type: element-exists
+            target: "#item-item004"
+
+      - id: add-to-cart
+        name: カートに追加
+        description: アイテムの「カートに追加」ボタンをタップするとカートに追加されること
+        setup:
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                price: 200
+            cartCount: 0
+        steps:
+          - action: press
+            target: "#add-to-cart-item001"
+        assertions:
+          - type: function-called
+            target: "addItemToCart"
+            params:
+              itemId: "item001"
+          - type: state-change
+            target: "cartCount"
+            value: 1
+          - type: element-text
+            target: "#cart-badge"
+            value: "1"
+          - type: toast-message
+            message: "テラコッタ鉢をカートに追加しました"
+
+  - id: buy_now
+    name: 即時購入テスト
+    description: 即時購入機能の動作を検証
+    type: functional
+    cases:
+      - id: buy-now-button
+        name: 即時購入ボタン
+        description: 「今すぐ購入」ボタンをタップすると購入確認ダイアログが表示されること
+        setup:
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                price: 200
+            userBalance: 1500
+            selectedItemId: "item001"
+        steps:
+          - action: press
+            target: "#buy-now-item001"
+        assertions:
+          - type: element-visible
+            target: "#purchase-confirmation-dialog"
+          - type: element-text
+            target: "#purchase-item-name"
+            value: "テラコッタ鉢"
+          - type: element-text
+            target: "#purchase-item-price"
+            value: "200 コイン"
+
+      - id: confirm-purchase
+        name: 購入確認
+        description: 購入確認ダイアログで確認すると購入処理が実行されること
+        setup:
+          state:
+            purchaseConfirmationVisible: true
+            selectedItemId: "item001"
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                price: 200
+            userBalance: 1500
+        mocks:
+          - api:
+              endpoint: "/api/store/purchase"
+              method: "POST"
+              params:
+                itemId: "item001"
+              response:
+                success: true
+                newBalance: 1300
+                purchasedItem:
+                  id: "item001"
+                  name: "テラコッタ鉢"
+        steps:
+          - action: press
+            target: "#confirm-purchase-button"
+        assertions:
+          - type: function-called
+            target: "purchaseItem"
+            params:
+              itemId: "item001"
+          - type: state-change
+            target: "userBalance"
+            value: 1300
+          - type: element-text
+            target: "#user-balance-amount"
+            value: "1,300"
+          - type: element-not-visible
+            target: "#purchase-confirmation-dialog"
+          - type: navigation
+            route: "PurchaseSuccess"
+            params:
+              itemId: "item001"
+
+      - id: cancel-purchase
+        name: 購入キャンセル
+        description: 購入確認ダイアログでキャンセルするとダイアログが閉じること
+        setup:
+          state:
+            purchaseConfirmationVisible: true
+            selectedItemId: "item001"
+        steps:
+          - action: press
+            target: "#cancel-purchase-button"
+        assertions:
+          - type: element-not-visible
+            target: "#purchase-confirmation-dialog"
+          - type: function-not-called
+            target: "purchaseItem"
+
+  - id: insufficient_balance
+    name: 残高不足テスト
+    description: コインが不足している場合の処理を検証
+    type: functional
+    cases:
+      - id: insufficient-balance-buy-now
+        name: 残高不足での購入
+        description: 残高不足の状態で「今すぐ購入」ボタンをタップするとエラーメッセージが表示されること
+        setup:
+          state:
+            items:
+              - id: "item003"
+                name: "モダン鉢（ホワイト）"
+                price: 800
+            userBalance: 500
+            selectedItemId: "item003"
+        steps:
+          - action: press
+            target: "#buy-now-item003"
+        assertions:
+          - type: element-visible
+            target: "#insufficient-balance-dialog"
+          - type: element-text
+            target: "#insufficient-balance-message"
+            value: "残高が不足しています"
+          - type: element-text
+            target: "#required-amount"
+            value: "800"
+          - type: element-text
+            target: "#current-balance"
+            value: "500"
+
+      - id: get-more-coins
+        name: コイン獲得画面遷移
+        description: 残高不足ダイアログで「コインを獲得」ボタンをタップするとコイン獲得画面に遷移すること
+        setup:
+          state:
+            insufficientBalanceDialogVisible: true
+        steps:
+          - action: press
+            target: "#get-more-coins-button"
+        assertions:
+          - type: navigation
+            route: "GetCoins"
+          - type: element-not-visible
+            target: "#insufficient-balance-dialog"
+
+      - id: close-insufficient-balance-dialog
+        name: 残高不足ダイアログ閉じる
+        description: 残高不足ダイアログの閉じるボタンをタップするとダイアログが閉じること
+        setup:
+          state:
+            insufficientBalanceDialogVisible: true
+        steps:
+          - action: press
+            target: "#close-dialog-button"
+        assertions:
+          - type: element-not-visible
+            target: "#insufficient-balance-dialog"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-items
+        name: アイテムなし
+        description: ストアアイテムが取得できない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            items: []
+        assertions:
+          - type: element-visible
+            target: "#empty-store"
+          - type: element-text
+            target: "#empty-store-title"
+            value: "現在、表示できるアイテムはありません"
+          - type: element-text
+            target: "#empty-store-message"
+            value: "しばらくしてから再度お試しください"
+
+      - id: no-filtered-items
+        name: フィルター結果なし
+        description: フィルター条件に合うアイテムがない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            activeFilter:
+              category: "肥料"
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                category: "鉢"
+              - id: "item004"
+                name: "装飾用小石"
+                category: "装飾"
+        assertions:
+          - type: element-visible
+            target: "#no-results"
+          - type: element-text
+            target: "#no-results-message"
+            value: "選択したフィルター条件に合うアイテムはありません"
+          - type: element-exists
+            target: "#clear-filter-button"
+
+      - id: clear-filter
+        name: フィルタークリア
+        description: フィルタークリアボタンをタップするとフィルターが解除されること
+        setup:
+          state:
+            activeFilter:
+              category: "肥料"
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                category: "鉢"
+              - id: "item004"
+                name: "装飾用小石"
+                category: "装飾"
+        steps:
+          - action: press
+            target: "#clear-filter-button"
+        assertions:
+          - type: function-called
+            target: "clearFilters"
+          - type: state-change
+            target: "activeFilter"
+            value: null
+          - type: element-exists
+            target: "#item-item001"
+          - type: element-exists
+            target: "#item-item004"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#item-grid"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load store items"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "ストアアイテムの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load store items"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadStoreItems"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: item_display
+    name: アイテム表示テスト
+    description: ストアアイテムの表示状態を検証
+    type: functional
+    cases:
+      - id: regular-item
+        name: 通常アイテム表示
+        description: 通常のストアアイテムが正しく表示されること
+        setup:
+          state:
+            items:
+              - id: "item001"
+                name: "テラコッタ鉢"
+                description: "クラシックなテラコッタ素材の植木鉢"
+                imageUrl: "assets/store/pot_terracotta.png"
+                price: 200
+                category: "鉢"
+                isPopular: false
+                isNew: false
+                discountPercent: 0
+        assertions:
+          - type: element-exists
+            target: "#item-item001"
+          - type: element-text
+            target: "#item-name-item001"
+            value: "テラコッタ鉢"
+          - type: element-text
+            target: "#item-price-item001"
+            value: "200"
+          - type: element-not-exists
+            target: "#new-badge-item001"
+          - type: element-not-exists
+            target: "#popular-badge-item001"
+          - type: element-not-exists
+            target: "#discount-badge-item001"
+
+      - id: new-item
+        name: 新着アイテム表示
+        description: 新着アイテムが正しく表示されること
+        setup:
+          state:
+            items:
+              - id: "item002"
+                name: "セラミック鉢（ブルー）"
+                price: 500
+                isNew: true
+        assertions:
+          - type: element-exists
+            target: "#item-item002"
+          - type: element-exists
+            target: "#new-badge-item002"
+          - type: element-text
+            target: "#new-badge-item002"
+            value: "NEW"
+
+      - id: popular-item
+        name: 人気アイテム表示
+        description: 人気アイテムが正しく表示されること
+        setup:
+          state:
+            items:
+              - id: "item003"
+                name: "モダン鉢（ホワイト）"
+                price: 800
+                isPopular: true
+        assertions:
+          - type: element-exists
+            target: "#item-item003"
+          - type: element-exists
+            target: "#popular-badge-item003"
+          - type: element-text
+            target: "#popular-badge-item003"
+            value: "人気"
+
+      - id: discounted-item
+        name: 割引アイテム表示
+        description: 割引アイテムが正しく表示されること
+        setup:
+          state:
+            items:
+              - id: "item003"
+                name: "モダン鉢（ホワイト）"
+                price: 800
+                originalPrice: 900
+                discountPercent: 10
+        assertions:
+          - type: element-exists
+            target: "#item-item003"
+          - type: element-exists
+            target: "#discount-badge-item003"
+          - type: element-text
+            target: "#discount-badge-item003"
+            value: "10%OFF"
+          - type: element-text
+            target: "#item-original-price-item003"
+            value: "900"
+          - type: element-has-class
+            target: "#item-original-price-item003"
+            className: "strikethrough"
+
+accessibility:
+  - test: color-contrast
+    description: アイテム名と価格のテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのアイテムと操作ボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: アイテムグリッドがキーボードで正しく操作できる
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

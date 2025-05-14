@@ -1,0 +1,259 @@
+id: S17_error_offline
+route: /error_offline
+name: ErrorOffline
+purpose: ネットワークエラー・オフライン状態の表示
+description: |
+  ネットワーク接続が切れたときやエラーが発生した際に表示される画面。
+  ユーザーにわかりやすい説明と解決策を提示し、再接続試行のオプションを提供します。
+  「ゆるふわBotanic Garden」テーマに沿った親しみやすいイラストと
+  励ましのメッセージで、ユーザーにポジティブな印象を与えます。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # メインコンテンツ
+      style:
+        flex: 1
+        justifyContent: center
+        alignItems: center
+        paddingHorizontal: 24
+
+components:
+  # ステータスバーの色設定
+  - id: status-bar
+    type: StatusBar
+    props:
+      backgroundColor: "#F2EFEA"
+      barStyle: "dark-content"
+  
+  # コンテンツコンテナ
+  - id: content-container
+    type: View
+    style:
+      alignItems: center
+      justifyContent: center
+      paddingBottom: 40 # キーボードが出たときに上にずらす
+    children:
+      # イラスト
+      - id: illustration-container
+        type: View
+        style:
+          marginBottom: 40
+          alignItems: center
+        children:
+          - id: main-illustration
+            type: Image
+            style:
+              width: 240
+              height: 240
+              marginBottom: 16
+            props:
+              source: "errorType === 'offline' ? 'assets/illustrations/offline_plant.png' : 'assets/illustrations/error_plant.png'"
+              resizeMode: "contain"
+          - id: small-decoration
+            type: Lottie
+            style:
+              width: 80
+              height: 80
+              position: "absolute"
+              bottom: 0
+              right: -20
+            props:
+              source: "errorType === 'offline' ? 'assets/animations/wifi_searching.json' : 'assets/animations/question_mark.json'"
+              autoPlay: true
+              loop: true
+
+      # エラータイトル
+      - id: error-title
+        type: Text
+        text: "errorType === 'offline' ? 'インターネット接続がありません' : '問題が発生しました'"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 24
+          color: "#333333"
+          textAlign: "center"
+          marginBottom: 12
+      
+      # エラーメッセージ
+      - id: error-message
+        type: Text
+        text: "errorType === 'offline' ? 'インターネット接続を確認してください。植物たちはあなたの戻りを待っています！' : errorMessage || '予期せぬエラーが発生しました。しばらくしてからもう一度お試しください。'"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 16
+          color: "#666666"
+          textAlign: "center"
+          marginBottom: 32
+          lineHeight: 24
+
+      # 再試行ボタン
+      - id: retry-button
+        type: TouchableOpacity
+        style:
+          backgroundColor: "#2C6E49"
+          paddingVertical: 14
+          paddingHorizontal: 32
+          borderRadius: 24
+          marginBottom: 16
+          minWidth: 200
+          alignItems: "center"
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 3
+          elevation: 2
+        onPress: "handleRetry"
+        children:
+          - id: retry-text
+            type: Text
+            text: "もう一度試す"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#FFFFFF"
+
+      # オフラインモード（オフラインエラーのみ表示）
+      - id: offline-mode-button
+        type: TouchableOpacity
+        style:
+          backgroundColor: "transparent"
+          paddingVertical: 12
+          paddingHorizontal: 24
+          borderWidth: 2
+          borderColor: "#97BC62" # 若葉色（サブカラー）
+          borderRadius: 24
+          minWidth: 200
+          alignItems: "center"
+          display: "errorType === 'offline' ? 'flex' : 'none'"
+        onPress: "enterOfflineMode"
+        children:
+          - id: offline-text
+            type: Text
+            text: "オフラインモードで続ける"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  # ヒントセクション
+  - id: tips-container
+    type: View
+    style:
+      position: "absolute"
+      bottom: 40
+      left: 24
+      right: 24
+      alignItems: "center"
+    children:
+      - id: tips-header
+        type: Text
+        text: "ヒント:"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#333333"
+          marginBottom: 8
+      - id: tips-list
+        type: View
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          padding: 16
+          width: "100%"
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.05
+          shadowRadius: 3
+          elevation: 1
+        children:
+          - id: tip-1
+            type: View
+            style:
+              flexDirection: "row"
+              alignItems: "center"
+              marginBottom: 8
+            children:
+              - id: bullet-1
+                type: View
+                style:
+                  width: 6
+                  height: 6
+                  borderRadius: 3
+                  backgroundColor: "#97BC62"
+                  marginRight: 8
+                  marginTop: 2
+              - id: tip-text-1
+                type: Text
+                text: "Wi-Fi接続を確認してください"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+          - id: tip-2
+            type: View
+            style:
+              flexDirection: "row"
+              alignItems: "center"
+              marginBottom: 8
+            children:
+              - id: bullet-2
+                type: View
+                style:
+                  width: 6
+                  height: 6
+                  borderRadius: 3
+                  backgroundColor: "#97BC62"
+                  marginRight: 8
+                  marginTop: 2
+              - id: tip-text-2
+                type: Text
+                text: "機内モードがオフになっていることを確認してください"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+          - id: tip-3
+            type: View
+            style:
+              flexDirection: "row"
+              alignItems: "center"
+            children:
+              - id: bullet-3
+                type: View
+                style:
+                  width: 6
+                  height: 6
+                  borderRadius: 3
+                  backgroundColor: "#97BC62"
+                  marginRight: 8
+                  marginTop: 2
+              - id: tip-text-3
+                type: Text
+                text: "モバイルデータ通信が有効になっていることを確認してください"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - ユーザーフレンドリーな植物イラストでエラー画面でもポジティブな印象を与える
+  - オフライン状態に合わせたアニメーションでインターネット探索中を表現
+  - エラーの種類に応じてメッセージとイラストを変える（オフライン・一般エラー）
+  - オフラインモード機能を提供し、ネット環境がなくても一部機能を使えるようにする
+  - 接続問題を解決するための具体的なヒントをわかりやすく提示
+  - 全体を「ゆるふわ」テーマに沿った優しい色使いと丸みを帯びたデザインで統一

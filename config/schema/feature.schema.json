@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plant Pals Feature Flags Schema",
+  "description": "JSONスキーマ定義：機能フラグ、ロールアウト条件、A/Bテスト設定",
+  "type": "object",
+  "required": ["version", "features"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "機能フラグ定義のバージョン",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["enabled", "description"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "機能が有効かどうか（グローバル設定）"
+          },
+          "description": {
+            "type": "string",
+            "description": "機能の説明"
+          },
+          "owner": {
+            "type": "string",
+            "description": "機能の所有者/担当チーム"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["core", "experimental", "premium", "beta", "alpha"],
+            "description": "機能カテゴリ"
+          },
+          "rollout": {
+            "type": "object",
+            "description": "段階的ロールアウト設定",
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "enum": ["all", "percentage", "userIds", "userGroups", "countries", "versions"],
+                "description": "ロールアウト戦略"
+              },
+              "percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "ユーザーの何%に有効化するか"
+              },
+              "userIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "機能へのアクセスを許可する特定のユーザーID"
+              },
+              "userGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["admin", "premium", "beta_tester", "internal"]
+                },
+                "description": "機能へのアクセスを許可するユーザーグループ"
+              },
+              "countries": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$"
+                },
+                "description": "機能を有効にする国コード（ISO 2文字）"
+              },
+              "minVersion": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                "description": "機能に必要な最小アプリバージョン"
+              }
+            }
+          },
+          "abTest": {
+            "type": "object",
+            "description": "A/Bテスト設定",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "A/Bテストが有効かどうか"
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "weight"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "バリアントの識別子"
+                    },
+                    "weight": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "バリアントの重み（合計が1になる必要あり）"
+                    },
+                    "config": {
+                      "type": "object",
+                      "description": "バリアント固有の設定"
+                    }
+                  }
+                },
+                "minItems": 2
+              },
+              "metrics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "A/Bテストで測定するメトリクス"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date-time",
+                "description": "テスト開始日時"
+              },
+              "endDate": {
+                "type": "string",
+                "format": "date-time",
+                "description": "テスト終了予定日時"
+              }
+            }
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "この機能が依存する他の機能フラグ"
+          },
+          "killSwitch": {
+            "type": "boolean",
+            "default": false,
+            "description": "緊急無効化スイッチ（trueの場合、他の設定に関わらず機能を無効化）"
+          }
+        }
+      }
+    }
+  }
+}

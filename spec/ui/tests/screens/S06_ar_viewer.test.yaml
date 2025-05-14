@@ -1,0 +1,349 @@
+id: TS06_ar_viewer
+name: ARビューワー画面テスト
+target:
+  screen: S06_ar_viewer
+  path: src/ui/screens/S06_ar_viewer/ARViewerScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: ARビューワー画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのARビューワー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/capture.png
+            - asset: assets/icons/switch_camera.png
+            - asset: assets/models/plant_pot.glb
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#ar-scene-container"
+          - type: element-exists
+            target: "#ar-controls"
+          - type: element-exists
+            target: "#capture-button"
+
+      - id: plant-model-loaded
+        name: 植物モデル読み込み
+        description: 3Dモデルが読み込まれた状態でのARビューワー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/capture.png
+            - asset: assets/icons/switch_camera.png
+            - asset: assets/models/plant_pot.glb
+            - asset: assets/models/monstera.glb
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantName: "モンちゃん"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#plant-model-monstera"
+          - type: element-exists
+            target: "#plant-name-label"
+          - type: element-text
+            target: "#plant-name-label"
+            value: "モンちゃん"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+  - id: ar_interaction
+    name: AR操作テスト
+    description: ARモードでの操作を検証
+    type: interaction
+    cases:
+      - id: place-plant
+        name: 植物配置
+        description: タップした場所に植物が配置されること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+            arSessionInitialized: true
+        steps:
+          - action: press
+            target: "#ar-scene-container"
+            x: 250
+            y: 400
+        assertions:
+          - type: function-called
+            target: "placePlantModel"
+            params:
+              x: 250
+              y: 400
+          - type: element-exists
+            target: "#placed-model-monstera"
+          - type: state-change
+            target: "plantPlaced"
+            value: true
+
+      - id: move-plant
+        name: 植物移動
+        description: 配置済みの植物をドラッグで移動できること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+            arSessionInitialized: true
+            plantPlaced: true
+        steps:
+          - action: press-and-move
+            target: "#placed-model-monstera"
+            fromX: 250
+            fromY: 400
+            toX: 300
+            toY: 450
+        assertions:
+          - type: function-called
+            target: "movePlantModel"
+          - type: state-change
+            target: "modelPosition"
+            operator: "not-equal"
+            value: { x: 250, y: 400 }
+            
+      - id: scale-plant
+        name: 植物拡大縮小
+        description: ピンチジェスチャーで植物のサイズを変更できること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+            arSessionInitialized: true
+            plantPlaced: true
+        steps:
+          - action: pinch
+            target: "#placed-model-monstera"
+            scale: 1.5
+        assertions:
+          - type: function-called
+            target: "scalePlantModel"
+          - type: state-change
+            target: "modelScale"
+            operator: "greater-than"
+            value: 1.0
+
+      - id: rotate-plant
+        name: 植物回転
+        description: 二本指回転ジェスチャーで植物を回転できること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+            arSessionInitialized: true
+            plantPlaced: true
+        steps:
+          - action: rotate
+            target: "#placed-model-monstera"
+            angle: 45
+        assertions:
+          - type: function-called
+            target: "rotatePlantModel"
+          - type: state-change
+            target: "modelRotation"
+            operator: "not-equal"
+            value: 0
+
+  - id: camera_controls
+    name: カメラ制御テスト
+    description: ARカメラの操作機能を検証
+    type: functional
+    cases:
+      - id: switch-camera
+        name: カメラ切り替え
+        description: カメラ切り替えボタンで前面/背面カメラを切り替えられること
+        setup:
+          state:
+            arSessionInitialized: true
+            currentCamera: "back"
+        steps:
+          - action: press
+            target: "#switch-camera-button"
+        assertions:
+          - type: function-called
+            target: "toggleCamera"
+          - type: state-change
+            target: "currentCamera"
+            value: "front"
+            
+      - id: capture-screen
+        name: 画面キャプチャ
+        description: キャプチャボタンで現在のAR表示をキャプチャーできること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: true
+            arSessionInitialized: true
+            plantPlaced: true
+        steps:
+          - action: press
+            target: "#capture-button"
+        assertions:
+          - type: function-called
+            target: "captureARScene"
+          - type: element-visible
+            target: "#capture-preview"
+          - type: state-change
+            target: "captureComplete"
+            value: true
+
+  - id: ar_session
+    name: ARセッション管理テスト
+    description: ARセッションの状態管理を検証
+    type: functional
+    cases:
+      - id: ar-initialization
+        name: AR初期化
+        description: 画面表示時にARセッションが正しく初期化されること
+        assertions:
+          - type: function-called
+            target: "initializeARSession"
+          - type: state-change
+            target: "arSessionInitialized"
+            value: true
+
+      - id: surface-detection
+        name: 平面検出
+        description: ARセッションが平面を正しく検出できること
+        setup:
+          state:
+            arSessionInitialized: true
+        steps:
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: function-called
+            target: "onPlaneDetected"
+          - type: element-visible
+            target: "#plane-indicator"
+          - type: state-change
+            target: "planeDetected"
+            value: true
+
+      - id: lighting-estimation
+        name: 照明推定
+        description: ARシーンの照明が環境に基づいて調整されること
+        setup:
+          state:
+            arSessionInitialized: true
+            planeDetected: true
+        assertions:
+          - type: function-called
+            target: "updateLighting"
+          - type: state-exists
+            target: "lightingIntensity"
+
+  - id: error_handling
+    name: エラー処理テスト
+    description: エラー状態の処理を検証
+    type: functional
+    cases:
+      - id: ar-not-supported
+        name: ARサポート外
+        description: デバイスがARをサポートしていない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            arSupported: false
+        assertions:
+          - type: element-visible
+            target: "#ar-not-supported"
+          - type: element-text
+            target: "#ar-error-message"
+            value: "お使いのデバイスはARに対応していません"
+
+      - id: model-load-error
+        name: モデル読み込みエラー
+        description: 3Dモデルの読み込みに失敗した場合に適切なメッセージが表示されること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: false
+            modelLoadError: true
+        assertions:
+          - type: element-visible
+            target: "#model-load-error"
+          - type: element-text
+            target: "#model-error-message"
+            value: "3Dモデルの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-load-button"
+
+      - id: retry-model-load
+        name: モデル再読み込み
+        description: 再試行ボタンでモデルを再読み込みできること
+        setup:
+          state:
+            selectedPlantId: "m123456"
+            selectedPlantModel: "monstera"
+            modelLoaded: false
+            modelLoadError: true
+        steps:
+          - action: press
+            target: "#retry-load-button"
+        assertions:
+          - type: function-called
+            target: "loadPlantModel"
+            params:
+              modelName: "monstera"
+          - type: element-visible
+            target: "#loading-model-indicator"
+
+accessibility:
+  - test: color-contrast
+    description: ARコントロールボタンのコントラストが適切である
+  - test: screen-reader
+    description: すべてのARコントロールボタンが音声読み上げに対応している
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone 12", "iPhone 13 Pro", "iPhone 14 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 7", "Samsung Galaxy S22", "Samsung Galaxy S23 Ultra"]
+  - type: tablet
+    os: iOS
+    models: ["iPad Pro 11-inch", "iPad Pro 12.9-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S8"] 

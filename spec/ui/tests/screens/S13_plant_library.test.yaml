@@ -1,0 +1,696 @@
+id: TS13_plant_library
+name: 植物図鑑画面テスト
+target:
+  screen: S13_plant_library
+  path: src/ui/screens/S13_plant_library/PlantLibraryScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: 植物図鑑画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態での植物図鑑画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/search.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/tab_discovered.png
+            - asset: assets/icons/tab_all.png
+            - asset: assets/icons/tab_favorite.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#library-header"
+          - type: element-exists
+            target: "#search-bar"
+          - type: element-exists
+            target: "#filter-button"
+          - type: element-exists
+            target: "#library-tabs"
+          - type: element-exists
+            target: "#plant-grid"
+
+      - id: plants-loaded
+        name: 植物データ読み込み
+        description: 植物データが読み込まれた状態での植物図鑑画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/search.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/tab_discovered.png
+            - asset: assets/icons/tab_all.png
+            - asset: assets/icons/tab_favorite.png
+            - asset: assets/plants/monstera_deliciosa.jpg
+            - asset: assets/plants/ficus_lyrata.jpg
+            - asset: assets/plants/snake_plant.jpg
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                scientificName: "Monstera deliciosa"
+                imageUrl: "assets/plants/monstera_deliciosa.jpg"
+                discovered: true
+                favorite: true
+                rarity: "common"
+                category: "観葉植物"
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                scientificName: "Ficus lyrata"
+                imageUrl: "assets/plants/ficus_lyrata.jpg"
+                discovered: true
+                favorite: false
+                rarity: "uncommon"
+                category: "観葉植物"
+              - id: "plant003"
+                name: "サンスベリア"
+                scientificName: "Sansevieria trifasciata"
+                imageUrl: "assets/plants/snake_plant.jpg"
+                discovered: true
+                favorite: false
+                rarity: "common"
+                category: "多肉植物"
+            currentTab: "discovered"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-exists
+            target: "#plant-plant002"
+          - type: element-exists
+            target: "#plant-plant003"
+          - type: element-count
+            target: ".plant-card"
+            count: 3
+          - type: element-text
+            target: "#plant-name-plant001"
+            value: "モンステラ"
+          - type: element-attribute
+            target: "#plant-image-plant001"
+            attribute: "src"
+            value: "assets/plants/monstera_deliciosa.jpg"
+          - type: element-exists
+            target: "#favorite-icon-plant001"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: plant-detail-navigation
+        name: 植物詳細画面遷移
+        description: 植物カードをタップすると植物詳細画面に遷移すること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+        steps:
+          - action: press
+            target: "#plant-plant001"
+        assertions:
+          - type: navigation
+            route: "PlantDetail"
+          - type: navigation-params
+            key: "plantId"
+            value: "plant001"
+
+  - id: tab_switching
+    name: タブ切り替えテスト
+    description: タブ切り替えの動作を検証
+    type: interaction
+    cases:
+      - id: switch-to-all-tab
+        name: 全植物タブ切り替え
+        description: 「すべて」タブをタップするとすべての植物（未発見含む）が表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                discovered: true
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                discovered: true
+              - id: "plant004"
+                name: "パキラ"
+                discovered: false
+                imageUrl: "assets/plants/unknown.jpg"
+            currentTab: "discovered"
+        steps:
+          - action: press
+            target: "#tab-all"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "all"
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-exists
+            target: "#plant-plant002"
+          - type: element-exists
+            target: "#plant-plant004"
+          - type: element-attribute
+            target: "#plant-image-plant004"
+            attribute: "src"
+            value: "assets/plants/unknown.jpg"
+          - type: element-has-class
+            target: "#plant-name-plant004"
+            className: "undiscovered-name"
+
+      - id: switch-to-favorites-tab
+        name: お気に入りタブ切り替え
+        description: 「お気に入り」タブをタップするとお気に入り登録した植物のみが表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                discovered: true
+                favorite: true
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                discovered: true
+                favorite: false
+            currentTab: "discovered"
+        steps:
+          - action: press
+            target: "#tab-favorite"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "favorite"
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-not-exists
+            target: "#plant-plant002"
+          - type: element-count
+            target: ".plant-card"
+            count: 1
+
+      - id: switch-to-discovered-tab
+        name: 発見済みタブ切り替え
+        description: 「発見済み」タブをタップすると発見済みの植物のみが表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                discovered: true
+              - id: "plant004"
+                name: "パキラ"
+                discovered: false
+            currentTab: "all"
+        steps:
+          - action: press
+            target: "#tab-discovered"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "discovered"
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-not-exists
+            target: "#plant-plant004"
+          - type: element-count
+            target: ".plant-card"
+            count: 1
+
+  - id: search_and_filter
+    name: 検索とフィルターテスト
+    description: 植物検索とフィルタリングの動作を検証
+    type: interaction
+    cases:
+      - id: search-plants
+        name: 植物検索
+        description: 検索ボックスに入力すると植物がフィルタリングされること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+              - id: "plant002"
+                name: "フィカス・リラータ"
+              - id: "plant003"
+                name: "サンスベリア"
+        steps:
+          - action: input
+            target: "#search-input"
+            value: "モンス"
+        assertions:
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-not-exists
+            target: "#plant-plant002"
+          - type: element-not-exists
+            target: "#plant-plant003"
+          - type: element-count
+            target: ".plant-card"
+            count: 1
+
+      - id: clear-search
+        name: 検索クリア
+        description: 検索ボックスのクリアボタンをタップすると検索がクリアされること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+              - id: "plant002"
+                name: "フィカス・リラータ"
+            searchText: "モンス"
+        steps:
+          - action: press
+            target: "#clear-search-button"
+        assertions:
+          - type: element-attribute
+            target: "#search-input"
+            attribute: "value"
+            value: ""
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-exists
+            target: "#plant-plant002"
+          - type: element-count
+            target: ".plant-card"
+            count: 2
+
+      - id: filter-dialog
+        name: フィルターダイアログ
+        description: フィルターボタンをタップするとフィルターダイアログが表示されること
+        steps:
+          - action: press
+            target: "#filter-button"
+        assertions:
+          - type: element-visible
+            target: "#filter-dialog"
+          - type: element-exists
+            target: "#rarity-filter"
+          - type: element-exists
+            target: "#category-filter"
+
+      - id: apply-filter
+        name: フィルター適用
+        description: フィルターを選択して適用すると結果が絞り込まれること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                category: "観葉植物"
+              - id: "plant003"
+                name: "サンスベリア"
+                category: "多肉植物"
+            filterDialogVisible: true
+        steps:
+          - action: press
+            target: "#category-多肉植物"
+          - action: press
+            target: "#apply-filter-button"
+        assertions:
+          - type: element-not-visible
+            target: "#filter-dialog"
+          - type: state-change
+            target: "activeFilters.category"
+            value: "多肉植物"
+          - type: element-not-exists
+            target: "#plant-plant001"
+          - type: element-exists
+            target: "#plant-plant003"
+          - type: element-count
+            target: ".plant-card"
+            count: 1
+          - type: element-text
+            target: "#active-filter-label"
+            value: "カテゴリー: 多肉植物"
+
+      - id: clear-filters
+        name: フィルタークリア
+        description: フィルタークリアボタンをタップするとフィルターが解除されること
+        setup:
+          state:
+            activeFilters:
+              category: "多肉植物"
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                category: "観葉植物"
+              - id: "plant003"
+                name: "サンスベリア"
+                category: "多肉植物"
+        steps:
+          - action: press
+            target: "#clear-filters-button"
+        assertions:
+          - type: state-change
+            target: "activeFilters"
+            value: {}
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-exists
+            target: "#plant-plant003"
+          - type: element-count
+            target: ".plant-card"
+            count: 2
+          - type: element-not-exists
+            target: "#active-filter-label"
+
+  - id: favorite_toggle
+    name: お気に入りトグルテスト
+    description: お気に入り登録・解除の動作を検証
+    type: interaction
+    cases:
+      - id: add-to-favorites
+        name: お気に入り登録
+        description: お気に入りアイコンをタップすると植物がお気に入りに登録されること
+        setup:
+          state:
+            plants:
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                favorite: false
+        steps:
+          - action: press
+            target: "#favorite-toggle-plant002"
+        assertions:
+          - type: function-called
+            target: "toggleFavorite"
+            params:
+              plantId: "plant002"
+              favorite: true
+          - type: state-change
+            target: "plants[0].favorite"
+            value: true
+          - type: element-attribute
+            target: "#favorite-icon-plant002"
+            attribute: "filled"
+            value: "true"
+          - type: toast-message
+            message: "お気に入りに追加しました"
+
+      - id: remove-from-favorites
+        name: お気に入り解除
+        description: 登録済みお気に入りアイコンをタップするとお気に入りが解除されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                favorite: true
+        steps:
+          - action: press
+            target: "#favorite-toggle-plant001"
+        assertions:
+          - type: function-called
+            target: "toggleFavorite"
+            params:
+              plantId: "plant001"
+              favorite: false
+          - type: state-change
+            target: "plants[0].favorite"
+            value: false
+          - type: element-attribute
+            target: "#favorite-icon-plant001"
+            attribute: "filled"
+            value: "false"
+          - type: toast-message
+            message: "お気に入りから削除しました"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-plants
+        name: データなし
+        description: 植物データがない場合にメッセージが表示されること
+        setup:
+          state:
+            plants: []
+            loading: false
+        assertions:
+          - type: element-visible
+            target: "#empty-library"
+          - type: element-text
+            target: "#empty-library-title"
+            value: "植物がありません"
+          - type: element-text
+            target: "#empty-library-message"
+            value: "カメラで植物を撮影して、植物図鑑を充実させましょう"
+
+      - id: no-search-results
+        name: 検索結果なし
+        description: 検索結果がない場合にメッセージが表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+              - id: "plant002"
+                name: "フィカス・リラータ"
+            searchText: "バラ"
+        assertions:
+          - type: element-visible
+            target: "#no-search-results"
+          - type: element-text
+            target: "#no-search-results-message"
+            value: "「バラ」に一致する植物は見つかりませんでした"
+          - type: element-exists
+            target: "#clear-search-button"
+
+      - id: no-filtered-results
+        name: フィルター結果なし
+        description: フィルター条件に合う植物がない場合にメッセージが表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                category: "観葉植物"
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                category: "観葉植物"
+            activeFilters:
+              category: "多肉植物"
+        assertions:
+          - type: element-visible
+            target: "#no-filter-results"
+          - type: element-text
+            target: "#no-filter-results-message"
+            value: "選択したフィルター条件に合う植物はありません"
+          - type: element-exists
+            target: "#clear-filters-button"
+
+      - id: no-favorites
+        name: お気に入りなし
+        description: お気に入りタブで登録がない場合にメッセージが表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                favorite: false
+              - id: "plant002"
+                name: "フィカス・リラータ"
+                favorite: false
+            currentTab: "favorite"
+        assertions:
+          - type: element-visible
+            target: "#no-favorites"
+          - type: element-text
+            target: "#no-favorites-message"
+            value: "お気に入りに登録された植物がありません"
+          - type: element-text
+            target: "#no-favorites-hint"
+            value: "ハートアイコンをタップして植物をお気に入りに登録できます"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#plant-grid"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load plant data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "植物データの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load plant data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadPlantData"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: plant_card_display
+    name: 植物カード表示テスト
+    description: 植物カードの表示状態を検証
+    type: functional
+    cases:
+      - id: discovered-plant
+        name: 発見済み植物表示
+        description: 発見済み植物が正しく表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant001"
+                name: "モンステラ"
+                scientificName: "Monstera deliciosa"
+                imageUrl: "assets/plants/monstera_deliciosa.jpg"
+                discovered: true
+                favorite: false
+                rarity: "common"
+        assertions:
+          - type: element-exists
+            target: "#plant-plant001"
+          - type: element-text
+            target: "#plant-name-plant001"
+            value: "モンステラ"
+          - type: element-text
+            target: "#plant-scientific-name-plant001"
+            value: "Monstera deliciosa"
+          - type: element-attribute
+            target: "#plant-image-plant001"
+            attribute: "src"
+            value: "assets/plants/monstera_deliciosa.jpg"
+          - type: element-not-has-class
+            target: "#plant-card-plant001"
+            className: "undiscovered"
+
+      - id: undiscovered-plant
+        name: 未発見植物表示
+        description: 未発見植物が正しく表示されること（シルエットなど）
+        setup:
+          state:
+            plants:
+              - id: "plant004"
+                name: "???"
+                scientificName: "???"
+                originalName: "パキラ"
+                originalScientificName: "Pachira aquatica"
+                imageUrl: "assets/plants/unknown.jpg"
+                originalImageUrl: "assets/plants/pachira.jpg"
+                discovered: false
+                rarity: "uncommon"
+            currentTab: "all"
+        assertions:
+          - type: element-exists
+            target: "#plant-plant004"
+          - type: element-text
+            target: "#plant-name-plant004"
+            value: "???"
+          - type: element-not-text
+            target: "#plant-name-plant004"
+            value: "パキラ"
+          - type: element-attribute
+            target: "#plant-image-plant004"
+            attribute: "src"
+            value: "assets/plants/unknown.jpg"
+          - type: element-has-class
+            target: "#plant-card-plant004"
+            className: "undiscovered"
+
+      - id: rare-plant
+        name: レア植物表示
+        description: レア植物が適切な装飾で表示されること
+        setup:
+          state:
+            plants:
+              - id: "plant005"
+                name: "モンキーリーフ"
+                rarity: "rare"
+                discovered: true
+        assertions:
+          - type: element-exists
+            target: "#plant-plant005"
+          - type: element-attribute
+            target: "#plant-card-plant005"
+            attribute: "data-rarity"
+            value: "rare"
+          - type: element-exists
+            target: "#rarity-badge-plant005"
+          - type: element-text
+            target: "#rarity-badge-plant005"
+            value: "レア"
+
+accessibility:
+  - test: color-contrast
+    description: 植物名と科学名のテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての植物カードと操作ボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: タブパネルと植物カードがキーボード操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

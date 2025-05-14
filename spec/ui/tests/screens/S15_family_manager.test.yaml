@@ -1,0 +1,707 @@
+id: TS15_family_manager
+name: ファミリーマネージャー画面テスト
+target:
+  screen: S15_family_manager
+  path: src/ui/screens/S15_family_manager/FamilyManagerScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: ファミリーマネージャー画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのファミリーマネージャー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/add_member.png
+            - asset: assets/icons/share.png
+            - asset: assets/icons/settings.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#family-header"
+          - type: element-exists
+            target: "#family-members-list"
+          - type: element-exists
+            target: "#add-member-button"
+          - type: element-exists
+            target: "#family-settings-button"
+
+      - id: family-loaded
+        name: ファミリーデータ読み込み
+        description: ファミリーデータが読み込まれた状態でのファミリーマネージャー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/add_member.png
+            - asset: assets/icons/share.png
+            - asset: assets/icons/settings.png
+            - asset: assets/icons/crown.png
+            - asset: assets/avatars/avatar1.png
+            - asset: assets/avatars/avatar2.png
+            - asset: assets/avatars/avatar3.png
+          state:
+            family:
+              id: "family001"
+              name: "緑の守り人"
+              inviteCode: "GREEN123"
+              createdAt: "2025-05-01T10:00:00Z"
+              members:
+                - id: "member001"
+                  userId: "user001"
+                  name: "山田太郎"
+                  avatarUrl: "assets/avatars/avatar1.png"
+                  role: "owner"
+                  joinedAt: "2025-05-01T10:00:00Z"
+                  isCurrentUser: true
+                  plantCount: 5
+                - id: "member002"
+                  userId: "user002"
+                  name: "佐藤花子"
+                  avatarUrl: "assets/avatars/avatar2.png"
+                  role: "member"
+                  joinedAt: "2025-05-02T14:30:00Z"
+                  isCurrentUser: false
+                  plantCount: 3
+                - id: "member003"
+                  userId: "user003"
+                  name: "鈴木一郎"
+                  avatarUrl: "assets/avatars/avatar3.png"
+                  role: "member"
+                  joinedAt: "2025-05-03T09:15:00Z"
+                  isCurrentUser: false
+                  plantCount: 2
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#member-member001"
+          - type: element-exists
+            target: "#member-member002"
+          - type: element-exists
+            target: "#member-member003"
+          - type: element-count
+            target: ".member-item"
+            count: 3
+          - type: element-text
+            target: "#family-name"
+            value: "緑の守り人"
+          - type: element-text
+            target: "#invite-code"
+            value: "GREEN123"
+          - type: element-text
+            target: "#member-name-member001"
+            value: "山田太郎"
+          - type: element-exists
+            target: "#owner-badge-member001"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: member-profile-navigation
+        name: メンバープロフィール画面遷移
+        description: メンバーアイテムをタップするとメンバーのプロフィール画面に遷移すること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member002"
+                  userId: "user002"
+                  isCurrentUser: false
+        steps:
+          - action: press
+            target: "#member-member002"
+        assertions:
+          - type: navigation
+            route: "MemberProfile"
+          - type: navigation-params
+            key: "memberId"
+            value: "member002"
+          - type: navigation-params
+            key: "userId"
+            value: "user002"
+
+      - id: add-member-navigation
+        name: メンバー追加画面遷移
+        description: メンバー追加ボタンをタップするとメンバー追加画面に遷移すること
+        steps:
+          - action: press
+            target: "#add-member-button"
+        assertions:
+          - type: navigation
+            route: "AddFamilyMember"
+
+      - id: settings-navigation
+        name: ファミリー設定画面遷移
+        description: 設定ボタンをタップするとファミリー設定画面に遷移すること
+        steps:
+          - action: press
+            target: "#family-settings-button"
+        assertions:
+          - type: navigation
+            route: "FamilySettings"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: invite-code-copy
+        name: 招待コードコピー
+        description: 招待コードをタップするとコードがクリップボードにコピーされること
+        setup:
+          state:
+            family:
+              inviteCode: "GREEN123"
+        steps:
+          - action: press
+            target: "#copy-invite-code"
+        assertions:
+          - type: function-called
+            target: "copyToClipboard"
+            params:
+              text: "GREEN123"
+          - type: toast-message
+            message: "招待コードをコピーしました"
+          - type: clipboard-contains
+            text: "GREEN123"
+
+      - id: share-family
+        name: ファミリー共有
+        description: 共有ボタンをタップするとシェア機能が起動すること
+        setup:
+          state:
+            family:
+              name: "緑の守り人"
+              inviteCode: "GREEN123"
+        steps:
+          - action: press
+            target: "#share-family-button"
+        assertions:
+          - type: function-called
+            target: "shareFamilyInvite"
+          - type: native-share-dialog
+            visible: true
+
+      - id: leave-family-confirmation
+        name: ファミリー退会確認
+        description: 退会ボタンをタップすると確認ダイアログが表示されること
+        steps:
+          - action: press
+            target: "#leave-family-button"
+        assertions:
+          - type: element-visible
+            target: "#leave-confirmation-dialog"
+          - type: element-text
+            target: "#leave-confirmation-title"
+            value: "ファミリーから退会しますか？"
+          - type: element-text
+            target: "#leave-confirmation-message"
+            value: "退会するとメンバーと植物を共有できなくなります"
+
+      - id: confirm-leave-family
+        name: ファミリー退会実行
+        description: 退会確認ダイアログで確認するとファミリーから退会すること
+        setup:
+          state:
+            leaveConfirmationVisible: true
+        steps:
+          - action: press
+            target: "#confirm-leave-button"
+        assertions:
+          - type: function-called
+            target: "leaveFamily"
+          - type: navigation
+            route: "S04_home"
+
+      - id: cancel-leave-family
+        name: ファミリー退会キャンセル
+        description: 退会確認ダイアログでキャンセルするとダイアログが閉じること
+        setup:
+          state:
+            leaveConfirmationVisible: true
+        steps:
+          - action: press
+            target: "#cancel-leave-button"
+        assertions:
+          - type: element-not-visible
+            target: "#leave-confirmation-dialog"
+
+  - id: member_management
+    name: メンバー管理テスト
+    description: メンバーの管理機能を検証
+    type: functional
+    cases:
+      - id: member-options
+        name: メンバーオプション
+        description: メンバーのオプションボタンをタップするとオプションメニューが表示されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: true
+                - id: "member002"
+                  role: "member"
+                  isCurrentUser: false
+        steps:
+          - action: press
+            target: "#member-options-member002"
+        assertions:
+          - type: element-visible
+            target: "#member-options-menu-member002"
+          - type: element-exists
+            target: "#promote-option-member002"
+          - type: element-exists
+            target: "#remove-option-member002"
+
+      - id: remove-member-confirmation
+        name: メンバー削除確認
+        description: メンバー削除オプションをタップすると確認ダイアログが表示されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: true
+                - id: "member002"
+                  name: "佐藤花子"
+                  role: "member"
+                  isCurrentUser: false
+            memberOptionsMenuVisible: {member002: true}
+        steps:
+          - action: press
+            target: "#remove-option-member002"
+        assertions:
+          - type: element-visible
+            target: "#remove-member-confirmation"
+          - type: element-text
+            target: "#remove-member-title"
+            value: "メンバーを削除しますか？"
+          - type: element-text
+            target: "#remove-member-message"
+            value: "佐藤花子をファミリーから削除します"
+
+      - id: confirm-remove-member
+        name: メンバー削除実行
+        description: メンバー削除確認ダイアログで確認するとメンバーが削除されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  isCurrentUser: true
+                - id: "member002"
+                  isCurrentUser: false
+            removeMemberConfirmationVisible: {member002: true}
+        steps:
+          - action: press
+            target: "#confirm-remove-button"
+        assertions:
+          - type: function-called
+            target: "removeMember"
+            params:
+              memberId: "member002"
+          - type: element-not-exists
+            target: "#member-member002"
+          - type: element-not-visible
+            target: "#remove-member-confirmation"
+
+      - id: cancel-remove-member
+        name: メンバー削除キャンセル
+        description: メンバー削除確認ダイアログでキャンセルするとダイアログが閉じること
+        setup:
+          state:
+            removeMemberConfirmationVisible: {member002: true}
+        steps:
+          - action: press
+            target: "#cancel-remove-button"
+        assertions:
+          - type: element-not-visible
+            target: "#remove-member-confirmation"
+
+      - id: promote-to-admin
+        name: 管理者権限付与
+        description: 権限付与オプションをタップするとメンバーが管理者になること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: true
+                - id: "member002"
+                  role: "member"
+                  isCurrentUser: false
+            memberOptionsMenuVisible: {member002: true}
+        steps:
+          - action: press
+            target: "#promote-option-member002"
+        assertions:
+          - type: function-called
+            target: "promoteMember"
+            params:
+              memberId: "member002"
+              role: "admin"
+          - type: state-change
+            target: "family.members[1].role"
+            value: "admin"
+          - type: element-exists
+            target: "#admin-badge-member002"
+          - type: element-not-visible
+            target: "#member-options-menu-member002"
+
+  - id: role_specific_ui
+    name: 役割別UI表示テスト
+    description: ユーザーの役割に応じたUI表示を検証
+    type: functional
+    cases:
+      - id: owner-ui
+        name: オーナー表示
+        description: オーナーとしてのUIが正しく表示されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: true
+                - id: "member002"
+                  role: "member"
+                  isCurrentUser: false
+        assertions:
+          - type: element-exists
+            target: "#family-settings-button"
+          - type: element-exists
+            target: "#add-member-button"
+          - type: element-exists
+            target: "#member-options-member002"
+          - type: element-not-exists
+            target: "#leave-family-button"
+          - type: element-exists
+            target: "#owner-badge-member001"
+
+      - id: admin-ui
+        name: 管理者表示
+        description: 管理者としてのUIが正しく表示されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: false
+                - id: "member002"
+                  role: "admin"
+                  isCurrentUser: true
+                - id: "member003"
+                  role: "member"
+                  isCurrentUser: false
+        assertions:
+          - type: element-exists
+            target: "#add-member-button"
+          - type: element-exists
+            target: "#member-options-member003"
+          - type: element-not-exists
+            target: "#member-options-member001"
+          - type: element-exists
+            target: "#leave-family-button"
+          - type: element-exists
+            target: "#admin-badge-member002"
+
+      - id: member-ui
+        name: 一般メンバー表示
+        description: 一般メンバーとしてのUIが正しく表示されること
+        setup:
+          state:
+            family:
+              members:
+                - id: "member001"
+                  role: "owner"
+                  isCurrentUser: false
+                - id: "member003"
+                  role: "member"
+                  isCurrentUser: true
+        assertions:
+          - type: element-not-exists
+            target: "#family-settings-button"
+          - type: element-not-exists
+            target: "#add-member-button"
+          - type: element-not-exists
+            target: "#member-options-member001"
+          - type: element-exists
+            target: "#leave-family-button"
+
+  - id: shared_plants
+    name: 共有植物テスト
+    description: ファミリー内の共有植物表示を検証
+    type: functional
+    cases:
+      - id: shared-plants-tab
+        name: 共有植物タブ
+        description: 「共有植物」タブをタップすると共有植物一覧が表示されること
+        setup:
+          state:
+            currentTab: "members"
+            sharedPlants:
+              - id: "plant001"
+                name: "リビングのモンステラ"
+                imageUrl: "assets/plants/monstera_thumbnail.jpg"
+                ownerId: "member001"
+                ownerName: "山田太郎"
+                sharedWith: ["member002", "member003"]
+              - id: "plant002"
+                name: "キッチンのポトス"
+                imageUrl: "assets/plants/pothos_thumbnail.jpg"
+                ownerId: "member002"
+                ownerName: "佐藤花子"
+                sharedWith: ["member001"]
+        steps:
+          - action: press
+            target: "#shared-plants-tab"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "plants"
+          - type: element-exists
+            target: "#shared-plants-list"
+          - type: element-exists
+            target: "#shared-plant-plant001"
+          - type: element-exists
+            target: "#shared-plant-plant002"
+          - type: element-count
+            target: ".shared-plant-item"
+            count: 2
+
+      - id: members-tab
+        name: メンバータブ
+        description: 「メンバー」タブをタップするとメンバー一覧が表示されること
+        setup:
+          state:
+            currentTab: "plants"
+            family:
+              members:
+                - id: "member001"
+                - id: "member002"
+        steps:
+          - action: press
+            target: "#members-tab"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "members"
+          - type: element-exists
+            target: "#family-members-list"
+          - type: element-exists
+            target: "#member-member001"
+          - type: element-exists
+            target: "#member-member002"
+
+      - id: plant-detail-navigation
+        name: 共有植物詳細遷移
+        description: 共有植物をタップすると植物詳細画面に遷移すること
+        setup:
+          state:
+            currentTab: "plants"
+            sharedPlants:
+              - id: "plant001"
+                name: "リビングのモンステラ"
+        steps:
+          - action: press
+            target: "#shared-plant-plant001"
+        assertions:
+          - type: navigation
+            route: "PlantDetail"
+          - type: navigation-params
+            key: "plantId"
+            value: "plant001"
+          - type: navigation-params
+            key: "isShared"
+            value: true
+
+      - id: share-plant-button
+        name: 植物共有ボタン
+        description: 「植物を共有」ボタンをタップすると植物共有画面に遷移すること
+        setup:
+          state:
+            currentTab: "plants"
+        steps:
+          - action: press
+            target: "#share-plant-button"
+        assertions:
+          - type: navigation
+            route: "SharePlant"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-family
+        name: ファミリーなし
+        description: ファミリーに所属していない場合のメッセージが表示されること
+        setup:
+          state:
+            hasFamily: false
+            loading: false
+        assertions:
+          - type: element-visible
+            target: "#no-family-message"
+          - type: element-text
+            target: "#no-family-title"
+            value: "ファミリーに参加していません"
+          - type: element-text
+            target: "#no-family-description"
+            value: "ファミリーに参加して植物を共有しましょう"
+          - type: element-exists
+            target: "#create-family-button"
+          - type: element-exists
+            target: "#join-family-button"
+
+      - id: create-family-navigation
+        name: ファミリー作成画面遷移
+        description: 「ファミリーを作成」ボタンをタップするとファミリー作成画面に遷移すること
+        setup:
+          state:
+            hasFamily: false
+        steps:
+          - action: press
+            target: "#create-family-button"
+        assertions:
+          - type: navigation
+            route: "CreateFamily"
+
+      - id: join-family-navigation
+        name: ファミリー参加画面遷移
+        description: 「ファミリーに参加」ボタンをタップするとファミリー参加画面に遷移すること
+        setup:
+          state:
+            hasFamily: false
+        steps:
+          - action: press
+            target: "#join-family-button"
+        assertions:
+          - type: navigation
+            route: "JoinFamily"
+
+      - id: no-shared-plants
+        name: 共有植物なし
+        description: 共有植物がない場合のメッセージが表示されること
+        setup:
+          state:
+            hasFamily: true
+            currentTab: "plants"
+            sharedPlants: []
+        assertions:
+          - type: element-visible
+            target: "#no-shared-plants"
+          - type: element-text
+            target: "#no-shared-plants-title"
+            value: "共有されている植物がありません"
+          - type: element-text
+            target: "#no-shared-plants-message"
+            value: "植物を共有して家族で一緒に育てましょう"
+          - type: element-exists
+            target: "#share-plant-button"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#family-members-list"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load family data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "ファミリーデータの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load family data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadFamilyData"
+          - type: state-change
+            target: "loading"
+            value: true
+
+accessibility:
+  - test: color-contrast
+    description: メンバー名とロールのテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのメンバー情報と操作ボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: メンバーリストがキーボードで操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

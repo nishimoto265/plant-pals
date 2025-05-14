@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-app
+  namespace: plant-pals # プロジェクト用の名前空間を想定
+  labels:
+    app: fastapi-app
+spec:
+  replicas: 2 # 初期レプリカ数 (HPAで自動調整)
+  selector:
+    matchLabels:
+      app: fastapi-app
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+    spec:
+      containers:
+        - name: fastapi-container
+          image: your-docker-registry/plant-pals-fastapi:latest # ★要変更: Dockerイメージのパス
+          ports:
+            - containerPort: 8000 # FastAPIがリッスンするポート
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          # readinessProbe: # 必要に応じて設定
+          #   httpGet:
+          #     path: /health # FastAPIのヘルスチェックエンドポイント
+          #     port: 8000
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 20
+          # livenessProbe: # 必要に応じて設定
+          #   httpGet:
+          #     path: /health
+          #     port: 8000
+          #   initialDelaySeconds: 15
+          #   periodSeconds: 20
+          env:
+            - name: PYTHONUNBUFFERED # Pythonの出力をバッファリングしない
+              value: "1"
+            # - name: DATABASE_URL # 必要に応じて環境変数を追加
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: api-secrets
+            #       key: database-url
+            # - name: MODEL_PATH # AIモデルのパスなど
+            #   value: /models
+          # volumeMounts: # モデルや設定ファイルをマウントする場合
+          #   - name: model-storage
+          #     mountPath: /models
+      # volumes: # 永続ボリュームやConfigMapを使用する場合
+      #   - name: model-storage
+      #     persistentVolumeClaim:
+      #       claimName: model-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+  namespace: plant-pals
+  labels:
+    app: fastapi-app
+spec:
+  selector:
+    app: fastapi-app
+  ports:
+    - protocol: TCP
+      port: 80 # Serviceが公開するポート
+      targetPort: 8000 # Podのコンテナポート
+  type: ClusterIP # Ingress経由で公開するためClusterIPで良い (LoadBalancerも可)

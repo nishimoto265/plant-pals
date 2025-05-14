@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-type-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8 # pnpmのバージョンはプロジェクトに合わせて調整
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x' # プロジェクトのNode.jsバージョンに合わせて調整
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint # 13. Lint / Type, 21. Git 並列開発フロー
+
+      - name: Type check
+        run: pnpm typecheck # 13. Lint / Type, 21. Git 並列開発フロー
+
+      - name: Unit tests
+        run: pnpm test:unit # 13. Unit (Jest)
+
+      # E2Eテストは環境構築や実行時間がかかるため、必要に応じて別ジョブにしたり、トリガーを絞ることを検討
+      # - name: E2E tests (mobile)
+      #   run: pnpm test:e2e:mobile # 13. E2E (Detox)
+      # - name: E2E tests (web)
+      #   run: pnpm test:e2e:web # 13. E2E (Playwright)
+
+      - name: Build
+        run: pnpm build # 実行するビルドコマンドはプロジェクト構成による

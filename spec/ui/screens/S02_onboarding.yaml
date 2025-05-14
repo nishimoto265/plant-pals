@@ -1,0 +1,239 @@
+id: S02_onboarding
+route: /onboarding
+name: Onboarding
+purpose: アプリの使い方案内と必要な権限の許可
+description: |
+  アプリ初回起動時に表示されるカルーセル形式のオンボーディング。
+  アプリの主要機能の紹介、必要な権限（カメラ、通知、マイク等）の説明と許可リクエスト、
+  ユーザーを魅力的に導入するデザインで構成。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View
+      style:
+        flex: 1
+        padding: 16
+      children:
+        - type: View # ヘッダー（スキップボタン）
+          style:
+            flexDirection: row
+            justifyContent: flex-end
+            paddingVertical: 16
+        - type: View # カルーセルコンテナ
+          style:
+            flex: 1
+            justifyContent: center
+            alignItems: center
+        - type: View # フッター（ページャーと次へボタン）
+          style:
+            paddingVertical: 24
+            alignItems: center
+
+components:
+  - id: skip-button-container
+    type: View
+    style:
+      position: absolute
+      top: 16
+      right: 16
+      zIndex: 10
+    children:
+      - id: skip-button
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+        onPress: "skipOnboarding"
+        children:
+          - id: skip-text
+            type: Text
+            text: "スキップ"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  - id: carousel-container
+    type: View
+    style:
+      flex: 1
+      width: "100%"
+    children:
+      - id: carousel
+        type: Carousel
+        props:
+          data: [0, 1, 2, 3] # 4ページのカルーセル
+          renderItem: "renderOnboardingPage"
+          horizontal: true
+          showsHorizontalScrollIndicator: false
+          pagingEnabled: true
+          onSnapToItem: "handlePageChange"
+          ref: "carouselRef"
+
+  - id: footer-container
+    type: View
+    style:
+      width: "100%"
+      paddingHorizontal: 24
+      marginBottom: 24
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+    children:
+      - id: pagination
+        type: Pagination
+        style:
+          paddingVertical: 8
+        props:
+          dotsLength: 4
+          activeDotIndex: 0 # 動的に変更
+          dotStyle:
+            width: 10
+            height: 10
+            borderRadius: 5
+            backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          inactiveDotStyle:
+            backgroundColor: "#97BC62" # 若葉（サブカラー）
+            opacity: 0.4
+          inactiveDotOpacity: 0.4
+          inactiveDotScale: 0.8
+          
+      - id: next-button
+        type: TouchableOpacity
+        style:
+          paddingVertical: 12
+          paddingHorizontal: 24
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 24
+          flexDirection: row
+          alignItems: center
+        onPress: "handleNextPress"
+        children:
+          - id: next-text
+            type: Text
+            text: "次へ" # 最終ページでは「始める」に変更
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#FFFFFF"
+              marginRight: 8
+          - id: next-icon
+            type: Icon
+            name: "arrow-right"
+            style:
+              fontSize: 18
+              color: "#FFFFFF"
+
+# カルーセルページのデータ
+onboardingPages:
+  - id: page-0
+    title: "Plant Palsへようこそ！"
+    description: "あなたの植物がかわいいキャラクターに変身。日々の世話を楽しく続けよう。"
+    illustration: "assets/illustrations/onboarding_welcome.png"
+    backgroundColor: "#F2EFEA" # アイボリー（背景色）
+    
+  - id: page-1
+    title: "植物をカメラで撮影"
+    description: "あなたの植物を撮影するだけで、品種を自動識別し、個性豊かなキャラクターを生成します。"
+    illustration: "assets/illustrations/onboarding_camera.png"
+    backgroundColor: "#F2EFEA"
+    permission:
+      type: "camera"
+      title: "カメラへのアクセス許可"
+      description: "植物の撮影・識別のために、カメラへのアクセス許可が必要です。"
+    
+  - id: page-2
+    title: "ARで楽しむ"
+    description: "生成されたキャラクターがARで現実世界に登場。植物の鉢の上に表示して楽しめます。"
+    illustration: "assets/illustrations/onboarding_ar.png"
+    backgroundColor: "#F2EFEA"
+    
+  - id: page-3
+    title: "水やりリマインダー"
+    description: "水やりのタイミングをお知らせ。植物の健康状態もAIがチェックします。"
+    illustration: "assets/illustrations/onboarding_reminder.png"
+    backgroundColor: "#F2EFEA"
+    permission:
+      type: "notifications"
+      title: "通知の許可"
+      description: "水やりのリマインダーや植物の状態をお知らせするために、通知の許可が必要です。"
+
+# カルーセルページのコンポーネント定義（renderItem用）
+carouselItemTemplate:
+  type: View
+  style:
+    flex: 1
+    justifyContent: center
+    alignItems: center
+    paddingHorizontal: 24
+  children:
+    - id: illustration
+      type: Image
+      style:
+        width: 240
+        height: 240
+        marginBottom: 40
+      props:
+        resizeMode: "contain"
+        
+    - id: title
+      type: Text
+      style:
+        fontFamily: "Poppins-SemiBold"
+        fontSize: 24
+        color: "#2C6E49" # 深緑（メインカラー）
+        textAlign: center
+        marginBottom: 16
+        
+    - id: description
+      type: Text
+      style:
+        fontFamily: "Noto Sans JP"
+        fontSize: 16
+        color: "#333333"
+        textAlign: center
+        lineHeight: 24
+        marginBottom: 24
+        paddingHorizontal: 16
+        
+    - id: permission-button
+      type: TouchableOpacity # 権限許可用ボタン（該当ページのみ）
+      style:
+        paddingVertical: 12
+        paddingHorizontal: 20
+        backgroundColor: "#97BC62" # 若葉（サブカラー）
+        borderRadius: 20
+        marginTop: 8
+        opacity: 0.85 # 少し控えめに
+      children:
+        - id: permission-text
+          type: Text
+          style:
+            fontFamily: "Noto Sans JP"
+            fontSize: 14
+            color: "#FFFFFF"
+            textAlign: center
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - 全ページ共通でやわらかく明るい雰囲気を保ちつつ、前後のページもわずかに見える設計
+  - イラストは親しみやすく、機能を直感的に伝えるデザイン
+  - アニメーション：ページ切り替え時はスライドエフェクト + フェード
+  - 権限許可が必要なページでは、説明の下に許可ボタンを配置
+  - 最終ページでは「次へ」ボタンが「始める」に変化
+  - スキップボタンは右上に常に表示
+  - カルーセル下部のドットはアクティブなページが濃い色で明示的に表示

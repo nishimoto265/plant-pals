@@ -1,0 +1,512 @@
+id: S09_badge_center
+route: /badge_center
+name: BadgeCenter
+purpose: 獲得したバッジと実績の表示・進捗確認
+description: |
+  ユーザーが獲得したバッジやチャレンジの進捗を表示する画面。
+  バッジはカテゴリー別（育成/SNS/ログイン）に整理され、達成済み/未達成が視覚的に区別されます。
+  「ゆるふわBotanic Garden」テーマに沿った、ユーザーのモチベーションを高めるデザインを採用し、
+  継続的な利用と植物育成を促進します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: header-title
+        type: Text
+        text: "バッジコレクション"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: stats-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          borderRadius: 20
+        onPress: "openStatsModal"
+        children:
+          - id: stats-icon
+            type: Icon
+            name: "chart-bar"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  - id: user-progress-summary
+    type: View
+    style:
+      marginHorizontal: 16
+      marginTop: 16
+      marginBottom: 24
+      padding: 20
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    children:
+      - id: summary-header
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          marginBottom: 16
+        children:
+          - id: user-avatar
+            type: Image
+            style:
+              width: 60
+              height: 60
+              borderRadius: 30
+              marginRight: 16
+            props:
+              source: "user.avatarUrl"
+          - id: user-info
+            type: View
+            style:
+              flex: 1
+            children:
+              - id: username
+                type: Text
+                text: "user.displayName"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 18
+                  color: "#2C6E49" # 深緑（メインカラー）
+                  marginBottom: 4
+              - id: badge-summary
+                type: Text
+                text: "獲得バッジ: 12/30"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+      
+      - id: grand-progress-ring
+        type: View
+        style:
+          alignItems: center
+          marginVertical: 8
+        children:
+          - id: progress-ring
+            type: ProgressRing
+            style:
+              width: 120
+              height: 120
+            props:
+              progress: 0.4 # 40%達成
+              size: 120
+              thickness: 12
+              color: "#2C6E49" # 深緑（メインカラー）
+              bgColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+          - id: progress-text
+            type: Text
+            text: "40%"
+            style:
+              position: "absolute"
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+          - id: progress-label
+            type: Text
+            text: "コレクション達成率"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+              marginTop: 8
+
+  - id: category-tabs
+    type: View
+    style:
+      flexDirection: row
+      marginHorizontal: 16
+      marginBottom: 16
+      borderRadius: 8
+      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+      padding: 4
+    children:
+      - id: tab-all
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'all' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('all')"
+        children:
+          - id: all-text
+            type: Text
+            text: "すべて"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'all' ? '#2C6E49' : '#97BC62'"
+              
+      - id: tab-care
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'care' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('care')"
+        children:
+          - id: care-text
+            type: Text
+            text: "育成"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'care' ? '#2C6E49' : '#97BC62'"
+      
+      - id: tab-sns
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'sns' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('sns')"
+        children:
+          - id: sns-text
+            type: Text
+            text: "交流"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'sns' ? '#2C6E49' : '#97BC62'"
+      
+      - id: tab-login
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'login' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('login')"
+        children:
+          - id: login-text
+            type: Text
+            text: "継続"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'login' ? '#2C6E49' : '#97BC62'"
+
+  - id: badge-grid
+    type: View
+    style:
+      paddingHorizontal: 16
+    children:
+      - id: badge-grid-container
+        type: FlatList
+        props:
+          data: "filteredBadges"
+          renderItem: "renderBadge"
+          keyExtractor: "item => item.id"
+          numColumns: 3
+          showsVerticalScrollIndicator: false
+          columnWrapperStyle:
+            justifyContent: "space-between"
+            marginBottom: 16
+
+  # バッジアイテムのテンプレート（renderBadge関数内でレンダリング）
+  - id: badge-item-template
+    type: TouchableOpacity
+    style:
+      width: "30%"
+      aspectRatio: 0.9
+      marginBottom: 12
+      alignItems: center
+    onPress: "openBadgeDetail"
+    children:
+      - id: badge-container
+        type: View
+        style:
+          width: "100%"
+          aspectRatio: 1
+          backgroundColor: "badge.earned ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)'"
+          borderRadius: 16
+          justifyContent: center
+          alignItems: center
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: "badge.earned ? 0.1 : 0"
+          shadowRadius: 3
+          elevation: "badge.earned ? 2 : 0"
+          opacity: "badge.earned ? 1 : 0.6"
+        children:
+          - id: badge-image
+            type: Image
+            style:
+              width: "70%"
+              height: "70%"
+              opacity: "badge.earned ? 1 : 0.4"
+            props:
+              source: "badge.imageUrl"
+              resizeMode: "contain"
+          - id: lock-overlay
+            type: View
+            style:
+              position: "absolute"
+              width: "100%"
+              height: "100%"
+              justifyContent: center
+              alignItems: center
+              borderRadius: 16
+              backgroundColor: "badge.earned ? 'transparent' : 'rgba(0, 0, 0, 0.1)'"
+              display: "badge.earned ? 'none' : 'flex'"
+            children:
+              - id: lock-icon
+                type: Icon
+                name: "lock"
+                style:
+                  fontSize: 24
+                  color: "rgba(0, 0, 0, 0.3)"
+      - id: badge-name
+        type: Text
+        text: "badge.name"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 12
+          color: "badge.earned ? '#333333' : '#999999'"
+          textAlign: center
+          marginTop: 6
+          height: 30
+
+  # バッジ詳細モーダル
+  - id: badge-detail-modal
+    type: Modal
+    props:
+      visible: false # 状態管理で制御
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: modal-overlay
+        type: TouchableOpacity
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          justifyContent: center
+          alignItems: center
+        onPress: "closeBadgeDetail"
+        children:
+          - id: modal-content
+            type: TouchableWithoutFeedback # 内部タップはモーダルを閉じない
+            children:
+              - id: badge-detail-card
+                type: View
+                style:
+                  backgroundColor: "#FFFFFF"
+                  borderRadius: 24
+                  padding: 24
+                  width: "80%"
+                  alignItems: center
+                  shadowColor: "#000"
+                  shadowOffset: { width: 0, height: 4 }
+                  shadowOpacity: 0.25
+                  shadowRadius: 8
+                  elevation: 10
+                children:
+                  - id: badge-detail-image
+                    type: Image
+                    style:
+                      width: 120
+                      height: 120
+                      marginBottom: 16
+                    props:
+                      source: "selectedBadge.imageUrl"
+                      resizeMode: "contain"
+                  
+                  - id: badge-detail-name
+                    type: Text
+                    text: "selectedBadge.name"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 18
+                      color: "#333333"
+                      marginBottom: 8
+                      textAlign: center
+                      
+                  - id: badge-detail-description
+                    type: Text
+                    text: "selectedBadge.description"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#666666"
+                      textAlign: center
+                      marginBottom: 24
+                      lineHeight: 20
+                      
+                  - id: badge-achievement-info
+                    type: View
+                    style:
+                      width: "100%"
+                      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+                      borderRadius: 12
+                      padding: 12
+                      marginBottom: 24
+                    children:
+                      - id: achievement-status
+                        type: Text
+                        text: "selectedBadge.earned ? '達成済み！' : '未達成'"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          fontWeight: "bold"
+                          color: "selectedBadge.earned ? '#2C6E49' : '#97BC62'"
+                          marginBottom: 8
+                          
+                      - id: achievement-date
+                        type: Text
+                        text: "selectedBadge.earnedDate ? `達成日: ${selectedBadge.earnedDate}` : '条件を満たすとバッジを獲得できます'"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 12
+                          color: "#666666"
+                          
+                  - id: close-modal-button
+                    type: TouchableOpacity
+                    style:
+                      paddingVertical: 12
+                      paddingHorizontal: 24
+                      backgroundColor: "#2C6E49" # 深緑（メインカラー）
+                      borderRadius: 24
+                    onPress: "closeBadgeDetail"
+                    children:
+                      - id: close-button-text
+                        type: Text
+                        text: "閉じる"
+                        style:
+                          fontFamily: "Poppins-SemiBold"
+                          fontSize: 14
+                          color: "#FFFFFF"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+sampleBadges:
+  care:
+    - id: "care_1"
+      name: "初めての水やり"
+      description: "植物に初めて水をあげました"
+      imageUrl: "assets/badges/watering_first.png"
+      earned: true
+      earnedDate: "2025-06-03"
+      category: "care"
+    - id: "care_2"
+      name: "水やりマスター"
+      description: "30日間連続で適切な水やりを行いました"
+      imageUrl: "assets/badges/watering_master.png"
+      earned: false
+      category: "care"
+    - id: "care_3"
+      name: "植物コレクター"
+      description: "5種類の植物を育て始めました"
+      imageUrl: "assets/badges/collector.png"
+      earned: true
+      earnedDate: "2025-07-15"
+      category: "care"
+    - id: "care_4"
+      name: "グリーンサム"
+      description: "植物の健康状態を3か月間良好に保ちました"
+      imageUrl: "assets/badges/green_thumb.png"
+      earned: false
+      category: "care"
+  sns:
+    - id: "sns_1"
+      name: "初投稿"
+      description: "初めての投稿を行いました"
+      imageUrl: "assets/badges/first_post.png"
+      earned: true
+      earnedDate: "2025-06-10"
+      category: "sns"
+    - id: "sns_2"
+      name: "人気投稿"
+      description: "1つの投稿で50いいねを獲得しました"
+      imageUrl: "assets/badges/popular_post.png"
+      earned: false
+      category: "sns"
+    - id: "sns_3"
+      name: "コミュニティリーダー"
+      description: "10人以上のフォロワーを獲得しました"
+      imageUrl: "assets/badges/community_leader.png"
+      earned: false
+      category: "sns"
+  login:
+    - id: "login_1"
+      name: "ようこそ"
+      description: "アプリに初めてログインしました"
+      imageUrl: "assets/badges/welcome.png"
+      earned: true
+      earnedDate: "2025-06-01"
+      category: "login"
+    - id: "login_2"
+      name: "1週間継続"
+      description: "7日間連続でログインしました"
+      imageUrl: "assets/badges/week_streak.png"
+      earned: true
+      earnedDate: "2025-06-07"
+      category: "login"
+    - id: "login_3"
+      name: "1か月継続"
+      description: "30日間連続でログインしました"
+      imageUrl: "assets/badges/month_streak.png"
+      earned: false
+      category: "login"
+
+designNotes: |
+  - 「バッジコレクション」というコンセプトで、ユーザーの達成感を高める
+  - 獲得済みバッジは明るく表示し、未獲得バッジはロックアイコン付きで半透明表示
+  - 全体の達成率をプログレスリングで視覚的に表現
+  - カテゴリータブで「すべて」「育成」「交流」「継続」とバッジをフィルタリング可能
+  - バッジタップで詳細モーダルを表示し、獲得条件や達成日を確認できる
+  - 全体的に丸みを帯びたデザインと優しい色使いで「ゆるふわ」コンセプトに統一
+  - アニメーション：バッジ獲得時にキラキラエフェクト、バッジタップ時に軽い拡大アニメーション

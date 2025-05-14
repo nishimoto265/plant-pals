@@ -1,0 +1,386 @@
+id: auth
+name: AuthEdgeFunction
+description: |
+  認証・ユーザー管理に関するエッジ関数。
+  サインアップ、ログイン、ソーシャルログイン、権限管理、
+  ユーザープロフィールの更新などの機能を提供します。
+
+runtime: deno
+entrypoint: auth.ts
+version: 1.0.0
+environment: edge
+
+endpoints:
+  - id: signup
+    path: /auth/signup
+    method: POST
+    description: |
+      新規ユーザー登録を行います。
+      基本情報の検証、重複チェック、初期設定を行います。
+    requestSchema:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        lang:
+          type: string
+          enum: [ja, en, ko, zh]
+          default: ja
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+      - code: 409
+        reason: email_exists
+        message: このメールアドレスは既に使用されています
+
+  - id: login
+    path: /auth/login
+    method: POST
+    description: |
+      既存ユーザーのログインを処理します。
+      認証成功時にJWTトークンを発行します。
+    requestSchema:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        deviceInfo:
+          type: object
+          properties:
+            os:
+              type: string
+            version:
+              type: string
+            model:
+              type: string
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: number
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+      - code: 401
+        reason: invalid_credentials
+        message: メールアドレスまたはパスワードが間違っています
+      - code: 403
+        reason: account_locked
+        message: アカウントがロックされています
+
+  - id: social_auth
+    path: /auth/social/{provider}
+    method: POST
+    description: |
+      ソーシャルログイン（Google, Apple, GitHub）を処理します。
+      OAuthトークンを検証し、ユーザー情報を取得・保存します。
+    pathParams:
+      provider:
+        type: string
+        enum: [google, apple, github]
+    requestSchema:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        redirectUrl:
+          type: string
+          format: uri
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        isNewUser:
+          type: boolean
+    errorCodes:
+      - code: 400
+        reason: invalid_token
+        message: 無効なトークンです
+      - code: 500
+        reason: provider_error
+        message: 認証プロバイダーとの通信エラー
+
+  - id: refresh_token
+    path: /auth/token
+    method: POST
+    description: |
+      リフレッシュトークンを使用して新しいアクセストークンを発行します。
+    requestSchema:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    responseSchema:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: number
+    errorCodes:
+      - code: 400
+        reason: invalid_refresh_token
+        message: 無効なリフレッシュトークンです
+      - code: 403
+        reason: token_expired
+        message: リフレッシュトークンの有効期限が切れています
+
+  - id: reset_password
+    path: /auth/reset-password
+    method: POST
+    description: |
+      パスワードリセットプロセスを開始し、
+      リセット用のメールをユーザーに送信します。
+    requestSchema:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    errorCodes:
+      - code: 400
+        reason: invalid_email
+        message: 無効なメールアドレスです
+      - code: 404
+        reason: user_not_found
+        message: ユーザーが見つかりません
+
+  - id: confirm_reset
+    path: /auth/confirm-reset
+    method: POST
+    description: |
+      パスワードリセットトークンを検証し、
+      新しいパスワードを設定します。
+    requestSchema:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    errorCodes:
+      - code: 400
+        reason: invalid_token
+        message: 無効なトークンです
+      - code: 400
+        reason: weak_password
+        message: パスワードが弱すぎます
+      - code: 410
+        reason: token_expired
+        message: トークンの有効期限が切れています
+
+  - id: update_profile
+    path: /auth/profile
+    method: PUT
+    description: |
+      ユーザープロフィール情報を更新します。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        avatar:
+          type: string
+          format: uri
+        bio:
+          type: string
+          maxLength: 200
+        lang:
+          type: string
+          enum: [ja, en, ko, zh]
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+        lang:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+
+  - id: change_password
+    path: /auth/change-password
+    method: POST
+    description: |
+      ユーザーのパスワードを変更します。
+      現在のパスワードの検証を行います。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+      - code: 401
+        reason: invalid_password
+        message: 現在のパスワードが間違っています
+      - code: 400
+        reason: weak_password
+        message: 新しいパスワードが弱すぎます
+
+  - id: logout
+    path: /auth/logout
+    method: POST
+    description: |
+      ユーザーをログアウトし、トークンを無効化します。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      properties:
+        all:
+          type: boolean
+          description: すべてのデバイスからログアウトするか
+          default: false
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+
+securitySchemes:
+  bearer:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: JWT認証トークン
+
+dependencies:
+  - @supabase/supabase-js
+  - jose
+  - zod
+  - bcrypt
+
+environment:
+  variables:
+    - SUPABASE_URL
+    - SUPABASE_SERVICE_ROLE_KEY
+    - JWT_SECRET
+    - GOOGLE_CLIENT_ID
+    - APPLE_APP_ID
+    - GITHUB_CLIENT_ID
+    - GITHUB_CLIENT_SECRET
+
+monitoring:
+  metrics:
+    - login_attempts
+    - login_success_rate
+    - signup_rate
+    - token_refresh_rate
+    - password_reset_requests
+  alerts:
+    - name: high_login_failure
+      condition: "login_failure_rate > 0.3 for 5m"
+      severity: warning
+    - name: suspicious_activity
+      condition: "login_attempts_per_ip > 20 in 1m"
+      severity: critical

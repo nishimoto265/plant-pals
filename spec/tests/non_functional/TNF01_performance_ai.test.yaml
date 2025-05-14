@@ -1,0 +1,275 @@
+id: TNF01_performance_ai
+name: AI推論パフォーマンステスト
+description: アプリケーションで使用されるAIモデルの推論パフォーマンスを検証するテスト
+
+components:
+  - plant_identification_model
+  - disease_recognition_model
+  - care_recommendation_engine
+  - growth_prediction_model
+
+testSuites:
+  - id: latency_benchmarks
+    name: レイテンシベンチマーク
+    description: 各AIモデルの推論レイテンシを測定
+    cases:
+      - id: plant_identification_latency
+        name: 植物識別レイテンシ
+        description: 植物識別モデルの推論時間を測定
+        setup:
+          device_profiles:
+            - name: "high_end"
+              cpu: "Snapdragon 8 Gen 2"
+              ram: "12GB"
+              os: "Android 13"
+            - name: "mid_range"
+              cpu: "Snapdragon 765G"
+              ram: "6GB"
+              os: "Android 12"
+            - name: "low_end"
+              cpu: "Snapdragon 680"
+              ram: "4GB"
+              os: "Android 11"
+          test_images:
+            - path: "test_assets/plants/monstera_full.jpg"
+              resolution: "4032x3024"
+            - path: "test_assets/plants/ficus_partial.jpg"
+              resolution: "2048x1536"
+            - path: "test_assets/plants/succulent_close.jpg"
+              resolution: "1280x720"
+        metrics:
+          - name: "cold_start_latency"
+            description: "初回起動時の推論時間"
+            thresholds:
+              p50: "< 2500ms"
+              p95: "< 4000ms"
+              p99: "< 6000ms"
+          - name: "warm_latency"
+            description: "2回目以降の推論時間"
+            thresholds:
+              p50: "< 1000ms"
+              p95: "< 1800ms"
+              p99: "< 3000ms"
+
+      - id: disease_recognition_latency
+        name: 病害検出レイテンシ
+        description: 病害検出モデルの推論時間を測定
+        setup:
+          device_profiles:
+            - name: "high_end"
+              cpu: "A15 Bionic"
+              ram: "6GB"
+              os: "iOS 16"
+            - name: "mid_range"
+              cpu: "A13 Bionic"
+              ram: "4GB"
+              os: "iOS 15"
+          test_images:
+            - path: "test_assets/plants/issues/leaf_spots.jpg"
+              resolution: "3024x4032"
+            - path: "test_assets/plants/issues/powdery_mildew.jpg"
+              resolution: "2048x1536"
+        metrics:
+          - name: "inference_time"
+            description: "推論処理時間"
+            thresholds:
+              p50: "< 1500ms"
+              p95: "< 2500ms"
+              p99: "< 4000ms"
+          - name: "detection_accuracy"
+            description: "検出精度（処理時間との関係）"
+            thresholds:
+              min_accuracy: "> 85%"
+              target_latency: "< 2000ms"
+
+  - id: resource_utilization
+    name: リソース使用率
+    description: AIモデル実行時のリソース使用状況を測定
+    cases:
+      - id: memory_usage
+        name: メモリ使用量
+        description: AIモデル実行時のメモリ使用量を測定
+        setup:
+          models:
+            - name: "plant_identification"
+              version: "v2.3"
+            - name: "disease_recognition"
+              version: "v1.5"
+            - name: "care_recommendation"
+              version: "v1.2"
+        metrics:
+          - name: "peak_memory"
+            description: "ピークメモリ使用量"
+            thresholds:
+              plant_identification: "< 250MB"
+              disease_recognition: "< 180MB"
+              care_recommendation: "< 120MB"
+          - name: "steady_state_memory"
+            description: "定常状態のメモリ使用量"
+            thresholds:
+              plant_identification: "< 150MB"
+              disease_recognition: "< 100MB"
+              care_recommendation: "< 60MB"
+
+      - id: battery_impact
+        name: バッテリー消費
+        description: AIモデル実行時のバッテリー消費を測定
+        setup:
+          test_scenarios:
+            - name: "single_identification"
+              description: "1回の植物識別"
+            - name: "batch_processing"
+              description: "10枚の画像を連続処理"
+            - name: "background_monitoring"
+              description: "バックグラウンドでの健康モニタリング（30分）"
+        metrics:
+          - name: "battery_drain"
+            description: "バッテリー消費率"
+            thresholds:
+              single_identification: "< 0.5%"
+              batch_processing: "< 3%"
+              background_monitoring: "< 5%"
+          - name: "device_temperature"
+            description: "デバイス温度上昇"
+            thresholds:
+              max_increase: "< 5°C"
+
+  - id: optimization_techniques
+    name: 最適化技術評価
+    description: 様々な最適化技術の効果を測定
+    cases:
+      - id: model_quantization
+        name: モデル量子化効果
+        description: モデル量子化による性能とサイズへの影響を評価
+        setup:
+          model_variants:
+            - name: "full_precision"
+              description: "FP32フル精度モデル"
+            - name: "quantized_int8"
+              description: "INT8量子化モデル"
+        metrics:
+          - name: "size_reduction"
+            description: "モデルサイズ削減率"
+            thresholds:
+              min_reduction: "> 65%"
+          - name: "accuracy_loss"
+            description: "精度低下率"
+            thresholds:
+              max_loss: "< 2%"
+          - name: "speed_improvement"
+            description: "推論速度向上率"
+            thresholds:
+              min_improvement: "> 40%"
+
+      - id: hardware_acceleration
+        name: ハードウェアアクセラレーション
+        description: 様々なハードウェアアクセラレーションの効果を評価
+        setup:
+          acceleration_methods:
+            - name: "cpu_only"
+              description: "CPUのみを使用"
+            - name: "gpu_enabled"
+              description: "GPU使用"
+            - name: "neural_engine"
+              description: "Neural Engine/NPU使用（対応デバイスのみ）"
+        metrics:
+          - name: "latency_improvement"
+            description: "レイテンシ改善率"
+            thresholds:
+              gpu_vs_cpu: "> 2x"
+              neural_engine_vs_cpu: "> 4x"
+          - name: "battery_efficiency"
+            description: "バッテリー効率"
+            thresholds:
+              gpu_vs_cpu: "> 30%"
+              neural_engine_vs_cpu: "> 60%"
+
+  - id: scalability
+    name: スケーラビリティテスト
+    description: 負荷増加時のAIシステムのスケーラビリティを検証
+    cases:
+      - id: concurrent_requests
+        name: 同時リクエスト処理
+        description: 複数の同時AIリクエストの処理能力を検証
+        setup:
+          load_profiles:
+            - name: "light_load"
+              concurrent_users: 10
+              requests_per_second: 1
+            - name: "medium_load"
+              concurrent_users: 50
+              requests_per_second: 5
+            - name: "heavy_load"
+              concurrent_users: 200
+              requests_per_second: 20
+        metrics:
+          - name: "throughput"
+            description: "1秒あたりの処理リクエスト数"
+            thresholds:
+              light_load: "> 10 req/s"
+              medium_load: "> 40 req/s"
+              heavy_load: "> 150 req/s"
+          - name: "error_rate"
+            description: "エラー率"
+            thresholds:
+              light_load: "< 0.1%"
+              medium_load: "< 0.5%"
+              heavy_load: "< 2%"
+          - name: "response_time_degradation"
+            description: "レスポンスタイム劣化率"
+            thresholds:
+              medium_vs_light: "< 50%"
+              heavy_vs_light: "< 200%"
+
+      - id: batch_processing_efficiency
+        name: バッチ処理効率
+        description: バッチ処理による効率向上を検証
+        setup:
+          batch_sizes: [1, 4, 16, 64]
+          model: "plant_identification"
+        metrics:
+          - name: "throughput_improvement"
+            description: "スループット向上率（単一処理比）"
+            thresholds:
+              batch_4: "> 2.5x"
+              batch_16: "> 8x"
+              batch_64: "> 20x"
+          - name: "latency_per_item"
+            description: "1アイテムあたりの平均レイテンシ"
+            thresholds:
+              batch_4: "< 80% of single"
+              batch_16: "< 60% of single"
+              batch_64: "< 40% of single"
+
+monitoring:
+  metrics:
+    - name: "inference_latency"
+      description: "推論レイテンシ"
+      collection_method: "client_side_timing"
+    - name: "memory_usage"
+      description: "メモリ使用量"
+      collection_method: "periodic_sampling"
+    - name: "model_accuracy"
+      description: "モデル精度"
+      collection_method: "user_feedback_and_corrections"
+    - name: "battery_impact"
+      description: "バッテリー消費"
+      collection_method: "battery_api_monitoring"
+
+reporting:
+  - format: "performance_dashboard"
+    update_frequency: "daily"
+    retention: "90 days"
+  - format: "alert_system"
+    triggers:
+      - "p95 latency > threshold for 15 minutes"
+      - "error rate > 2% for 5 minutes"
+      - "memory leak detected"
+
+platforms:
+  - os: iOS
+    versions: ["15.0", "16.0"]
+    devices: ["iPhone 13", "iPhone 12", "iPhone SE (2022)"]
+  - os: Android
+    versions: ["11", "12", "13"]
+    devices: ["Pixel 6", "Samsung Galaxy S22", "Xiaomi Redmi Note 11"] 

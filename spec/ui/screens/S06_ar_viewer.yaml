@@ -1,0 +1,663 @@
+id: S06_ar_viewer
+route: /ar_viewer
+name: ARViewer
+purpose: 実鉢に3Dキャラクターを重ねて表示・撮影
+description: |
+  ARテクノロジー（Viro React/ARCore/ARKit）を活用して、
+  実際の植木鉢に3Dキャラクターを重畳表示するAR体験画面。
+  平面を検出し、キャラクターを配置して写真や動画を撮影、
+  SNSでシェアすることができます。
+  「ゆるふわBotanic Garden」テーマに沿った、現実と仮想が融合する楽しい体験を提供します。
+
+layout:
+  type: View
+  style:
+    flex: 1
+    backgroundColor: "#000000" # AR表示のため黒背景
+  children:
+    - type: View # AR画面表示部
+      style:
+        flex: 1
+        position: relative
+    - type: View # 下部コントロール部
+      style:
+        height: 100
+        backgroundColor: "rgba(0, 0, 0, 0.5)"
+        borderTopLeftRadius: 24
+        borderTopRightRadius: 24
+
+components:
+  - id: ar-scene-container
+    type: ViroARSceneNavigator
+    style:
+      flex: 1
+    props:
+      initialScene:
+        scene: "ARScene"
+      autofocus: true
+      onPlaneDetected: "handlePlaneDetected"
+      onTrackingUpdated: "handleTrackingUpdated"
+
+  # 平面検出インジケータ（平面が検出されるまで表示）
+  - id: plane-indicator-container
+    type: View
+    style:
+      position: "absolute"
+      top: 0
+      left: 0
+      right: 0
+      bottom: 100
+      justifyContent: "center"
+      alignItems: "center"
+      pointerEvents: "none"
+      display: "planeDetected ? 'none' : 'flex'"
+    children:
+      - id: plane-detection-animation
+        type: Lottie
+        style:
+          width: 120
+          height: 120
+        props:
+          source: "assets/animations/plane_scanning.json"
+          autoPlay: true
+          loop: true
+      - id: plane-detection-text
+        type: Text
+        text: "平面を検出中..."
+        style:
+          marginTop: 16
+          color: "#FFFFFF"
+          fontFamily: "Noto Sans JP"
+          fontSize: 16
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+
+  # 平面が検出され、タップを促すインジケータ（平面検出後、配置前に表示）
+  - id: tap-indicator
+    type: View
+    style:
+      position: "absolute"
+      top: 0
+      left: 0
+      right: 0
+      bottom: 100
+      justifyContent: "center"
+      alignItems: "center"
+      pointerEvents: "none"
+      display: "planeDetected && !characterPlaced ? 'flex' : 'none'"
+    children:
+      - id: tap-animation
+        type: Lottie
+        style:
+          width: 100
+          height: 100
+        props:
+          source: "assets/animations/tap_indicator.json"
+          autoPlay: true
+          loop: true
+      - id: tap-text
+        type: Text
+        text: "タップして配置"
+        style:
+          marginTop: 8
+          color: "#FFFFFF"
+          fontFamily: "Noto Sans JP"
+          fontSize: 16
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+
+  # ヘッダーコントロール
+  - id: header-controls
+    type: View
+    style:
+      position: "absolute"
+      top: 48
+      left: 0
+      right: 0
+      flexDirection: "row"
+      justifyContent: "space-between"
+      paddingHorizontal: 16
+      zIndex: 10
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 44
+          height: 44
+          borderRadius: 22
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          justifyContent: "center"
+          alignItems: "center"
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#FFFFFF"
+      - id: character-selector-button
+        type: TouchableOpacity
+        style:
+          height: 44
+          paddingHorizontal: 16
+          borderRadius: 22
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          flexDirection: "row"
+          justifyContent: "center"
+          alignItems: "center"
+        onPress: "openCharacterSelector"
+        children:
+          - id: character-icon
+            type: Icon
+            name: "leaf"
+            style:
+              fontSize: 18
+              color: "#97BC62" # 若葉（サブカラー）
+              marginRight: 8
+          - id: character-name
+            type: Text
+            text: "selectedCharacter.name || 'キャラクター選択'" # データバインディング
+            style:
+              color: "#FFFFFF"
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+
+  # 下部コントロールバー
+  - id: footer-controls
+    type: View
+    style:
+      position: "absolute"
+      bottom: 0
+      left: 0
+      right: 0
+      height: 100
+      backgroundColor: "rgba(0, 0, 0, 0.5)"
+      borderTopLeftRadius: 24
+      borderTopRightRadius: 24
+      paddingHorizontal: 24
+      paddingTop: 16
+      paddingBottom: 24
+      flexDirection: "row"
+      justifyContent: "space-evenly"
+      alignItems: "center"
+    children:
+      # 左側のツールボタン
+      - id: tools-container
+        type: View
+        style:
+          flexDirection: "row"
+          alignItems: "center"
+        children:
+          - id: scale-button
+            type: TouchableOpacity
+            style:
+              width: 50
+              height: 50
+              borderRadius: 25
+              backgroundColor: "rgba(255, 255, 255, 0.2)"
+              justifyContent: "center"
+              alignItems: "center"
+              marginRight: 16
+              opacity: "characterPlaced ? 1 : 0.5"
+            onPress: "toggleScaleMode"
+            disabled: "!characterPlaced"
+            children:
+              - id: scale-icon
+                type: Icon
+                name: "resize"
+                style:
+                  fontSize: 24
+                  color: "#FFFFFF"
+          - id: rotate-button
+            type: TouchableOpacity
+            style:
+              width: 50
+              height: 50
+              borderRadius: 25
+              backgroundColor: "rgba(255, 255, 255, 0.2)"
+              justifyContent: "center"
+              alignItems: "center"
+              opacity: "characterPlaced ? 1 : 0.5"
+            onPress: "toggleRotateMode"
+            disabled: "!characterPlaced"
+            children:
+              - id: rotate-icon
+                type: Icon
+                name: "rotate-3d"
+                style:
+                  fontSize: 24
+                  color: "#FFFFFF"
+      
+      # 中央の撮影ボタン
+      - id: capture-button
+        type: TouchableOpacity
+        style:
+          width: 70
+          height: 70
+          borderRadius: 35
+          backgroundColor: "#FFFFFF"
+          justifyContent: "center"
+          alignItems: "center"
+          opacity: "characterPlaced ? 1 : 0.5"
+          borderWidth: 3
+          borderColor: "#97BC62" # 若葉（サブカラー）
+        onPress: "captureARScene"
+        disabled: "!characterPlaced"
+        children:
+          - id: capture-icon
+            type: Icon
+            name: "camera"
+            style:
+              fontSize: 30
+              color: "#2C6E49" # 深緑（メインカラー）
+      
+      # 右側のツールボタン
+      - id: mode-container
+        type: View
+        style:
+          flexDirection: "row"
+          alignItems: "center"
+        children:
+          - id: animation-button
+            type: TouchableOpacity
+            style:
+              width: 50
+              height: 50
+              borderRadius: 25
+              backgroundColor: "rgba(255, 255, 255, 0.2)"
+              justifyContent: "center"
+              alignItems: "center"
+              marginRight: 16
+              opacity: "characterPlaced ? 1 : 0.5"
+            onPress: "toggleAnimation"
+            disabled: "!characterPlaced"
+            children:
+              - id: animation-icon
+                type: Icon
+                name: "animation-play"
+                style:
+                  fontSize: 24
+                  color: "#FFFFFF"
+          - id: switch-camera-button
+            type: TouchableOpacity
+            style:
+              width: 50
+              height: 50
+              borderRadius: 25
+              backgroundColor: "rgba(255, 255, 255, 0.2)"
+              justifyContent: "center"
+              alignItems: "center"
+            onPress: "switchCamera"
+            children:
+              - id: switch-camera-icon
+                type: Icon
+                name: "camera-switch"
+                style:
+                  fontSize: 24
+                  color: "#FFFFFF"
+
+  # 撮影モードコントローラー（写真/動画切り替え）- 撮影ボタンの上部に表示
+  - id: capture-mode-switch
+    type: View
+    style:
+      position: "absolute"
+      bottom: 110
+      alignSelf: "center"
+      backgroundColor: "rgba(0, 0, 0, 0.5)"
+      borderRadius: 20
+      flexDirection: "row"
+      padding: 4
+      opacity: "characterPlaced ? 1 : 0.5"
+    children:
+      - id: photo-mode-button
+        type: TouchableOpacity
+        style:
+          paddingVertical: 6
+          paddingHorizontal: 16
+          borderRadius: 16
+          backgroundColor: "captureMode === 'photo' ? '#FFFFFF' : 'transparent'"
+        onPress: "setCaptureMode('photo')"
+        disabled: "!characterPlaced"
+        children:
+          - id: photo-mode-text
+            type: Text
+            text: "写真"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "captureMode === 'photo' ? '#000000' : '#FFFFFF'"
+      - id: video-mode-button
+        type: TouchableOpacity
+        style:
+          paddingVertical: 6
+          paddingHorizontal: 16
+          borderRadius: 16
+          backgroundColor: "captureMode === 'video' ? '#FFFFFF' : 'transparent'"
+        onPress: "setCaptureMode('video')"
+        disabled: "!characterPlaced"
+        children:
+          - id: video-mode-text
+            type: Text
+            text: "動画"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "captureMode === 'video' ? '#000000' : '#FFFFFF'"
+  
+  # 録画インジケーター（動画撮影中のみ表示）
+  - id: recording-indicator
+    type: View
+    style:
+      position: "absolute"
+      top: 48
+      alignSelf: "center"
+      flexDirection: "row"
+      alignItems: "center"
+      backgroundColor: "rgba(224, 32, 32, 0.7)"
+      paddingVertical: 6
+      paddingHorizontal: 12
+      borderRadius: 16
+      display: "isRecording ? 'flex' : 'none'"
+    children:
+      - id: recording-dot
+        type: View
+        style:
+          width: 8
+          height: 8
+          borderRadius: 4
+          backgroundColor: "#FF0000"
+          marginRight: 8
+        animation:
+          type: "pulse"
+          duration: 1000
+          loop: true
+      - id: recording-text
+        type: Text
+        text: "録画中"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#FFFFFF"
+      - id: recording-timer
+        type: Text
+        text: "recordingDuration" # データバインディング: "00:42" のような形式
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#FFFFFF"
+          marginLeft: 8
+  
+  # キャラクター選択モーダル
+  - id: character-selector-modal
+    type: Modal
+    props:
+      visible: false # 状態管理で制御
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: modal-overlay
+        type: View
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.7)"
+          justifyContent: "flex-end"
+        children:
+          - id: modal-content
+            type: View
+            style:
+              backgroundColor: "#FFFFFF"
+              borderTopLeftRadius: 24
+              borderTopRightRadius: 24
+              padding: 24
+              paddingBottom: 40
+              height: "50%"
+            children:
+              - id: modal-header
+                type: View
+                style:
+                  flexDirection: "row"
+                  justifyContent: "space-between"
+                  alignItems: "center"
+                  marginBottom: 24
+                children:
+                  - id: modal-title
+                    type: Text
+                    text: "キャラクターを選択"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 20
+                      color: "#2C6E49" # 深緑（メインカラー）
+                  - id: close-modal-button
+                    type: TouchableOpacity
+                    style:
+                      width: 40
+                      height: 40
+                      borderRadius: 20
+                      justifyContent: "center"
+                      alignItems: "center"
+                    onPress: "closeCharacterSelector"
+                    children:
+                      - id: close-icon
+                        type: Icon
+                        name: "close"
+                        style:
+                          fontSize: 24
+                          color: "#333333"
+              - id: character-list
+                type: FlatList
+                style:
+                  flex: 1
+                props:
+                  data: "userCharacters" # データバインディング
+                  keyExtractor: "item => item.id"
+                  renderItem: "renderCharacterItem"
+                  numColumns: 2
+                  showsVerticalScrollIndicator: false
+                  columnWrapperStyle:
+                    justifyContent: "space-between"
+  
+  # キャラクターアイテムのテンプレート（renderCharacterItem関数内でレンダリング）
+  - id: character-item-template
+    type: TouchableOpacity
+    style:
+      width: "48%"
+      aspectRatio: 0.8
+      backgroundColor: "item.id === selectedCharacter?.id ? 'rgba(151, 188, 98, 0.1)' : '#F2EFEA'" # 選択中は薄い若葉色
+      borderRadius: 16
+      marginBottom: 16
+      padding: 12
+      alignItems: "center"
+    onPress: "() => selectCharacter(item)"
+    children:
+      - id: character-thumbnail
+        type: Image
+        style:
+          width: "80%"
+          height: "70%"
+          marginBottom: 8
+        props:
+          source: "item.thumbnailUrl"
+          resizeMode: "contain"
+      - id: character-name
+        type: Text
+        text: "item.name"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#333333"
+          textAlign: "center"
+      - id: character-species
+        type: Text
+        text: "item.speciesName"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 12
+          color: "#666666"
+          textAlign: "center"
+      - id: selection-indicator
+        type: Icon
+        name: "check-circle"
+        style:
+          position: "absolute"
+          top: 8
+          right: 8
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+          display: "item.id === selectedCharacter?.id ? 'flex' : 'none'"
+
+  # 撮影結果確認モーダル
+  - id: capture-result-modal
+    type: Modal
+    props:
+      visible: false # 状態管理で制御
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: result-overlay
+        type: View
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.9)"
+        children:
+          - id: result-content
+            type: View
+            style:
+              flex: 1
+              padding: 24
+            children:
+              - id: result-header
+                type: View
+                style:
+                  flexDirection: "row"
+                  justifyContent: "space-between"
+                  alignItems: "center"
+                  marginBottom: 24
+                children:
+                  - id: close-result-button
+                    type: TouchableOpacity
+                    style:
+                      width: 44
+                      height: 44
+                      borderRadius: 22
+                      backgroundColor: "rgba(255, 255, 255, 0.2)"
+                      justifyContent: "center"
+                      alignItems: "center"
+                    onPress: "closeCaptureResult"
+                    children:
+                      - id: close-result-icon
+                        type: Icon
+                        name: "arrow-left"
+                        style:
+                          fontSize: 24
+                          color: "#FFFFFF"
+                  - id: result-title
+                    type: Text
+                    text: "captureMode === 'photo' ? '写真' : '動画'"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 18
+                      color: "#FFFFFF"
+              - id: media-preview
+                type: View
+                style:
+                  flex: 1
+                  justifyContent: "center"
+                  alignItems: "center"
+                  marginBottom: 24
+                children:
+                  - id: media-content
+                    type: "captureMode === 'photo' ? Image : Video"
+                    style:
+                      width: "100%"
+                      height: "80%"
+                      borderRadius: 16
+                    props:
+                      source: "capturedMediaUri"
+                      resizeMode: "contain"
+                      controls: "captureMode === 'video'"
+              - id: action-buttons
+                type: View
+                style:
+                  flexDirection: "row"
+                  justifyContent: "space-evenly"
+                  paddingBottom: 24
+                children:
+                  - id: retake-button
+                    type: TouchableOpacity
+                    style:
+                      width: 60
+                      height: 60
+                      borderRadius: 30
+                      backgroundColor: "rgba(255, 255, 255, 0.2)"
+                      justifyContent: "center"
+                      alignItems: "center"
+                    onPress: "retakeCapture"
+                    children:
+                      - id: retake-icon
+                        type: Icon
+                        name: "refresh"
+                        style:
+                          fontSize: 30
+                          color: "#FFFFFF"
+                  - id: share-button
+                    type: TouchableOpacity
+                    style:
+                      width: 60
+                      height: 60
+                      borderRadius: 30
+                      backgroundColor: "#2C6E49" # 深緑（メインカラー）
+                      justifyContent: "center"
+                      alignItems: "center"
+                    onPress: "shareMedia"
+                    children:
+                      - id: share-icon
+                        type: Icon
+                        name: "share"
+                        style:
+                          fontSize: 30
+                          color: "#FFFFFF"
+                  - id: save-button
+                    type: TouchableOpacity
+                    style:
+                      width: 60
+                      height: 60
+                      borderRadius: 30
+                      backgroundColor: "#97BC62" # 若葉（サブカラー）
+                      justifyContent: "center"
+                      alignItems: "center"
+                    onPress: "saveMedia"
+                    children:
+                      - id: save-icon
+                        type: Icon
+                        name: "content-save"
+                        style:
+                          fontSize: 30
+                          color: "#FFFFFF"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#000000" # AR表示のため黒背景
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - AR表示のため全体の背景は黒で、コントロール類は半透明オーバーレイ
+  - 平面検出のフィードバックは視覚的にわかりやすくアニメーション表示
+  - 操作ボタンは大きめに設計し、AR体験中でも簡単に操作できるよう配慮
+  - キャラクター選択は下部からスライドするモーダルで、視覚的に分かりやすく表示
+  - 写真・動画の撮影モード切替はシンプルなセグメントコントロールで実現
+  - 撮影結果確認画面は全画面表示で、シェア・保存などのアクションをすぐに実行可能
+  - 30fpsのAR表示を維持するため、UIのアニメーションは最小限に抑える
+  - 「ゆるふわBotanic Garden」コンセプトに合わせたアイコンと色使い

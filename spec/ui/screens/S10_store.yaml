@@ -1,0 +1,606 @@
+id: S10_store
+route: /store
+name: Store
+purpose: キセカエアイテム販売とガチャ機能
+description: |
+  植物キャラクターのカスタマイズアイテムを購入できるストア画面。
+  有料/無料のアイテム購入やガチャでキャラクターの外見を変更することができます。
+  「ゆるふわBotanic Garden」コンセプトに合わせた温かみのあるUIで、
+  課金への自然な導線と楽しいショッピング体験を提供します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "ストア"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: currency-display
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          paddingHorizontal: 12
+          paddingVertical: 6
+          borderRadius: 16
+        children:
+          - id: currency-icon
+            type: Icon
+            name: "leaf"
+            style:
+              fontSize: 18
+              color: "#2C6E49"
+              marginRight: 4
+          - id: currency-amount
+            type: Text
+            text: "user.leafCoins || '0'" # データバインディング
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#2C6E49"
+
+  # カテゴリタブ
+  - id: category-tabs
+    type: View
+    style:
+      flexDirection: row
+      marginHorizontal: 16
+      marginVertical: 16
+      borderRadius: 8
+      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+      padding: 4
+    children:
+      - id: tab-gacha
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'gacha' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('gacha')"
+        children:
+          - id: gacha-text
+            type: Text
+            text: "ガチャ"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'gacha' ? '#2C6E49' : '#97BC62'"
+      - id: tab-items
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'items' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('items')"
+        children:
+          - id: items-text
+            type: Text
+            text: "アイテム"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'items' ? '#2C6E49' : '#97BC62'"
+      - id: tab-premium
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'premium' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('premium')"
+        children:
+          - id: premium-text
+            type: Text
+            text: "プレミアム"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'premium' ? '#2C6E49' : '#97BC62'"
+
+  # ガチャセクション
+  - id: gacha-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+      display: "selectedTab === 'gacha' ? 'flex' : 'none'"
+    children:
+      - id: featured-gacha-banner
+        type: TouchableOpacity
+        style:
+          width: "100%"
+          height: 180
+          borderRadius: 16
+          marginBottom: 20
+          overflow: "hidden"
+        onPress: "openFeaturedGacha"
+        children:
+          - id: banner-image
+            type: Image
+            style:
+              width: "100%"
+              height: "100%"
+            props:
+              source: "assets/images/featured_gacha_banner.png"
+              resizeMode: "cover"
+          - id: banner-overlay
+            type: View
+            style:
+              position: "absolute"
+              bottom: 0
+              left: 0
+              right: 0
+              backgroundColor: "rgba(0, 0, 0, 0.5)"
+              padding: 12
+            children:
+              - id: banner-title
+                type: Text
+                text: "初夏の装い限定ガチャ"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 18
+                  color: "#FFFFFF"
+                  marginBottom: 2
+              - id: banner-description
+                type: Text
+                text: "期間限定！5/31まで"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#FFFFFF"
+                  
+      - id: gacha-list-title
+        type: Text
+        text: "ガチャ一覧"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#333333"
+          marginBottom: 12
+          marginTop: 8
+      
+      - id: gacha-list
+        type: FlatList
+        style:
+          width: "100%"
+        props:
+          data: "gachaList" # データバインディング
+          renderItem: "renderGachaItem"
+          keyExtractor: "item => item.id"
+          horizontal: true
+          showsHorizontalScrollIndicator: false
+          
+  # アイテムセクション
+  - id: items-section
+    type: View
+    style:
+      marginHorizontal: 16
+      display: "selectedTab === 'items' ? 'flex' : 'none'"
+    children:
+      - id: item-filter-tabs
+        type: ScrollView
+        style:
+          marginBottom: 16
+        props:
+          horizontal: true
+          showsHorizontalScrollIndicator: false
+        children:
+          - id: filter-all
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemFilter === 'all' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemFilter('all')"
+            children:
+              - id: all-text
+                type: Text
+                text: "すべて"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemFilter === 'all' ? '#FFFFFF' : '#2C6E49'"
+          - id: filter-hats
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemFilter === 'hats' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemFilter('hats')"
+            children:
+              - id: hats-text
+                type: Text
+                text: "帽子"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemFilter === 'hats' ? '#FFFFFF' : '#2C6E49'"
+          - id: filter-glasses
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemFilter === 'glasses' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemFilter('glasses')"
+            children:
+              - id: glasses-text
+                type: Text
+                text: "眼鏡"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemFilter === 'glasses' ? '#FFFFFF' : '#2C6E49'"
+          - id: filter-accessories
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemFilter === 'accessories' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemFilter('accessories')"
+            children:
+              - id: accessories-text
+                type: Text
+                text: "アクセサリー"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemFilter === 'accessories' ? '#FFFFFF' : '#2C6E49'"
+                  
+      - id: items-grid
+        type: FlatList
+        style:
+          width: "100%"
+        props:
+          data: "filteredItems"
+          renderItem: "renderItemGridItem"
+          keyExtractor: "item => item.id"
+          numColumns: 2
+          showsVerticalScrollIndicator: false
+          columnWrapperStyle:
+            justifyContent: "space-between"
+            
+  # プレミアムセクション
+  - id: premium-section
+    type: View
+    style:
+      marginHorizontal: 16
+      display: "selectedTab === 'premium' ? 'flex' : 'none'"
+    children:
+      - id: premium-banner
+        type: View
+        style:
+          backgroundColor: "#FFD166" # アクセントカラー1
+          borderRadius: 16
+          padding: 16
+          marginBottom: 24
+          alignItems: "center"
+        children:
+          - id: premium-title
+            type: Text
+            text: "プレミアムプラン"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 22
+              color: "#333333"
+              marginBottom: 8
+          - id: premium-image
+            type: Image
+            style:
+              width: 100
+              height: 100
+              marginBottom: 12
+            props:
+              source: "assets/images/premium_badge.png"
+              resizeMode: "contain"
+          - id: premium-description
+            type: Text
+            text: "毎月特別アイテム、広告なし、特別バッジなど特典が満載！"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+              textAlign: "center"
+              marginBottom: 16
+          - id: premium-button
+            type: TouchableOpacity
+            style:
+              backgroundColor: "#2C6E49" # 深緑（メインカラー）
+              paddingVertical: 12
+              paddingHorizontal: 24
+              borderRadius: 24
+            onPress: "subscribeToPremium"
+            children:
+              - id: premium-button-text
+                type: Text
+                text: "¥480/月で登録する"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 16
+                  color: "#FFFFFF"
+      
+      - id: coin-packages-title
+        type: Text
+        text: "リーフコイン購入"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#333333"
+          marginBottom: 16
+      
+      - id: coin-packages
+        type: FlatList
+        style:
+          width: "100%"
+        props:
+          data: "coinPackages"
+          renderItem: "renderCoinPackage"
+          keyExtractor: "item => item.id"
+          showsVerticalScrollIndicator: false
+
+# テンプレートコンポーネント
+  # ガチャアイテム表示用テンプレート
+  - id: gacha-item-template
+    type: TouchableOpacity
+    style:
+      width: 160
+      marginRight: 12
+      borderRadius: 12
+      backgroundColor: "#FFFFFF"
+      padding: 12
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    onPress: "openGacha"
+    children:
+      - id: gacha-image
+        type: Image
+        style:
+          width: "100%"
+          height: 120
+          borderRadius: 8
+          marginBottom: 8
+        props:
+          source: "item.imageUrl"
+          resizeMode: "cover"
+      - id: gacha-name
+        type: Text
+        text: "item.name"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#333333"
+          marginBottom: 4
+      - id: gacha-price
+        type: View
+        style:
+          flexDirection: "row"
+          alignItems: "center"
+        children:
+          - id: price-icon
+            type: Icon
+            name: "leaf"
+            style:
+              fontSize: 14
+              color: "#2C6E49"
+              marginRight: 2
+          - id: price-amount
+            type: Text
+            text: "item.price"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 14
+              color: "#2C6E49"
+          - id: price-per
+            type: Text
+            text: "/回"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+              marginLeft: 2
+
+  # アイテムグリッドアイテム表示用テンプレート
+  - id: item-grid-template
+    type: TouchableOpacity
+    style:
+      width: "48%"
+      backgroundColor: "#FFFFFF"
+      borderRadius: 12
+      padding: 12
+      marginBottom: 16
+      alignItems: "center"
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 1
+    onPress: "openItemDetail"
+    children:
+      - id: item-image
+        type: Image
+        style:
+          width: "80%"
+          height: 100
+          marginBottom: 8
+        props:
+          source: "item.imageUrl"
+          resizeMode: "contain"
+      - id: item-name
+        type: Text
+        text: "item.name"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#333333"
+          textAlign: "center"
+          marginBottom: 4
+      - id: item-price-container
+        type: View
+        style:
+          flexDirection: "row"
+          alignItems: "center"
+          justifyContent: "center"
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          paddingVertical: 4
+          paddingHorizontal: 8
+          borderRadius: 12
+        children:
+          - id: item-price-icon
+            type: Icon
+            name: "leaf"
+            style:
+              fontSize: 14
+              color: "#2C6E49"
+              marginRight: 2
+          - id: item-price
+            type: Text
+            text: "item.price"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 14
+              color: "#2C6E49"
+
+  # コインパッケージ表示用テンプレート
+  - id: coin-package-template
+    type: TouchableOpacity
+    style:
+      flexDirection: "row"
+      backgroundColor: "#FFFFFF"
+      borderRadius: 12
+      padding: 16
+      marginBottom: 12
+      alignItems: "center"
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 1
+    onPress: "purchaseCoinPackage"
+    children:
+      - id: package-icon-container
+        type: View
+        style:
+          width: 60
+          height: 60
+          borderRadius: 30
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          justifyContent: "center"
+          alignItems: "center"
+          marginRight: 16
+        children:
+          - id: package-icon
+            type: Icon
+            name: "leaf-maple"
+            style:
+              fontSize: 30
+              color: "#2C6E49"
+      - id: package-info
+        type: View
+        style:
+          flex: 1
+        children:
+          - id: package-amount
+            type: Text
+            text: "item.amount + ' リーフコイン'"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#333333"
+              marginBottom: 4
+          - id: package-bonus
+            type: Text
+            text: "item.bonus ? '+' + item.bonus + ' ボーナス' : ''"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#EF476F" # アクセントカラー2
+              display: "item.bonus ? 'flex' : 'none'"
+      - id: package-price
+        type: Text
+        text: "item.price"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 16
+          color: "#2C6E49"
+          
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - ストア画面は「ガチャ」「アイテム」「プレミアム」の3タブ構成
+  - ガチャは限定バナーと通常ガチャのリスト表示
+  - アイテムはカテゴリフィルターとグリッド表示で見やすく整理
+  - プレミアム購読と直接コイン購入のオプションを提供
+  - 全体的に「ゆるふわ」コンセプトに合わせた丸みのあるデザイン要素
+  - 価格表示は常にリーフコインアイコンと組み合わせて視認性向上
+  - タッチ可能な領域は十分な大きさを確保

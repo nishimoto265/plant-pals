@@ -1,0 +1,363 @@
+id: TC08_realtime_api
+name: リアルタイムAPI契約テスト
+description: リアルタイム通信を提供するAPIエンドポイント群の契約テスト
+
+endpoints:
+  - id: connect_realtime
+    path: /api/realtime/connect
+    method: GET
+    description: リアルタイム通信のWebSocket接続を確立するエンドポイント
+    request:
+      parameters:
+        - name: token
+          type: string
+          in: query
+          required: true
+          description: 認証トークン
+        - name: client_id
+          type: string
+          in: query
+          required: false
+          description: クライアント識別子（再接続時に使用）
+    response:
+      success:
+        status: 101
+        description: WebSocket接続に切り替え成功
+      error:
+        cases:
+          - status: 401
+            description: 認証エラー
+          - status: 429
+            description: 接続数制限超過
+    examples:
+      - name: 接続成功
+        request:
+          parameters:
+            token: "valid_auth_token_123"
+        response:
+          status: 101
+          headers:
+            Upgrade: "websocket"
+            Connection: "Upgrade"
+            Sec-WebSocket-Accept: "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+
+  - id: subscribe_channel
+    path: /api/realtime/channels
+    method: POST
+    description: 特定のチャンネルを購読するエンドポイント
+    request:
+      content_type: application/json
+      body:
+        type: object
+        properties:
+          channel:
+            type: string
+            description: 購読するチャンネル名
+          client_id:
+            type: string
+            description: クライアント識別子
+          presence:
+            type: boolean
+            description: プレゼンス情報を含めるかどうか
+            default: false
+        required: [channel, client_id]
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            channel:
+              type: string
+            subscription_id:
+              type: string
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  client_id:
+                    type: string
+                  user_id:
+                    type: string
+                  metadata:
+                    type: object
+          required: [success, channel, subscription_id]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 401
+            description: 認証エラー
+          - status: 403
+            description: チャンネルへのアクセス権限なし
+    examples:
+      - name: チャンネル購読
+        request:
+          body:
+            channel: "plant:updates:plant123"
+            client_id: "client_xyz789"
+            presence: true
+        response:
+          status: 200
+          body:
+            success: true
+            channel: "plant:updates:plant123"
+            subscription_id: "sub_456abc"
+            members: [
+              {
+                "client_id": "client_xyz789",
+                "user_id": "user001",
+                "metadata": {
+                  "name": "植物好き太郎",
+                  "avatar": "avatar1.jpg"
+                }
+              }
+            ]
+
+  - id: unsubscribe_channel
+    path: /api/realtime/channels/{subscription_id}
+    method: DELETE
+    description: チャンネル購読を解除するエンドポイント
+    request:
+      parameters:
+        - name: subscription_id
+          type: string
+          in: path
+          required: true
+          description: 購読ID
+        - name: client_id
+          type: string
+          in: query
+          required: true
+          description: クライアント識別子
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            channel:
+              type: string
+          required: [success, channel]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 404
+            description: 購読が見つからない
+    examples:
+      - name: 購読解除
+        request:
+          parameters:
+            subscription_id: "sub_456abc"
+            client_id: "client_xyz789"
+        response:
+          status: 200
+          body:
+            success: true
+            channel: "plant:updates:plant123"
+
+  - id: publish_message
+    path: /api/realtime/channels/{channel}/messages
+    method: POST
+    description: チャンネルにメッセージを送信するエンドポイント
+    request:
+      parameters:
+        - name: channel
+          type: string
+          in: path
+          required: true
+          description: チャンネル名
+      content_type: application/json
+      body:
+        type: object
+        properties:
+          client_id:
+            type: string
+            description: 送信元クライアント識別子
+          event:
+            type: string
+            description: イベント種別
+          data:
+            type: object
+            description: メッセージデータ
+        required: [client_id, event, data]
+    response:
+      success:
+        status: 202
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+            message_id:
+              type: string
+          required: [success, message_id]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 401
+            description: 認証エラー
+          - status: 403
+            description: 送信権限なし
+          - status: 413
+            description: メッセージサイズ超過
+    examples:
+      - name: メッセージ送信
+        request:
+          parameters:
+            channel: "plant:updates:plant123"
+          body:
+            client_id: "client_xyz789"
+            event: "health_update"
+            data: {
+              "plantId": "plant123",
+              "status": "warning",
+              "message": "水やりが必要かもしれません",
+              "timestamp": "2025-05-15T12:34:56Z"
+            }
+        response:
+          status: 202
+          body:
+            success: true
+            message_id: "msg_789def"
+
+message_schemas:
+  - name: health_update
+    description: 植物の健康状態更新メッセージ
+    schema:
+      type: object
+      properties:
+        plantId:
+          type: string
+        status:
+          type: string
+          enum: [healthy, warning, issue]
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required: [plantId, status, timestamp]
+
+  - name: watering_reminder
+    description: 水やりリマインダーメッセージ
+    schema:
+      type: object
+      properties:
+        plantId:
+          type: string
+        plantName:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        priority:
+          type: string
+          enum: [low, medium, high]
+      required: [plantId, dueDate]
+
+  - name: presence_update
+    description: プレゼンス状態更新メッセージ
+    schema:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [enter, leave, update]
+        client_id:
+          type: string
+        user_id:
+          type: string
+        metadata:
+          type: object
+      required: [action, client_id]
+
+channel_patterns:
+  - pattern: "plant:updates:{plantId}"
+    description: 特定の植物に関する更新を受け取るチャンネル
+    access_control:
+      - owner
+      - family_member
+      - caretaker
+    events:
+      - health_update
+      - watering_reminder
+      - growth_milestone
+
+  - pattern: "user:{userId}:notifications"
+    description: ユーザー通知用チャンネル
+    access_control:
+      - self
+    events:
+      - app_notification
+      - friend_request
+      - achievement_unlocked
+
+  - pattern: "family:{familyId}:activities"
+    description: ファミリーグループのアクティビティチャンネル
+    access_control:
+      - family_member
+    events:
+      - plant_added
+      - member_joined
+      - care_activity_logged
+
+security:
+  - type: bearer_token
+    scopes:
+      - realtime:connect
+      - realtime:subscribe
+      - realtime:publish
+
+rate_limiting:
+  connections:
+    per_user: 5
+    per_ip: 20
+  messages:
+    publish: 10 per second
+    subscribe: 20 per minute
+
+validation:
+  - scenario: invalid_subscription
+    endpoint: unsubscribe_channel
+    request:
+      parameters:
+        subscription_id: "non_existent_sub"
+        client_id: "client_xyz789"
+    expected:
+      status: 404
+
+  - scenario: message_too_large
+    endpoint: publish_message
+    request:
+      parameters:
+        channel: "plant:updates:plant123"
+      body:
+        client_id: "client_xyz789"
+        event: "health_update"
+        data: {
+          "plantId": "plant123",
+          "status": "warning",
+          "message": "非常に長いメッセージ...(10MB以上のデータ)"
+        }
+    expected:
+      status: 413
+
+compatibility:
+  supported_versions:
+    - "1.0"
+    - "1.1"
+  default_version: "1.1"
+  websocket_protocols:
+    - "plant-pals-realtime-v1"
+    - "plant-pals-realtime-v1.1" 

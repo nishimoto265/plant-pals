@@ -1,0 +1,699 @@
+id: TS16_checkout
+name: 決済画面テスト
+target:
+  screen: S16_checkout
+  path: src/ui/screens/S16_checkout/CheckoutScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: 決済画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態での決済画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/info.png
+            - asset: assets/icons/card.png
+            - asset: assets/icons/applepay.png
+            - asset: assets/icons/googlepay.png
+            - asset: assets/icons/secure.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#checkout-header"
+          - type: element-exists
+            target: "#order-summary"
+          - type: element-exists
+            target: "#payment-methods"
+          - type: element-exists
+            target: "#shipping-address"
+          - type: element-exists
+            target: "#checkout-button"
+
+      - id: checkout-data-loaded
+        name: 決済データ読み込み
+        description: 決済データが読み込まれた状態での決済画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/info.png
+            - asset: assets/icons/card.png
+            - asset: assets/icons/applepay.png
+            - asset: assets/icons/googlepay.png
+            - asset: assets/icons/secure.png
+            - asset: assets/store/pro_fertilizer.jpg
+            - asset: assets/store/terracotta_pot.jpg
+          state:
+            cart:
+              items:
+                - id: "item001"
+                  name: "プロフェッショナル肥料"
+                  price: 1200
+                  quantity: 1
+                  imageUrl: "assets/store/pro_fertilizer.jpg"
+                - id: "item002"
+                  name: "テラコッタ植木鉢セット"
+                  price: 1800
+                  quantity: 2
+                  imageUrl: "assets/store/terracotta_pot.jpg"
+              subtotal: 4800
+              tax: 480
+              shipping: 500
+              total: 5780
+            paymentMethods:
+              - id: "card001"
+                type: "credit_card"
+                brand: "visa"
+                last4: "4242"
+                expiryMonth: 12
+                expiryYear: 2028
+                isDefault: true
+              - id: "card002"
+                type: "credit_card"
+                brand: "mastercard"
+                last4: "5555"
+                expiryMonth: 4
+                expiryYear: 2027
+                isDefault: false
+            shippingAddress:
+              id: "address001"
+              fullName: "山田太郎"
+              postalCode: "123-4567"
+              prefecture: "東京都"
+              city: "渋谷区"
+              line1: "渋谷1-2-3"
+              line2: "渋谷アパート101"
+              phoneNumber: "090-1234-5678"
+              isDefault: true
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#cart-item-item001"
+          - type: element-exists
+            target: "#cart-item-item002"
+          - type: element-count
+            target: ".cart-item"
+            count: 2
+          - type: element-text
+            target: "#cart-item-name-item001"
+            value: "プロフェッショナル肥料"
+          - type: element-text
+            target: "#cart-item-price-item001"
+            value: "¥1,200"
+          - type: element-text
+            target: "#cart-item-quantity-item002"
+            value: "2"
+          - type: element-text
+            target: "#subtotal-amount"
+            value: "¥4,800"
+          - type: element-text
+            target: "#tax-amount"
+            value: "¥480"
+          - type: element-text
+            target: "#total-amount"
+            value: "¥5,780"
+          - type: element-text
+            target: "#payment-method-last4"
+            value: "末尾4242"
+          - type: element-text
+            target: "#shipping-address-name"
+            value: "山田太郎"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: add-payment-method-navigation
+        name: 支払い方法追加画面遷移
+        description: 支払い方法追加ボタンをタップすると支払い方法追加画面に遷移すること
+        steps:
+          - action: press
+            target: "#add-payment-method"
+        assertions:
+          - type: navigation
+            route: "AddPaymentMethod"
+
+      - id: edit-payment-method-navigation
+        name: 支払い方法編集画面遷移
+        description: 現在の支払い方法をタップすると支払い方法選択画面に遷移すること
+        steps:
+          - action: press
+            target: "#selected-payment-method"
+        assertions:
+          - type: navigation
+            route: "SelectPaymentMethod"
+
+      - id: add-shipping-address-navigation
+        name: 配送先追加画面遷移
+        description: 配送先追加ボタンをタップすると配送先追加画面に遷移すること
+        steps:
+          - action: press
+            target: "#add-shipping-address"
+        assertions:
+          - type: navigation
+            route: "AddShippingAddress"
+
+      - id: edit-shipping-address-navigation
+        name: 配送先編集画面遷移
+        description: 現在の配送先をタップすると配送先選択画面に遷移すること
+        steps:
+          - action: press
+            target: "#selected-shipping-address"
+        assertions:
+          - type: navigation
+            route: "SelectShippingAddress"
+
+  - id: checkout_process
+    name: 決済処理テスト
+    description: 決済処理の動作を検証
+    type: functional
+    cases:
+      - id: checkout-button-enabled
+        name: 決済ボタン有効
+        description: 必須項目が入力された状態では決済ボタンが有効になること
+        setup:
+          state:
+            paymentMethods:
+              - id: "card001"
+                isDefault: true
+            shippingAddress:
+              id: "address001"
+              isDefault: true
+            cart:
+              total: 5780
+        assertions:
+          - type: element-attribute
+            target: "#checkout-button"
+            attribute: "disabled"
+            value: "false"
+          - type: element-text
+            target: "#checkout-button"
+            value: "¥5,780を支払う"
+
+      - id: checkout-button-disabled
+        name: 決済ボタン無効
+        description: 必須項目が未入力の状態では決済ボタンが無効になること
+        setup:
+          state:
+            paymentMethods: []
+            shippingAddress: null
+            cart:
+              total: 5780
+        assertions:
+          - type: element-attribute
+            target: "#checkout-button"
+            attribute: "disabled"
+            value: "true"
+          - type: element-text
+            target: "#checkout-button"
+            value: "¥5,780を支払う"
+
+      - id: start-checkout
+        name: 決済開始
+        description: 決済ボタンをタップすると決済処理が開始されること
+        setup:
+          state:
+            paymentMethods:
+              - id: "card001"
+                isDefault: true
+            shippingAddress:
+              id: "address001"
+              isDefault: true
+            cart:
+              total: 5780
+          mocks:
+            - api:
+                endpoint: "/api/checkout/process"
+                method: "POST"
+                response:
+                  success: true
+                  orderId: "order001"
+        steps:
+          - action: press
+            target: "#checkout-button"
+        assertions:
+          - type: function-called
+            target: "processCheckout"
+            params:
+              paymentMethodId: "card001"
+              shippingAddressId: "address001"
+              amount: 5780
+          - type: element-attribute
+            target: "#checkout-button"
+            attribute: "loading"
+            value: "true"
+
+      - id: successful-checkout
+        name: 決済成功
+        description: 決済が成功すると完了画面に遷移すること
+        setup:
+          state:
+            checkoutInProgress: true
+            checkoutResponse:
+              success: true
+              orderId: "order001"
+        assertions:
+          - type: navigation
+            route: "CheckoutSuccess"
+          - type: navigation-params
+            key: "orderId"
+            value: "order001"
+
+      - id: failed-checkout
+        name: 決済失敗
+        description: 決済が失敗するとエラーメッセージが表示されること
+        setup:
+          state:
+            checkoutInProgress: true
+            checkoutResponse:
+              success: false
+              error: "payment_failed"
+              message: "決済処理に失敗しました。カード情報をご確認ください。"
+        assertions:
+          - type: element-visible
+            target: "#checkout-error"
+          - type: element-text
+            target: "#checkout-error-message"
+            value: "決済処理に失敗しました。カード情報をご確認ください。"
+          - type: element-attribute
+            target: "#checkout-button"
+            attribute: "loading"
+            value: "false"
+
+  - id: coupon_code
+    name: クーポンコードテスト
+    description: クーポンコード機能の動作を検証
+    type: interaction
+    cases:
+      - id: show-coupon-input
+        name: クーポン入力表示
+        description: クーポンコード入力欄を表示できること
+        steps:
+          - action: press
+            target: "#show-coupon-button"
+        assertions:
+          - type: element-visible
+            target: "#coupon-input-section"
+          - type: element-exists
+            target: "#coupon-code-input"
+          - type: element-exists
+            target: "#apply-coupon-button"
+
+      - id: apply-valid-coupon
+        name: 有効クーポン適用
+        description: 有効なクーポンコードを適用すると割引が反映されること
+        setup:
+          state:
+            couponInputVisible: true
+            cart:
+              subtotal: 4800
+              tax: 480
+              shipping: 500
+              total: 5780
+          mocks:
+            - api:
+                endpoint: "/api/coupons/apply"
+                method: "POST"
+                params:
+                  code: "WELCOME20"
+                response:
+                  valid: true
+                  discountType: "percentage"
+                  discountValue: 20
+                  discountAmount: 960
+        steps:
+          - action: input
+            target: "#coupon-code-input"
+            value: "WELCOME20"
+          - action: press
+            target: "#apply-coupon-button"
+        assertions:
+          - type: function-called
+            target: "applyCoupon"
+            params:
+              code: "WELCOME20"
+          - type: element-visible
+            target: "#discount-row"
+          - type: element-text
+            target: "#discount-label"
+            value: "割引 (20%)"
+          - type: element-text
+            target: "#discount-amount"
+            value: "-¥960"
+          - type: element-text
+            target: "#total-amount"
+            value: "¥4,820"
+          - type: element-exists
+            target: "#remove-coupon-button"
+
+      - id: apply-invalid-coupon
+        name: 無効クーポン処理
+        description: 無効なクーポンコードではエラーメッセージが表示されること
+        setup:
+          state:
+            couponInputVisible: true
+          mocks:
+            - api:
+                endpoint: "/api/coupons/apply"
+                method: "POST"
+                params:
+                  code: "INVALID"
+                response:
+                  valid: false
+                  error: "invalid_coupon"
+                  message: "無効なクーポンコードです"
+        steps:
+          - action: input
+            target: "#coupon-code-input"
+            value: "INVALID"
+          - action: press
+            target: "#apply-coupon-button"
+        assertions:
+          - type: function-called
+            target: "applyCoupon"
+            params:
+              code: "INVALID"
+          - type: element-visible
+            target: "#coupon-error"
+          - type: element-text
+            target: "#coupon-error-message"
+            value: "無効なクーポンコードです"
+          - type: element-not-exists
+            target: "#discount-row"
+
+      - id: remove-coupon
+        name: クーポン削除
+        description: クーポン削除ボタンをタップするとクーポンが削除されること
+        setup:
+          state:
+            appliedCoupon:
+              code: "WELCOME20"
+              discountType: "percentage"
+              discountValue: 20
+              discountAmount: 960
+            cart:
+              subtotal: 4800
+              tax: 480
+              shipping: 500
+              discount: 960
+              total: 4820
+        steps:
+          - action: press
+            target: "#remove-coupon-button"
+        assertions:
+          - type: function-called
+            target: "removeCoupon"
+          - type: element-not-exists
+            target: "#discount-row"
+          - type: state-change
+            target: "appliedCoupon"
+            value: null
+          - type: element-text
+            target: "#total-amount"
+            value: "¥5,780"
+
+  - id: dynamic_form_validation
+    name: 動的フォームバリデーションテスト
+    description: フォーム入力時のバリデーションを検証
+    type: interaction
+    cases:
+      - id: empty-state-validation
+        name: 空欄バリデーション
+        description: 必須項目が空の場合のバリデーションが正しく動作すること
+        setup:
+          state:
+            paymentMethods: []
+            shippingAddress: null
+        assertions:
+          - type: element-visible
+            target: "#payment-method-required"
+          - type: element-text
+            target: "#payment-method-required-message"
+            value: "支払い方法を選択してください"
+          - type: element-visible
+            target: "#shipping-address-required"
+          - type: element-text
+            target: "#shipping-address-required-message"
+            value: "配送先を選択してください"
+
+      - id: card-expiry-validation
+        name: カード有効期限バリデーション
+        description: 有効期限切れのカードの警告が表示されること
+        setup:
+          state:
+            currentTime: "2026-06-01T00:00:00Z"
+            paymentMethods:
+              - id: "card003"
+                type: "credit_card"
+                brand: "visa"
+                last4: "9999"
+                expiryMonth: 5
+                expiryYear: 2026
+                isDefault: true
+        assertions:
+          - type: element-visible
+            target: "#card-expiry-warning"
+          - type: element-text
+            target: "#card-expiry-warning-message"
+            value: "このカードの有効期限が近づいています"
+
+  - id: cart_summary
+    name: カート概要テスト
+    description: カート内容の表示と操作を検証
+    type: functional
+    cases:
+      - id: cart-item-display
+        name: カートアイテム表示
+        description: カートアイテムが正しく表示されること
+        setup:
+          state:
+            cart:
+              items:
+                - id: "item001"
+                  name: "プロフェッショナル肥料"
+                  price: 1200
+                  quantity: 1
+                  imageUrl: "assets/store/pro_fertilizer.jpg"
+                - id: "item002"
+                  name: "テラコッタ植木鉢セット"
+                  price: 1800
+                  quantity: 2
+                  imageUrl: "assets/store/terracotta_pot.jpg"
+              subtotal: 4800
+        assertions:
+          - type: element-exists
+            target: "#cart-item-item001"
+          - type: element-exists
+            target: "#cart-item-item002"
+          - type: element-text
+            target: "#cart-item-name-item001"
+            value: "プロフェッショナル肥料"
+          - type: element-text
+            target: "#cart-item-quantity-item002"
+            value: "2"
+          - type: element-text
+            target: "#cart-item-total-item002"
+            value: "¥3,600"
+
+      - id: expand-collapse-cart
+        name: カート開閉
+        description: カート概要を開閉できること
+        steps:
+          - action: press
+            target: "#toggle-cart-details"
+          - assertions:
+              - type: element-attribute
+                target: "#cart-details"
+                attribute: "expanded"
+                value: "true"
+              - type: element-visible
+                target: "#cart-items-list"
+          - action: press
+            target: "#toggle-cart-details"
+          - assertions:
+              - type: element-attribute
+                target: "#cart-details"
+                attribute: "expanded"
+                value: "false"
+              - type: element-not-visible
+                target: "#cart-items-list"
+
+  - id: payment_method_display
+    name: 支払い方法表示テスト
+    description: 支払い方法の表示を検証
+    type: functional
+    cases:
+      - id: credit-card-display
+        name: クレジットカード表示
+        description: クレジットカード情報が正しく表示されること
+        setup:
+          state:
+            paymentMethods:
+              - id: "card001"
+                type: "credit_card"
+                brand: "visa"
+                last4: "4242"
+                expiryMonth: 12
+                expiryYear: 2028
+                isDefault: true
+        assertions:
+          - type: element-exists
+            target: "#payment-card-icon"
+          - type: element-attribute
+            target: "#payment-card-icon"
+            attribute: "brand"
+            value: "visa"
+          - type: element-text
+            target: "#payment-method-last4"
+            value: "末尾4242"
+          - type: element-text
+            target: "#payment-method-expiry"
+            value: "有効期限: 12/28"
+
+      - id: alternative-payment-display
+        name: 代替支払方法表示
+        description: 代替支払方法（ApplePay/GooglePay）が正しく表示されること
+        setup:
+          state:
+            paymentMethods:
+              - id: "wallet001"
+                type: "apple_pay"
+                isDefault: true
+        assertions:
+          - type: element-exists
+            target: "#payment-wallet-icon"
+          - type: element-attribute
+            target: "#payment-wallet-icon"
+            attribute: "type"
+            value: "apple_pay"
+          - type: element-text
+            target: "#payment-method-name"
+            value: "Apple Pay"
+
+  - id: shipping_address_display
+    name: 配送先表示テスト
+    description: 配送先の表示を検証
+    type: functional
+    cases:
+      - id: address-display
+        name: 住所表示
+        description: 配送先住所が正しく表示されること
+        setup:
+          state:
+            shippingAddress:
+              id: "address001"
+              fullName: "山田太郎"
+              postalCode: "123-4567"
+              prefecture: "東京都"
+              city: "渋谷区"
+              line1: "渋谷1-2-3"
+              line2: "渋谷アパート101"
+              phoneNumber: "090-1234-5678"
+              isDefault: true
+        assertions:
+          - type: element-exists
+            target: "#shipping-address-display"
+          - type: element-text
+            target: "#shipping-address-name"
+            value: "山田太郎"
+          - type: element-text
+            target: "#shipping-address-line1"
+            value: "〒123-4567"
+          - type: element-text
+            target: "#shipping-address-line2"
+            value: "東京都渋谷区渋谷1-2-3"
+          - type: element-text
+            target: "#shipping-address-line3"
+            value: "渋谷アパート101"
+          - type: element-text
+            target: "#shipping-address-phone"
+            value: "090-1234-5678"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#checkout-form"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load checkout data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "決済情報の読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load checkout data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadCheckoutData"
+          - type: state-change
+            target: "loading"
+            value: true
+
+accessibility:
+  - test: color-contrast
+    description: 支払い情報と支払いボタンのテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての料金情報と支払いフォームが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: フォーム入力とボタンがキーボードで操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

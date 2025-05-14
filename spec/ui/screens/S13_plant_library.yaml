@@ -1,0 +1,669 @@
+id: S13_plant_library
+route: /plant_library
+name: PlantLibrary
+purpose: 植物図鑑・育成情報検索
+description: |
+  ユーザーが植物の種類を検索・閲覧できる図鑑機能。
+  植物の詳細な育成方法やケアのヒントを表示し、
+  ユーザーが所持している植物にはマーカーを表示します。
+  「ゆるふわBotanic Garden」テーマに沿った学びやすいデザインで、
+  植物育成の知識を楽しく深める体験を提供します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: View # メインコンテンツ
+      style:
+        flex: 1
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "植物図鑑"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: search-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          borderRadius: 20
+        onPress: "toggleSearchBar"
+        children:
+          - id: search-icon
+            type: Icon
+            name: "magnify"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  # 検索バー（トグルで表示/非表示）
+  - id: search-bar-container
+    type: Animated.View
+    style:
+      height: "isSearchVisible ? 60 : 0"
+      overflow: "hidden"
+      paddingHorizontal: 16
+      paddingVertical: "isSearchVisible ? 8 : 0"
+      backgroundColor: "#FFFFFF"
+      borderBottomWidth: 1
+      borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    children:
+      - id: search-input
+        type: TextInput
+        style:
+          height: 44
+          backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+          borderRadius: 22
+          paddingHorizontal: 16
+          paddingVertical: 8
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#333333"
+        props:
+          placeholder: "植物名で検索..."
+          placeholderTextColor: "#999999"
+          value: "searchQuery"
+          onChangeText: "handleSearch"
+
+  # カテゴリフィルター
+  - id: category-filters
+    type: ScrollView
+    style:
+      marginTop: 16
+      marginBottom: 16
+      paddingHorizontal: 16
+    props:
+      horizontal: true
+      showsHorizontalScrollIndicator: false
+    children:
+      - id: filter-all
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+          backgroundColor: "selectedCategory === 'all' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+          marginRight: 8
+        onPress: "setCategory('all')"
+        children:
+          - id: all-text
+            type: Text
+            text: "すべて"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedCategory === 'all' ? '#FFFFFF' : '#2C6E49'"
+      - id: filter-indoor
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+          backgroundColor: "selectedCategory === 'indoor' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+          marginRight: 8
+        onPress: "setCategory('indoor')"
+        children:
+          - id: indoor-text
+            type: Text
+            text: "観葉植物"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedCategory === 'indoor' ? '#FFFFFF' : '#2C6E49'"
+      - id: filter-succulent
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+          backgroundColor: "selectedCategory === 'succulent' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+          marginRight: 8
+        onPress: "setCategory('succulent')"
+        children:
+          - id: succulent-text
+            type: Text
+            text: "多肉植物"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedCategory === 'succulent' ? '#FFFFFF' : '#2C6E49'"
+      - id: filter-herb
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+          backgroundColor: "selectedCategory === 'herb' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+          marginRight: 8
+        onPress: "setCategory('herb')"
+        children:
+          - id: herb-text
+            type: Text
+            text: "ハーブ"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedCategory === 'herb' ? '#FFFFFF' : '#2C6E49'"
+      - id: filter-flower
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 16
+          borderRadius: 20
+          backgroundColor: "selectedCategory === 'flower' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+          marginRight: 8
+        onPress: "setCategory('flower')"
+        children:
+          - id: flower-text
+            type: Text
+            text: "花"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedCategory === 'flower' ? '#FFFFFF' : '#2C6E49'"
+
+  # 植物リスト
+  - id: plant-list
+    type: FlatList
+    style:
+      flex: 1
+      paddingHorizontal: 16
+    props:
+      data: "filteredPlants"
+      renderItem: "renderPlantItem"
+      keyExtractor: "item => item.id"
+      showsVerticalScrollIndicator: false
+      contentContainerStyle:
+        paddingBottom: 24
+
+  # 植物リストアイテムテンプレート
+  - id: plant-item-template
+    type: TouchableOpacity
+    style:
+      flexDirection: "row"
+      backgroundColor: "#FFFFFF"
+      borderRadius: 12
+      marginBottom: 12
+      padding: 12
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    onPress: "openPlantDetail"
+    children:
+      - id: plant-thumbnail
+        type: Image
+        style:
+          width: 80
+          height: 80
+          borderRadius: 8
+          marginRight: 12
+        props:
+          source: "item.thumbnailUrl"
+          resizeMode: "cover"
+      - id: plant-info
+        type: View
+        style:
+          flex: 1
+          justifyContent: "center"
+        children:
+          - id: plant-name-container
+            type: View
+            style:
+              flexDirection: "row"
+              alignItems: "center"
+              marginBottom: 4
+            children:
+              - id: plant-name
+                type: Text
+                text: "item.name"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  fontWeight: "bold"
+                  color: "#333333"
+                  flex: 1
+              - id: owned-marker
+                type: View
+                style:
+                  backgroundColor: "#97BC62"
+                  paddingHorizontal: 8
+                  paddingVertical: 2
+                  borderRadius: 10
+                  display: "item.isOwned ? 'flex' : 'none'"
+                children:
+                  - id: owned-text
+                    type: Text
+                    text: "所持中"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 10
+                      color: "#FFFFFF"
+                      
+          - id: plant-scientific-name
+            type: Text
+            text: "item.scientificName"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              fontStyle: "italic"
+              color: "#666666"
+              marginBottom: 6
+              
+          # 難易度表示（水やり頻度・日光・温度など）
+          - id: difficulty-container
+            type: View
+            style:
+              flexDirection: "row"
+              alignItems: "center"
+            children:
+              - id: difficulty-label
+                type: Text
+                text: "育てやすさ:"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#666666"
+                  marginRight: 6
+              - id: difficulty-stars
+                type: View
+                style:
+                  flexDirection: "row"
+                children:
+                  - id: star-1
+                    type: Icon
+                    name: "star"
+                    style:
+                      fontSize: 14
+                      color: "item.difficulty >= 1 ? '#FFD166' : '#E0E0E0'"
+                      marginRight: 2
+                  - id: star-2
+                    type: Icon
+                    name: "star"
+                    style:
+                      fontSize: 14
+                      color: "item.difficulty >= 2 ? '#FFD166' : '#E0E0E0'"
+                      marginRight: 2
+                  - id: star-3
+                    type: Icon
+                    name: "star"
+                    style:
+                      fontSize: 14
+                      color: "item.difficulty >= 3 ? '#FFD166' : '#E0E0E0'"
+                      marginRight: 2
+                  - id: star-4
+                    type: Icon
+                    name: "star"
+                    style:
+                      fontSize: 14
+                      color: "item.difficulty >= 4 ? '#FFD166' : '#E0E0E0'"
+                      marginRight: 2
+                  - id: star-5
+                    type: Icon
+                    name: "star"
+                    style:
+                      fontSize: 14
+                      color: "item.difficulty >= 5 ? '#FFD166' : '#E0E0E0'"
+
+  # 植物詳細モーダル
+  - id: plant-detail-modal
+    type: Modal
+    props:
+      visible: "!!selectedPlant"
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: modal-container
+        type: View
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.4)"
+        children:
+          - id: modal-content
+            type: View
+            style:
+              flex: 1
+              backgroundColor: "#F2EFEA"
+              marginTop: 60
+              borderTopLeftRadius: 24
+              borderTopRightRadius: 24
+              overflow: "hidden"
+            children:
+              # ヘッダー画像
+              - id: plant-hero-image
+                type: Image
+                style:
+                  width: "100%"
+                  height: 200
+                props:
+                  source: "selectedPlant?.imageUrl"
+                  resizeMode: "cover"
+                  
+              # 閉じるボタン
+              - id: close-detail-button
+                type: TouchableOpacity
+                style:
+                  position: "absolute"
+                  top: 16
+                  left: 16
+                  width: 40
+                  height: 40
+                  borderRadius: 20
+                  backgroundColor: "rgba(255, 255, 255, 0.8)"
+                  justifyContent: "center"
+                  alignItems: "center"
+                  zIndex: 10
+                onPress: "closeDetail"
+                children:
+                  - id: close-icon
+                    type: Icon
+                    name: "close"
+                    style:
+                      fontSize: 20
+                      color: "#333333"
+                      
+              # 詳細コンテンツ
+              - id: detail-content-container
+                type: ScrollView
+                style:
+                  flex: 1
+                  backgroundColor: "#FFFFFF"
+                  marginTop: -20
+                  borderTopLeftRadius: 24
+                  borderTopRightRadius: 24
+                  paddingTop: 24
+                  paddingHorizontal: 20
+                props:
+                  showsVerticalScrollIndicator: false
+                children:
+                  # 植物名と科学名
+                  - id: plant-name-header
+                    type: View
+                    style:
+                      marginBottom: 20
+                    children:
+                      - id: plant-display-name
+                        type: Text
+                        text: "selectedPlant?.name"
+                        style:
+                          fontFamily: "Poppins-SemiBold"
+                          fontSize: 24
+                          color: "#333333"
+                          marginBottom: 4
+                      - id: plant-latin-name
+                        type: Text
+                        text: "selectedPlant?.scientificName"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          fontStyle: "italic"
+                          color: "#666666"
+                          
+                  # 特性アイコン
+                  - id: plant-traits
+                    type: View
+                    style:
+                      flexDirection: "row"
+                      justifyContent: "space-around"
+                      marginBottom: 24
+                      backgroundColor: "rgba(151, 188, 98, 0.1)"
+                      borderRadius: 12
+                      padding: 16
+                    children:
+                      # 水やり
+                      - id: watering-trait
+                        type: View
+                        style:
+                          alignItems: "center"
+                        children:
+                          - id: water-icon
+                            type: Icon
+                            name: "water"
+                            style:
+                              fontSize: 24
+                              color: "#2C6E49"
+                              marginBottom: 4
+                          - id: water-text
+                            type: Text
+                            text: "selectedPlant?.wateringFrequency"
+                            style:
+                              fontFamily: "Noto Sans JP"
+                              fontSize: 12
+                              color: "#333333"
+                              textAlign: "center"
+                      # 日光
+                      - id: sunlight-trait
+                        type: View
+                        style:
+                          alignItems: "center"
+                        children:
+                          - id: sun-icon
+                            type: Icon
+                            name: "weather-sunny"
+                            style:
+                              fontSize: 24
+                              color: "#FFD166"
+                              marginBottom: 4
+                          - id: sun-text
+                            type: Text
+                            text: "selectedPlant?.sunlightNeeds"
+                            style:
+                              fontFamily: "Noto Sans JP"
+                              fontSize: 12
+                              color: "#333333"
+                              textAlign: "center"
+                      # 温度
+                      - id: temperature-trait
+                        type: View
+                        style:
+                          alignItems: "center"
+                        children:
+                          - id: temp-icon
+                            type: Icon
+                            name: "thermometer"
+                            style:
+                              fontSize: 24
+                              color: "#EF476F"
+                              marginBottom: 4
+                          - id: temp-text
+                            type: Text
+                            text: "selectedPlant?.temperatureRange"
+                            style:
+                              fontFamily: "Noto Sans JP"
+                              fontSize: 12
+                              color: "#333333"
+                              textAlign: "center"
+                      # 湿度
+                      - id: humidity-trait
+                        type: View
+                        style:
+                          alignItems: "center"
+                        children:
+                          - id: humidity-icon
+                            type: Icon
+                            name: "water-percent"
+                            style:
+                              fontSize: 24
+                              color: "#4D9DE0"
+                              marginBottom: 4
+                          - id: humidity-text
+                            type: Text
+                            text: "selectedPlant?.humidityNeeds"
+                            style:
+                              fontFamily: "Noto Sans JP"
+                              fontSize: 12
+                              color: "#333333"
+                              textAlign: "center"
+                              
+                  # 説明
+                  - id: about-section
+                    type: View
+                    style:
+                      marginBottom: 24
+                    children:
+                      - id: about-heading
+                        type: Text
+                        text: "この植物について"
+                        style:
+                          fontFamily: "Poppins-SemiBold"
+                          fontSize: 18
+                          color: "#2C6E49"
+                          marginBottom: 12
+                      - id: about-content
+                        type: Text
+                        text: "selectedPlant?.description"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#333333"
+                          lineHeight: 22
+                          
+                  # ケアのヒント
+                  - id: care-section
+                    type: View
+                    style:
+                      marginBottom: 24
+                    children:
+                      - id: care-heading
+                        type: Text
+                        text: "育て方のポイント"
+                        style:
+                          fontFamily: "Poppins-SemiBold"
+                          fontSize: 18
+                          color: "#2C6E49"
+                          marginBottom: 12
+                      - id: care-tips-list
+                        type: FlatList
+                        style:
+                          maxHeight: 200
+                        props:
+                          data: "selectedPlant?.careTips"
+                          renderItem: "renderCareTip"
+                          keyExtractor: "(item, index) => index.toString()"
+                          scrollEnabled: false
+                          
+                  # マイコレクションに追加ボタン
+                  - id: add-to-collection-button
+                    type: TouchableOpacity
+                    style:
+                      backgroundColor: "#2C6E49"
+                      borderRadius: 24
+                      paddingVertical: 14
+                      paddingHorizontal: 24
+                      alignItems: "center"
+                      flexDirection: "row"
+                      justifyContent: "center"
+                      marginTop: 16
+                      marginBottom: 40
+                      display: "selectedPlant?.isOwned ? 'none' : 'flex'"
+                    onPress: "addToCollection"
+                    children:
+                      - id: add-icon
+                        type: Icon
+                        name: "plus"
+                        style:
+                          fontSize: 20
+                          color: "#FFFFFF"
+                          marginRight: 8
+                      - id: add-text
+                        type: Text
+                        text: "マイコレクションに追加"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 16
+                          fontWeight: "bold"
+                          color: "#FFFFFF"
+
+# 育成ヒントアイテムテンプレート（renderCareTip関数内でレンダリング）
+components-definition:
+  - id: CareListItem
+    props:
+      tip:
+        type: string
+        description: "育成ヒントテキスト"
+    render: |
+      <View style={{
+        flexDirection: 'row',
+        marginBottom: 12,
+        alignItems: 'flex-start'
+      }}>
+        <Icon
+          name="check-circle"
+          style={{
+            fontSize: 16,
+            color: '#97BC62',
+            marginRight: 8,
+            marginTop: 3
+          }}
+        />
+        <Text style={{
+          fontFamily: 'Noto Sans JP',
+          fontSize: 14,
+          color: '#333333',
+          flex: 1,
+          lineHeight: 20
+        }}>
+          {tip}
+        </Text>
+      </View>
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - 植物図鑑は観葉植物、多肉植物、ハーブ、花などカテゴリで整理
+  - 所持中の植物には視認性の高いマーカーを表示
+  - 詳細画面では水やり、日光、温度、湿度などのケア情報をアイコンで直感的に表示
+  - 育て方のポイントはチェックリスト形式で見やすく整理
+  - 非所持の植物には「マイコレクションに追加」ボタンを表示
+  - 全体的に「ゆるふわ」テーマを守りつつ、学習要素として情報の視認性を重視

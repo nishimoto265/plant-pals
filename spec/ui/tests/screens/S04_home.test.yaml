@@ -1,0 +1,327 @@
+id: TS04_home
+name: ホーム画面テスト
+target:
+  screen: S04_home
+  path: src/ui/screens/S04_home/HomeScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: ホーム画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのホーム画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/timeline.png
+            - asset: assets/icons/profile.png
+            - asset: assets/icons/settings.png
+            - asset: assets/illustrations/no_plants.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#home-header"
+          - type: element-exists
+            target: "#tab-bar"
+          - type: element-exists
+            target: "#plant-grid"
+
+      - id: plants-loaded
+        name: 植物データ読み込み
+        description: 植物データが読み込まれた状態でのホーム画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/timeline.png
+            - asset: assets/icons/profile.png
+            - asset: assets/icons/settings.png
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                avatarUrl: "https://example.com/avatars/monstera123.png"
+                lastWatered: "2025-05-10T10:00:00Z"
+                healthStatus: "healthy"
+              - id: "p789012"
+                name: "パキらん"
+                species: "pachira_aquatica"
+                avatarUrl: "https://example.com/avatars/pachira456.png"
+                lastWatered: "2025-05-08T09:30:00Z"
+                healthStatus: "moderate"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#plant-card-m123456"
+          - type: element-exists
+            target: "#plant-card-p789012"
+          - type: element-count
+            target: ".plant-card"
+            count: 2
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: camera-navigation
+        name: カメラ画面遷移
+        description: カメラボタンをタップするとカメラ画面に遷移すること
+        steps:
+          - action: press
+            target: "#camera-button"
+        assertions:
+          - type: navigation
+            route: "S03_camera"
+
+      - id: timeline-navigation
+        name: タイムライン画面遷移
+        description: タイムラインボタンをタップするとタイムライン画面に遷移すること
+        steps:
+          - action: press
+            target: "#timeline-button"
+        assertions:
+          - type: navigation
+            route: "S05_timeline"
+
+      - id: profile-navigation
+        name: プロフィール画面遷移
+        description: プロフィールボタンをタップするとプロフィール画面に遷移すること
+        steps:
+          - action: press
+            target: "#profile-button"
+        assertions:
+          - type: navigation
+            route: "S07_profile"
+
+      - id: plant-detail-navigation
+        name: 植物詳細画面遷移
+        description: 植物カードをタップすると植物詳細画面に遷移すること
+        setup:
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                avatarUrl: "https://example.com/avatars/monstera123.png"
+        steps:
+          - action: press
+            target: "#plant-card-m123456"
+        assertions:
+          - type: navigation
+            route: "PlantDetail"
+            params:
+              plantId: "m123456"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: water-plant
+        name: 植物の水やり
+        description: 水やりボタンをタップすると植物の水やりアクションが実行されること
+        setup:
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                lastWatered: "2025-05-05T10:00:00Z"
+                needsWater: true
+        steps:
+          - action: press
+            target: "#water-button-m123456"
+        assertions:
+          - type: function-called
+            target: "waterPlant"
+            params:
+              plantId: "m123456"
+          - type: state-change
+            target: "plants[0].lastWatered"
+            operator: "newer-than"
+            value: "2025-05-05T10:00:00Z"
+          - type: state-change
+            target: "plants[0].needsWater"
+            value: false
+
+      - id: pull-to-refresh
+        name: プル更新
+        description: プルダウン操作で植物データが更新されること
+        steps:
+          - action: scroll
+            target: "#plant-grid"
+            direction: "down"
+            distance: 100
+        assertions:
+          - type: function-called
+            target: "refreshPlants"
+          - type: element-visible
+            target: "#refresh-indicator"
+
+  - id: empty_state
+    name: 空の状態テスト
+    description: 植物が登録されていない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-plants
+        name: 植物なし
+        description: 植物が登録されていない場合に適切なメッセージと案内が表示されること
+        setup:
+          state:
+            plants: []
+        assertions:
+          - type: element-visible
+            target: "#empty-state"
+          - type: element-exists
+            target: "#add-first-plant-button"
+          - type: element-text
+            target: "#empty-title"
+            value: "まだ植物が登録されていません"
+
+      - id: add-first-plant
+        name: 最初の植物追加
+        description: 「植物を追加」ボタンをタップするとカメラ画面に遷移すること
+        setup:
+          state:
+            plants: []
+        steps:
+          - action: press
+            target: "#add-first-plant-button"
+        assertions:
+          - type: navigation
+            route: "S03_camera"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#plant-grid"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load plant data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "データの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load plant data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadPlants"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: plant_care
+    name: 植物お世話機能テスト
+    description: 植物のお世話に関する機能を検証
+    type: functional
+    cases:
+      - id: watering-reminder
+        name: 水やり通知
+        description: 水やりが必要な植物には水やり通知バッジが表示されること
+        setup:
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                needsWater: true
+              - id: "p789012"
+                name: "パキらん"
+                species: "pachira_aquatica"
+                needsWater: false
+        assertions:
+          - type: element-exists
+            target: "#water-badge-m123456"
+          - type: element-not-exists
+            target: "#water-badge-p789012"
+
+      - id: health-status
+        name: 健康状態表示
+        description: 植物の健康状態に応じたアイコンが表示されること
+        setup:
+          state:
+            plants:
+              - id: "m123456"
+                name: "モンちゃん"
+                species: "monstera_deliciosa"
+                healthStatus: "healthy"
+              - id: "p789012"
+                name: "パキらん"
+                species: "pachira_aquatica"
+                healthStatus: "moderate"
+              - id: "f345678"
+                name: "フィカくん"
+                species: "ficus_elastica"
+                healthStatus: "unhealthy"
+        assertions:
+          - type: element-attribute
+            target: "#health-icon-m123456"
+            attribute: "status"
+            value: "healthy"
+          - type: element-attribute
+            target: "#health-icon-p789012"
+            attribute: "status"
+            value: "moderate"
+          - type: element-attribute
+            target: "#health-icon-f345678"
+            attribute: "status"
+            value: "unhealthy"
+
+accessibility:
+  - test: color-contrast
+    description: 植物カードのテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての植物カードとボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: キーボードのみでタブ移動と操作が可能
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

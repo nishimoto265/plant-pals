@@ -1,0 +1,353 @@
+id: S01_auth
+route: /auth
+name: Auth
+purpose: メールとソーシャルログインによるユーザー認証
+description: |
+  メール+パスワード、Google、Apple、GitHub OAuth2認証、およびゲストモードを提供する認証画面。
+  ユーザーが簡単にログインまたはアカウント登録できるシンプルで安心感のあるUIデザイン。
+  
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: KeyboardAvoidingView
+      behavior: "padding" # iOSではpadding、Androidではheightなど
+      style:
+        flex: 1
+      children:
+        - type: ScrollView
+          style:
+            flexGrow: 1
+            padding: 24
+          contentContainerStyle:
+            flexGrow: 1
+            justifyContent: "space-between"
+          children:
+            - type: View # メインコンテンツコンテナ
+              style:
+                flex: 1
+                justifyContent: center
+            - type: View # フッターコンテナ
+              style:
+                marginBottom: 24
+
+components:
+  - id: header-section
+    type: View
+    style:
+      alignItems: center
+      marginTop: 24
+      marginBottom: 32
+    children:
+      - id: app-logo
+        type: Image
+        source: "assets/images/plant_pals_logo.png"
+        style:
+          width: 100
+          height: 100
+          marginBottom: 16
+        
+      - id: title
+        type: Text
+        text: "アカウント"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 24
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 8
+        
+      - id: subtitle
+        type: Text
+        text: "ログインまたは新規登録"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#97BC62" # 若葉（サブカラー）
+    
+  - id: auth-form
+    type: View
+    style:
+      width: "100%"
+      marginVertical: 16
+    children:
+      - id: email-input-container
+        type: View
+        style:
+          marginBottom: 16
+        children:
+          - id: email-label
+            type: Text
+            text: "メールアドレス"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#2C6E49"
+              marginBottom: 8
+              
+          - id: email-input
+            type: TextInput
+            placeholder: "example@email.com"
+            keyboardType: "email-address"
+            autoCapitalize: "none"
+            style:
+              width: "100%"
+              height: 48
+              borderRadius: 12
+              borderWidth: 1
+              borderColor: "#97BC62" # 若葉（サブカラー）
+              backgroundColor: "#FFFFFF"
+              paddingHorizontal: 16
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              color: "#333333"
+            
+      - id: password-input-container
+        type: View
+        style:
+          marginBottom: 24
+        children:
+          - id: password-label
+            type: Text
+            text: "パスワード"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#2C6E49"
+              marginBottom: 8
+              
+          - id: password-input
+            type: TextInput
+            placeholder: "••••••••"
+            secureTextEntry: true
+            style:
+              width: "100%"
+              height: 48
+              borderRadius: 12
+              borderWidth: 1
+              borderColor: "#97BC62" # 若葉（サブカラー）
+              backgroundColor: "#FFFFFF"
+              paddingHorizontal: 16
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              color: "#333333"
+      
+      - id: forgot-password
+        type: TouchableOpacity
+        style:
+          alignSelf: "flex-end"
+          marginBottom: 24
+        children:
+          - id: forgot-password-text
+            type: Text
+            text: "パスワードをお忘れですか？"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#2C6E49" # 深緑（メインカラー）
+              textDecorationLine: "underline"
+      
+      - id: submit-button
+        type: TouchableOpacity
+        style:
+          width: "100%"
+          height: 50
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 25
+          justifyContent: center
+          alignItems: center
+          marginBottom: 24
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 4
+          elevation: 2
+        children:
+          - id: submit-text
+            type: Text
+            text: "ログイン / 登録"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#FFFFFF"
+              
+  - id: divider-section
+    type: View
+    style:
+      flexDirection: row
+      alignItems: center
+      marginVertical: 16
+    children:
+      - id: divider-left
+        type: View
+        style:
+          flex: 1
+          height: 1
+          backgroundColor: "#97BC62"
+          opacity: 0.5
+          
+      - id: divider-text
+        type: Text
+        text: "または"
+        style:
+          paddingHorizontal: 16
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#97BC62"
+          
+      - id: divider-right
+        type: View
+        style:
+          flex: 1
+          height: 1
+          backgroundColor: "#97BC62"
+          opacity: 0.5
+          
+  - id: social-login-section
+    type: View
+    style:
+      marginVertical: 16
+    children:
+      - id: social-buttons
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: center
+          marginBottom: 24
+        children:
+          - id: google-button
+            type: TouchableOpacity
+            style:
+              width: 60
+              height: 60
+              borderRadius: 30
+              backgroundColor: "#FFFFFF"
+              justifyContent: center
+              alignItems: center
+              marginHorizontal: 10
+              shadowColor: "#000"
+              shadowOffset: { width: 0, height: 1 }
+              shadowOpacity: 0.1
+              shadowRadius: 2
+              elevation: 1
+            children:
+              - id: google-icon
+                type: Image
+                source: "assets/icons/google.png"
+                style:
+                  width: 24
+                  height: 24
+          
+          - id: apple-button
+            type: TouchableOpacity
+            style:
+              width: 60
+              height: 60
+              borderRadius: 30
+              backgroundColor: "#FFFFFF"
+              justifyContent: center
+              alignItems: center
+              marginHorizontal: 10
+              shadowColor: "#000"
+              shadowOffset: { width: 0, height: 1 }
+              shadowOpacity: 0.1
+              shadowRadius: 2
+              elevation: 1
+            children:
+              - id: apple-icon
+                type: Image
+                source: "assets/icons/apple.png"
+                style:
+                  width: 24
+                  height: 24
+          
+          - id: github-button
+            type: TouchableOpacity
+            style:
+              width: 60
+              height: 60
+              borderRadius: 30
+              backgroundColor: "#FFFFFF"
+              justifyContent: center
+              alignItems: center
+              marginHorizontal: 10
+              shadowColor: "#000"
+              shadowOffset: { width: 0, height: 1 }
+              shadowOpacity: 0.1
+              shadowRadius: 2
+              elevation: 1
+            children:
+              - id: github-icon
+                type: Image
+                source: "assets/icons/github.png"
+                style:
+                  width: 24
+                  height: 24
+      
+  - id: guest-mode-section
+    type: View
+    style:
+      alignItems: center
+      marginTop: 8
+      marginBottom: 16
+    children:
+      - id: guest-button
+        type: TouchableOpacity
+        style:
+          flexDirection: row
+          alignItems: center
+          padding: 12
+        children:
+          - id: guest-icon
+            type: Icon
+            name: "account-outline"
+            style:
+              fontSize: 18
+              color: "#97BC62"
+              marginRight: 8
+              
+          - id: guest-text
+            type: Text
+            text: "ゲストモードで続行"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#97BC62"
+              
+  - id: auth-notes
+    type: View
+    style:
+      marginTop: 16
+    children:
+      - id: auth-notes-text
+        type: Text
+        text: "※ ゲストモードでは一部機能が制限されます"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 12
+          color: "#666666"
+          textAlign: center
+          
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+    inputBackground: "#FFFFFF"
+    inputBorder: "#97BC62"
+    inputText: "#333333"
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - フォームエレメントは十分なスペースを取り、タップしやすく設計
+  - ソーシャルログインボタンは認識しやすいアイコンを使用
+  - ゲストモードは最下部に配置し、補助的な位置付けに
+  - エラー状態では入力欄の枠線を#EF476F（アクセントカラー2）に変更
+  - フォーカスされた要素は薄い緑色のアウトラインでハイライト
+  - キーボード表示時にはScroll可能になり、入力フィールドが隠れないよう配慮
+

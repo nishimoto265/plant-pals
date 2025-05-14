@@ -1,0 +1,469 @@
+id: TC05_health_assessment_api
+name: 健康評価API契約テスト
+description: 植物の健康状態を評価・分析するAPIエンドポイント群の契約テスト
+
+endpoints:
+  - id: analyze_health
+    path: /api/plants/health/analyze
+    method: POST
+    description: 植物の写真から健康状態を分析するエンドポイント
+    request:
+      content_type: multipart/form-data
+      parameters:
+        - name: image
+          type: file
+          required: true
+          description: 分析対象の植物画像
+        - name: plantId
+          type: string
+          required: false
+          description: 既存の植物ID（登録済みの植物の場合）
+        - name: species
+          type: string
+          required: false
+          description: 植物の種類（既知の場合）
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            healthStatus:
+              type: string
+              enum: [healthy, warning, issue]
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+            issueType:
+              type: string
+              enum: [null, overwatering, underwatering, pest, disease, nutrient_deficiency, light_issue]
+            details:
+              type: object
+              properties:
+                affectedAreas:
+                  type: array
+                  items:
+                    type: string
+                severity:
+                  type: string
+                  enum: [mild, moderate, severe]
+            recommendations:
+              type: array
+              items:
+                type: object
+                properties:
+                  action:
+                    type: string
+                  priority:
+                    type: string
+                    enum: [low, medium, high, urgent]
+                  instructions:
+                    type: string
+          required: [healthStatus, confidence]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+            content_type: application/json
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  enum: [invalid_parameters, unsupported_image_format, image_too_large]
+                message:
+                  type: string
+          - status: 401
+            description: 認証エラー
+          - status: 500
+            description: サーバーエラー
+    examples:
+      - name: 健康な植物
+        request:
+          parameters:
+            image: "@test_assets/plants/healthy_monstera.jpg"
+            plantId: "plant123"
+        response:
+          status: 200
+          body:
+            healthStatus: "healthy"
+            confidence: 0.95
+            issueType: null
+            details: null
+            recommendations: []
+      - name: 水不足の植物
+        request:
+          parameters:
+            image: "@test_assets/plants/underwatered_ficus.jpg"
+            plantId: "plant456"
+        response:
+          status: 200
+          body:
+            healthStatus: "issue"
+            confidence: 0.87
+            issueType: "underwatering"
+            details:
+              affectedAreas: ["leaves", "soil"]
+              severity: "moderate"
+            recommendations:
+              - action: "watering"
+                priority: "high"
+                instructions: "すぐに水を与えてください。土が完全に乾いています。"
+
+  - id: get_health_history
+    path: /api/plants/{plantId}/health/history
+    method: GET
+    description: 植物の健康状態の履歴を取得するエンドポイント
+    request:
+      parameters:
+        - name: plantId
+          type: string
+          in: path
+          required: true
+          description: 植物のID
+        - name: timeframe
+          type: string
+          in: query
+          required: false
+          description: 履歴の期間
+          default: "1month"
+          enum: [1week, 1month, 3months, 6months, 1year, all]
+        - name: limit
+          type: integer
+          in: query
+          required: false
+          description: 取得する記録の最大数
+          default: 10
+          minimum: 1
+          maximum: 100
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            plantId:
+              type: string
+            records:
+              type: array
+              items:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    format: date-time
+                  healthStatus:
+                    type: string
+                    enum: [healthy, warning, issue]
+                  issueType:
+                    type: string
+                  metrics:
+                    type: object
+                    properties:
+                      leafColor:
+                        type: number
+                        format: float
+                      soilMoisture:
+                        type: number
+                        format: float
+                      growth:
+                        type: number
+                        format: float
+                required: [timestamp, healthStatus]
+            trend:
+              type: object
+              properties:
+                direction:
+                  type: string
+                  enum: [improving, stable, declining]
+                rate:
+                  type: string
+                  enum: [slow, moderate, fast]
+          required: [plantId, records]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 401
+            description: 認証エラー
+          - status: 404
+            description: 植物が見つからない
+          - status: 500
+            description: サーバーエラー
+    examples:
+      - name: 健康履歴取得
+        request:
+          parameters:
+            plantId: "plant123"
+            timeframe: "1month"
+            limit: 5
+        response:
+          status: 200
+          body:
+            plantId: "plant123"
+            records:
+              - timestamp: "2025-05-10T14:30:00Z"
+                healthStatus: "healthy"
+                issueType: null
+                metrics:
+                  leafColor: 0.95
+                  soilMoisture: 0.72
+                  growth: 0.65
+              - timestamp: "2025-05-03T09:15:00Z"
+                healthStatus: "warning"
+                issueType: "underwatering"
+                metrics:
+                  leafColor: 0.85
+                  soilMoisture: 0.30
+                  growth: 0.60
+              - timestamp: "2025-04-26T11:20:00Z"
+                healthStatus: "healthy"
+                issueType: null
+                metrics:
+                  leafColor: 0.92
+                  soilMoisture: 0.68
+                  growth: 0.58
+            trend:
+              direction: "improving"
+              rate: "moderate"
+
+  - id: predict_health_issues
+    path: /api/plants/{plantId}/health/predict
+    method: GET
+    description: 植物の将来的な健康問題を予測するエンドポイント
+    request:
+      parameters:
+        - name: plantId
+          type: string
+          in: path
+          required: true
+          description: 植物のID
+        - name: timeframe
+          type: string
+          in: query
+          required: false
+          description: 予測期間
+          default: "1week"
+          enum: [1week, 2weeks, 1month]
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            plantId:
+              type: string
+            predictions:
+              type: array
+              items:
+                type: object
+                properties:
+                  timeframe:
+                    type: string
+                  issueType:
+                    type: string
+                  probability:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 1
+                  suggestedAction:
+                    type: string
+                required: [timeframe, probability]
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+          required: [plantId, predictions, confidence]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 401
+            description: 認証エラー
+          - status: 404
+            description: 植物が見つからない
+          - status: 412
+            description: 予測に十分なデータがない
+          - status: 500
+            description: サーバーエラー
+    examples:
+      - name: 健康予測取得
+        request:
+          parameters:
+            plantId: "plant123"
+            timeframe: "1week"
+        response:
+          status: 200
+          body:
+            plantId: "plant123"
+            predictions:
+              - timeframe: "within 3 days"
+                issueType: "underwatering"
+                probability: 0.78
+                suggestedAction: "水やりを増やしてください"
+              - timeframe: "within 1 week"
+                issueType: "nutrient_deficiency"
+                probability: 0.45
+                suggestedAction: "1週間以内に肥料を与えることを検討してください"
+            confidence: 0.82
+
+  - id: recommend_care
+    path: /api/plants/{plantId}/health/recommend
+    method: GET
+    description: 植物の健康状態に基づいてケアを推奨するエンドポイント
+    request:
+      parameters:
+        - name: plantId
+          type: string
+          in: path
+          required: true
+          description: 植物のID
+        - name: includeSchedule
+          type: boolean
+          in: query
+          required: false
+          description: ケアスケジュールを含めるかどうか
+          default: false
+    response:
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          properties:
+            plantId:
+              type: string
+            currentHealth:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, warning, issue]
+                details:
+                  type: string
+              required: [status]
+            immediateActions:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [watering, fertilizing, repotting, pruning, pest_treatment, location_change]
+                  instructions:
+                    type: string
+                  priority:
+                    type: string
+                    enum: [low, medium, high, urgent]
+                required: [type, instructions, priority]
+            careSchedule:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  frequency:
+                    type: string
+                  nextDue:
+                    type: string
+                    format: date
+                required: [type, frequency, nextDue]
+          required: [plantId, currentHealth, immediateActions]
+      error:
+        cases:
+          - status: 400
+            description: 無効なリクエストパラメータ
+          - status: 401
+            description: 認証エラー
+          - status: 404
+            description: 植物が見つからない
+          - status: 500
+            description: サーバーエラー
+    examples:
+      - name: ケア推奨取得
+        request:
+          parameters:
+            plantId: "plant123"
+            includeSchedule: true
+        response:
+          status: 200
+          body:
+            plantId: "plant123"
+            currentHealth:
+              status: "warning"
+              details: "葉の一部に黄変が見られます"
+            immediateActions:
+              - type: "watering"
+                instructions: "土が乾いているので、たっぷりと水を与えてください"
+                priority: "high"
+              - type: "location_change"
+                instructions: "より明るい場所に移動することを検討してください"
+                priority: "medium"
+            careSchedule:
+              - type: "watering"
+                frequency: "週に1回"
+                nextDue: "2025-05-18"
+              - type: "fertilizing"
+                frequency: "月に1回"
+                nextDue: "2025-06-01"
+              - type: "repotting"
+                frequency: "年に1回"
+                nextDue: "2026-03-15"
+
+security:
+  - type: bearer_token
+    scopes:
+      - plants:read
+      - plants:health:read
+
+rate_limiting:
+  default: 60 requests per minute
+  endpoints:
+    analyze_health: 10 requests per minute
+
+validation:
+  - scenario: invalid_image
+    endpoint: analyze_health
+    request:
+      parameters:
+        image: "@test_assets/invalid/corrupt_image.jpg"
+        plantId: "plant123"
+    expected:
+      status: 400
+      body:
+        error: "unsupported_image_format"
+  
+  - scenario: unauthorized_access
+    endpoint: get_health_history
+    request:
+      headers:
+        Authorization: null
+      parameters:
+        plantId: "plant123"
+    expected:
+      status: 401
+
+  - scenario: not_found
+    endpoint: predict_health_issues
+    request:
+      parameters:
+        plantId: "nonexistent_id"
+    expected:
+      status: 404
+
+compatibility:
+  supported_versions:
+    - "1.0"
+    - "1.1"
+  default_version: "1.1"
+  deprecation:
+    version: "1.0"
+    date: "2025-12-31" 

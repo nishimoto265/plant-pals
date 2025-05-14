@@ -1,0 +1,508 @@
+id: TS09_badge_center
+name: バッジセンター画面テスト
+target:
+  screen: S09_badge_center
+  path: src/ui/screens/S09_badge_center/BadgeCenterScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: バッジセンター画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのバッジセンター画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/sort.png
+            - asset: assets/illustrations/empty_badges.png
+            - asset: assets/badges/placeholder.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#badge-center-header"
+          - type: element-exists
+            target: "#badge-categories"
+          - type: element-exists
+            target: "#badge-grid"
+
+      - id: badges-loaded
+        name: バッジデータ読み込み
+        description: バッジデータが読み込まれた状態でのバッジセンター画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/filter.png
+            - asset: assets/icons/sort.png
+            - asset: assets/badges/first_plant.png
+            - asset: assets/badges/plant_collector.png
+            - asset: assets/badges/photo_expert.png
+            - asset: assets/badges/social_butterfly.png
+            - asset: assets/badges/water_master.png
+          state:
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                description: "最初の植物を登録"
+                iconUrl: "assets/badges/first_plant.png"
+                category: "マイルストーン"
+                rarityLevel: "一般"
+                isUnlocked: true
+                unlockedAt: "2025-04-10T14:30:00Z"
+              - id: "badge002"
+                name: "植物コレクター"
+                description: "10種類の植物を登録"
+                iconUrl: "assets/badges/plant_collector.png"
+                category: "コレクション"
+                rarityLevel: "レア"
+                isUnlocked: false
+                progress: 4
+                maxProgress: 10
+              - id: "badge003"
+                name: "写真マスター"
+                description: "50枚の植物写真を撮影"
+                iconUrl: "assets/badges/photo_expert.png"
+                category: "アクティビティ"
+                rarityLevel: "エピック"
+                isUnlocked: false
+                progress: 28
+                maxProgress: 50
+              - id: "badge004"
+                name: "ソーシャルバタフライ"
+                description: "100人のフォロワーを獲得"
+                iconUrl: "assets/badges/social_butterfly.png"
+                category: "ソーシャル"
+                rarityLevel: "レジェンダリー"
+                isUnlocked: false
+                progress: 42
+                maxProgress: 100
+              - id: "badge005"
+                name: "水やりマスター"
+                description: "100回の水やりを達成"
+                iconUrl: "assets/badges/water_master.png"
+                category: "アクティビティ"
+                rarityLevel: "レア"
+                isUnlocked: true
+                unlockedAt: "2025-05-05T09:15:00Z"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#badge-badge001"
+          - type: element-exists
+            target: "#badge-badge005"
+          - type: element-count
+            target: ".badge-item"
+            count: 5
+          - type: element-count
+            target: ".badge-unlocked"
+            count: 2
+          - type: element-count
+            target: ".badge-locked"
+            count: 3
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: badge-detail-navigation
+        name: バッジ詳細画面遷移
+        description: バッジアイテムをタップするとバッジ詳細画面に遷移すること
+        setup:
+          state:
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                description: "最初の植物を登録"
+                iconUrl: "assets/badges/first_plant.png"
+                isUnlocked: true
+        steps:
+          - action: press
+            target: "#badge-badge001"
+        assertions:
+          - type: navigation
+            route: "BadgeDetail"
+            params:
+              badgeId: "badge001"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: filter-badges
+        name: バッジフィルター
+        description: フィルターボタンをタップするとフィルターダイアログが表示されること
+        steps:
+          - action: press
+            target: "#filter-button"
+        assertions:
+          - type: element-visible
+            target: "#filter-dialog"
+          - type: element-exists
+            target: "#filter-options"
+
+      - id: apply-filter
+        name: フィルター適用
+        description: フィルターを選択して適用すると結果が絞り込まれること
+        setup:
+          state:
+            filterDialogVisible: true
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                category: "マイルストーン"
+                isUnlocked: true
+              - id: "badge003"
+                name: "写真マスター"
+                category: "アクティビティ"
+                isUnlocked: false
+        steps:
+          - action: press
+            target: "#filter-category-アクティビティ"
+          - action: press
+            target: "#apply-filter-button"
+        assertions:
+          - type: element-not-visible
+            target: "#filter-dialog"
+          - type: function-called
+            target: "filterBadges"
+            params:
+              category: "アクティビティ"
+          - type: element-not-exists
+            target: "#badge-badge001"
+          - type: element-exists
+            target: "#badge-badge003"
+          - type: element-text
+            target: "#active-filter"
+            value: "カテゴリー: アクティビティ"
+
+      - id: sort-badges
+        name: バッジ並び替え
+        description: 並び替えボタンをタップすると並び替えダイアログが表示されること
+        steps:
+          - action: press
+            target: "#sort-button"
+        assertions:
+          - type: element-visible
+            target: "#sort-dialog"
+          - type: element-exists
+            target: "#sort-options"
+
+      - id: apply-sort
+        name: 並び替え適用
+        description: 並び替えオプションを選択して適用すると結果が並び替えられること
+        setup:
+          state:
+            sortDialogVisible: true
+          mocks:
+            - api:
+                endpoint: "/api/badges/sort"
+                params:
+                  sortBy: "rarityLevel"
+                  order: "desc"
+                response:
+                  badges:
+                    - id: "badge004"
+                      name: "ソーシャルバタフライ"
+                      rarityLevel: "レジェンダリー"
+                    - id: "badge003"
+                      name: "写真マスター"
+                      rarityLevel: "エピック"
+                    - id: "badge002"
+                      name: "植物コレクター"
+                      rarityLevel: "レア"
+        steps:
+          - action: press
+            target: "#sort-rarity-desc"
+          - action: press
+            target: "#apply-sort-button"
+        assertions:
+          - type: element-not-visible
+            target: "#sort-dialog"
+          - type: function-called
+            target: "sortBadges"
+            params:
+              sortBy: "rarityLevel"
+              order: "desc"
+          - type: element-text
+            target: "#active-sort"
+            value: "レアリティ（高い順）"
+
+      - id: switch-category
+        name: カテゴリ切り替え
+        description: カテゴリタブをタップするとそのカテゴリのバッジが表示されること
+        setup:
+          state:
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                category: "マイルストーン"
+                isUnlocked: true
+              - id: "badge003"
+                name: "写真マスター"
+                category: "アクティビティ"
+                isUnlocked: false
+        steps:
+          - action: press
+            target: "#category-tab-アクティビティ"
+        assertions:
+          - type: function-called
+            target: "filterBadges"
+            params:
+              category: "アクティビティ"
+          - type: element-attribute
+            target: "#category-tab-アクティビティ"
+            attribute: "selected"
+            value: "true"
+          - type: element-not-exists
+            target: "#badge-badge001"
+          - type: element-exists
+            target: "#badge-badge003"
+
+  - id: empty_states
+    name: 空の状態テスト
+    description: データがない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-badges
+        name: バッジなし
+        description: バッジが獲得されていない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            badges: []
+        assertions:
+          - type: element-visible
+            target: "#empty-badges"
+          - type: element-text
+            target: "#empty-badges-title"
+            value: "まだバッジを獲得していません"
+          - type: element-text
+            target: "#empty-badges-message"
+            value: "アプリを使って植物と触れ合うとバッジを獲得できます"
+
+      - id: no-filtered-badges
+        name: フィルター結果なし
+        description: フィルター条件に合うバッジがない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            activeFilter:
+              category: "イベント"
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                category: "マイルストーン"
+              - id: "badge003"
+                name: "写真マスター"
+                category: "アクティビティ"
+        assertions:
+          - type: element-visible
+            target: "#no-results"
+          - type: element-text
+            target: "#no-results-message"
+            value: "選択したフィルター条件に合うバッジはありません"
+          - type: element-exists
+            target: "#clear-filter-button"
+
+      - id: clear-filter
+        name: フィルタークリア
+        description: フィルタークリアボタンをタップするとフィルターが解除されること
+        setup:
+          state:
+            activeFilter:
+              category: "イベント"
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                category: "マイルストーン"
+              - id: "badge003"
+                name: "写真マスター"
+                category: "アクティビティ"
+        steps:
+          - action: press
+            target: "#clear-filter-button"
+        assertions:
+          - type: function-called
+            target: "clearFilters"
+          - type: state-change
+            target: "activeFilter"
+            value: null
+          - type: element-exists
+            target: "#badge-badge001"
+          - type: element-exists
+            target: "#badge-badge003"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#badge-grid"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load badges"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "バッジの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load badges"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadBadges"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: badge_display
+    name: バッジ表示テスト
+    description: バッジの表示状態を検証
+    type: functional
+    cases:
+      - id: unlocked-badge
+        name: 獲得済みバッジ
+        description: 獲得済みバッジが正しく表示されること
+        setup:
+          state:
+            badges:
+              - id: "badge001"
+                name: "はじめての植物"
+                description: "最初の植物を登録"
+                iconUrl: "assets/badges/first_plant.png"
+                isUnlocked: true
+                unlockedAt: "2025-04-10T14:30:00Z"
+        assertions:
+          - type: element-exists
+            target: "#badge-badge001"
+          - type: element-has-class
+            target: "#badge-badge001"
+            className: "badge-unlocked"
+          - type: element-not-has-class
+            target: "#badge-badge001"
+            className: "badge-locked"
+          - type: element-text
+            target: "#badge-name-badge001"
+            value: "はじめての植物"
+          - type: element-exists
+            target: "#badge-unlocked-icon-badge001"
+
+      - id: locked-badge
+        name: 未獲得バッジ
+        description: 未獲得バッジが正しく表示されること
+        setup:
+          state:
+            badges:
+              - id: "badge003"
+                name: "写真マスター"
+                description: "50枚の植物写真を撮影"
+                iconUrl: "assets/badges/photo_expert.png"
+                isUnlocked: false
+                progress: 28
+                maxProgress: 50
+        assertions:
+          - type: element-exists
+            target: "#badge-badge003"
+          - type: element-has-class
+            target: "#badge-badge003"
+            className: "badge-locked"
+          - type: element-not-has-class
+            target: "#badge-badge003"
+            className: "badge-unlocked"
+          - type: element-text
+            target: "#badge-name-badge003"
+            value: "写真マスター"
+          - type: element-exists
+            target: "#badge-progress-badge003"
+          - type: element-text
+            target: "#badge-progress-text-badge003"
+            value: "28/50"
+
+      - id: badge-progress
+        name: バッジ進捗
+        description: バッジの進捗が正しく表示されること
+        setup:
+          state:
+            badges:
+              - id: "badge003"
+                name: "写真マスター"
+                isUnlocked: false
+                progress: 28
+                maxProgress: 50
+        assertions:
+          - type: element-attribute
+            target: "#badge-progress-bar-badge003"
+            attribute: "value"
+            value: "28"
+          - type: element-attribute
+            target: "#badge-progress-bar-badge003"
+            attribute: "max"
+            value: "50"
+          - type: element-style
+            target: "#badge-progress-fill-badge003"
+            property: "width"
+            value: "56%"
+
+accessibility:
+  - test: color-contrast
+    description: バッジ名とその背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのバッジと操作ボタンが音声読み上げに対応している
+  - test: focus-order
+    description: バッジグリッドが適切なフォーカス順序を持っている
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

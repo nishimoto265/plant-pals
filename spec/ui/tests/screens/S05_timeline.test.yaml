@@ -1,0 +1,421 @@
+id: TS05_timeline
+name: タイムライン画面テスト
+target:
+  screen: S05_timeline
+  path: src/ui/screens/S05_timeline/TimelineScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: タイムライン画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのタイムライン画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/profile.png
+            - asset: assets/icons/like.png
+            - asset: assets/icons/comment.png
+            - asset: assets/icons/share.png
+            - asset: assets/illustrations/empty_timeline.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#timeline-header"
+          - type: element-exists
+            target: "#tab-bar"
+          - type: element-exists
+            target: "#post-feed"
+
+      - id: posts-loaded
+        name: 投稿データ読み込み
+        description: 投稿データが読み込まれた状態でのタイムライン画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/camera.png
+            - asset: assets/icons/profile.png
+            - asset: assets/icons/like.png
+            - asset: assets/icons/comment.png
+            - asset: assets/icons/share.png
+          state:
+            posts:
+              - id: "post123"
+                userId: "user456"
+                username: "植物好きさん"
+                avatarUrl: "https://example.com/users/user456.png"
+                plantId: "m123456"
+                plantName: "モンちゃん"
+                plantSpecies: "monstera_deliciosa"
+                imageUrl: "https://example.com/posts/post123.jpg"
+                content: "モンちゃんの新芽が出てきました！"
+                likeCount: 15
+                commentCount: 3
+                createdAt: "2025-05-10T10:00:00Z"
+              - id: "post789"
+                userId: "user012"
+                username: "ガーデナー"
+                avatarUrl: "https://example.com/users/user012.png"
+                plantId: "p789012"
+                plantName: "パキらん"
+                plantSpecies: "pachira_aquatica"
+                imageUrl: "https://example.com/posts/post789.jpg"
+                content: "パキらんが元気に育っています"
+                likeCount: 8
+                commentCount: 1
+                createdAt: "2025-05-09T15:30:00Z"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#post-card-post123"
+          - type: element-exists
+            target: "#post-card-post789"
+          - type: element-count
+            target: ".post-card"
+            count: 2
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: camera-navigation
+        name: カメラ画面遷移
+        description: カメラボタンをタップするとカメラ画面に遷移すること
+        steps:
+          - action: press
+            target: "#camera-button"
+        assertions:
+          - type: navigation
+            route: "S03_camera"
+
+      - id: profile-navigation
+        name: プロフィール画面遷移
+        description: プロフィールボタンをタップするとプロフィール画面に遷移すること
+        steps:
+          - action: press
+            target: "#profile-button"
+        assertions:
+          - type: navigation
+            route: "S07_profile"
+      
+      - id: post-detail-navigation
+        name: 投稿詳細画面遷移
+        description: 投稿カードをタップすると投稿詳細画面に遷移すること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                content: "モンちゃんの新芽が出てきました！"
+        steps:
+          - action: press
+            target: "#post-card-post123"
+        assertions:
+          - type: navigation
+            route: "PostDetail"
+            params:
+              postId: "post123"
+
+      - id: user-profile-navigation
+        name: ユーザープロフィール遷移
+        description: 投稿のユーザーアバターをタップするとユーザープロフィール画面に遷移すること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                userId: "user456"
+                username: "植物好きさん"
+        steps:
+          - action: press
+            target: "#user-avatar-user456"
+        assertions:
+          - type: navigation
+            route: "UserProfile"
+            params:
+              userId: "user456"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 投稿に対する操作の検証
+    type: interaction
+    cases:
+      - id: like-post
+        name: 投稿へのいいね
+        description: いいねボタンをタップすると投稿にいいねがつくこと
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                likeCount: 15
+                isLiked: false
+        steps:
+          - action: press
+            target: "#like-button-post123"
+        assertions:
+          - type: function-called
+            target: "likePost"
+            params:
+              postId: "post123"
+          - type: state-change
+            target: "posts[0].likeCount"
+            value: 16
+          - type: state-change
+            target: "posts[0].isLiked"
+            value: true
+          - type: element-attribute
+            target: "#like-button-post123"
+            attribute: "liked"
+            value: "true"
+
+      - id: unlike-post
+        name: 投稿のいいね解除
+        description: いいね済みの投稿でいいねボタンをタップするといいねが解除されること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                likeCount: 16
+                isLiked: true
+        steps:
+          - action: press
+            target: "#like-button-post123"
+        assertions:
+          - type: function-called
+            target: "unlikePost"
+            params:
+              postId: "post123"
+          - type: state-change
+            target: "posts[0].likeCount"
+            value: 15
+          - type: state-change
+            target: "posts[0].isLiked"
+            value: false
+          - type: element-attribute
+            target: "#like-button-post123"
+            attribute: "liked"
+            value: "false"
+
+      - id: comment-navigation
+        name: コメント画面遷移
+        description: コメントボタンをタップするとコメント画面に遷移すること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                commentCount: 3
+        steps:
+          - action: press
+            target: "#comment-button-post123"
+        assertions:
+          - type: navigation
+            route: "Comments"
+            params:
+              postId: "post123"
+
+      - id: share-post
+        name: 投稿共有
+        description: 共有ボタンをタップすると共有ダイアログが表示されること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                content: "モンちゃんの新芽が出てきました！"
+        steps:
+          - action: press
+            target: "#share-button-post123"
+        assertions:
+          - type: function-called
+            target: "sharePost"
+            params:
+              postId: "post123"
+          - type: element-visible
+            target: "#share-dialog"
+
+  - id: empty_state
+    name: 空の状態テスト
+    description: 投稿がない場合の表示を検証
+    type: functional
+    cases:
+      - id: no-posts
+        name: 投稿なし
+        description: 投稿がない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            posts: []
+            following: true
+        assertions:
+          - type: element-visible
+            target: "#empty-timeline"
+          - type: element-text
+            target: "#empty-timeline-title"
+            value: "まだ投稿がありません"
+          - type: element-text
+            target: "#empty-timeline-message"
+            value: "フォローしているユーザーの投稿がここに表示されます"
+
+      - id: no-following
+        name: フォローなし
+        description: フォローしているユーザーがいない場合に適切なメッセージが表示されること
+        setup:
+          state:
+            posts: []
+            following: false
+        assertions:
+          - type: element-visible
+            target: "#no-following"
+          - type: element-text
+            target: "#no-following-title"
+            value: "ユーザーをフォローしましょう"
+          - type: element-exists
+            target: "#discover-users-button"
+
+      - id: discover-users
+        name: ユーザー発見画面
+        description: 「ユーザーを見つける」ボタンをタップするとユーザー発見画面に遷移すること
+        setup:
+          state:
+            posts: []
+            following: false
+        steps:
+          - action: press
+            target: "#discover-users-button"
+        assertions:
+          - type: navigation
+            route: "DiscoverUsers"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#post-feed"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load timeline data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "タイムラインの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: pull-to-refresh
+        name: プル更新
+        description: プルダウン操作で投稿データが更新されること
+        steps:
+          - action: scroll
+            target: "#post-feed"
+            direction: "down"
+            distance: 100
+        assertions:
+          - type: function-called
+            target: "refreshTimeline"
+          - type: element-visible
+            target: "#refresh-indicator"
+
+  - id: infinite_scroll
+    name: 無限スクロールテスト
+    description: スクロールによる追加データ読み込みを検証
+    type: functional
+    cases:
+      - id: load-more
+        name: 追加読み込み
+        description: リストの最下部までスクロールすると追加の投稿が読み込まれること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                content: "最初の投稿"
+              - id: "post456"
+                content: "2つ目の投稿"
+            hasMorePosts: true
+        steps:
+          - action: scroll
+            target: "#post-feed"
+            direction: "up"
+            toEnd: true
+        assertions:
+          - type: function-called
+            target: "loadMorePosts"
+          - type: element-visible
+            target: "#load-more-indicator"
+
+      - id: end-of-feed
+        name: フィード終端
+        description: これ以上読み込む投稿がない場合は適切なメッセージが表示されること
+        setup:
+          state:
+            posts:
+              - id: "post123"
+                content: "最初の投稿"
+              - id: "post456"
+                content: "2つ目の投稿"
+            hasMorePosts: false
+        steps:
+          - action: scroll
+            target: "#post-feed"
+            direction: "up"
+            toEnd: true
+        assertions:
+          - type: function-not-called
+            target: "loadMorePosts"
+          - type: element-visible
+            target: "#end-of-feed-message"
+          - type: element-text
+            target: "#end-of-feed-message"
+            value: "すべての投稿を読み込みました"
+
+accessibility:
+  - test: color-contrast
+    description: 投稿テキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての投稿と操作ボタンが音声読み上げに対応している
+  - test: image-alt
+    description: すべての投稿画像に適切な代替テキストが設定されている
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

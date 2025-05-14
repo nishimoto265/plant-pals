@@ -1,0 +1,498 @@
+id: TS12_gacha_result
+name: ガチャ結果画面テスト
+target:
+  screen: S12_gacha_result
+  path: src/ui/screens/S12_gacha_result/GachaResultScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: ガチャ結果画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのガチャ結果画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/share.png
+            - asset: assets/icons/save.png
+            - asset: assets/effects/confetti.json
+            - asset: assets/effects/sparkle.json
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#gacha-result-header"
+          - type: element-exists
+            target: "#result-container"
+          - type: element-exists
+            target: "#action-buttons"
+          - type: element-exists
+            target: "#share-button"
+          - type: element-exists
+            target: "#save-button"
+
+      - id: common-reward
+        name: 一般報酬表示
+        description: 一般報酬を獲得した場合のガチャ結果画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/share.png
+            - asset: assets/icons/save.png
+            - asset: assets/effects/sparkle.json
+            - asset: assets/rewards/fertilizer_basic.png
+          state:
+            reward:
+              id: "reward001"
+              name: "基本肥料"
+              description: "植物の成長を促進する基本的な肥料です"
+              imageUrl: "assets/rewards/fertilizer_basic.png"
+              rarity: "common"
+              type: "consumable"
+              quantity: 1
+              isNew: false
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#reward-image"
+          - type: element-attribute
+            target: "#reward-image"
+            attribute: "src"
+            value: "assets/rewards/fertilizer_basic.png"
+          - type: element-text
+            target: "#reward-name"
+            value: "基本肥料"
+          - type: element-text
+            target: "#reward-description"
+            value: "植物の成長を促進する基本的な肥料です"
+          - type: element-text
+            target: "#reward-quantity"
+            value: "×1"
+          - type: element-attribute
+            target: "#reward-container"
+            attribute: "data-rarity"
+            value: "common"
+
+      - id: rare-reward
+        name: レアアイテム表示
+        description: レアアイテムを獲得した場合のガチャ結果画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/home.png
+            - asset: assets/icons/back.png
+            - asset: assets/icons/share.png
+            - asset: assets/icons/save.png
+            - asset: assets/effects/confetti.json
+            - asset: assets/effects/sparkle.json
+            - asset: assets/rewards/special_pot.png
+          state:
+            reward:
+              id: "reward010"
+              name: "プレミアム植木鉢"
+              description: "特別なデザインの植木鉢です"
+              imageUrl: "assets/rewards/special_pot.png"
+              rarity: "rare"
+              type: "permanent"
+              quantity: 1
+              isNew: true
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#reward-image"
+          - type: element-attribute
+            target: "#reward-image"
+            attribute: "src"
+            value: "assets/rewards/special_pot.png"
+          - type: element-text
+            target: "#reward-name"
+            value: "プレミアム植木鉢"
+          - type: element-exists
+            target: "#new-badge"
+          - type: element-attribute
+            target: "#reward-container"
+            attribute: "data-rarity"
+            value: "rare"
+          - type: element-exists
+            target: "#confetti-effect"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る画面遷移
+        description: 戻るボタンをタップすると前の画面に戻ること
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: home-navigation
+        name: ホーム画面遷移
+        description: ホームボタンをタップするとホーム画面に遷移すること
+        steps:
+          - action: press
+            target: "#home-button"
+        assertions:
+          - type: navigation
+            route: "S04_home"
+
+      - id: reward-to-inventory
+        name: インベントリ画面遷移
+        description: 「インベントリを見る」ボタンをタップするとインベントリ画面に遷移すること
+        setup:
+          state:
+            reward:
+              id: "reward001"
+              type: "consumable"
+        steps:
+          - action: press
+            target: "#view-inventory-button"
+        assertions:
+          - type: navigation
+            route: "Inventory"
+          - type: navigation-params
+            key: "selectedTab"
+            value: "consumable"
+
+      - id: reward-to-customizer
+        name: カスタマイザー画面遷移
+        description: 「カスタマイズする」ボタンをタップするとカスタマイザー画面に遷移すること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              type: "permanent"
+        steps:
+          - action: press
+            target: "#customize-button"
+        assertions:
+          - type: navigation
+            route: "S11_customizer"
+          - type: navigation-params
+            key: "itemId"
+            value: "reward010"
+
+  - id: interaction
+    name: インタラクションテスト
+    description: 画面上の操作とアクションの検証
+    type: interaction
+    cases:
+      - id: share-reward
+        name: 報酬シェア
+        description: シェアボタンをタップするとシェア機能が実行されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              name: "プレミアム植木鉢"
+        steps:
+          - action: press
+            target: "#share-button"
+        assertions:
+          - type: function-called
+            target: "shareReward"
+            params:
+              rewardId: "reward010"
+          - type: native-share-dialog
+            visible: true
+
+      - id: save-image
+        name: 画像保存
+        description: 保存ボタンをタップすると画像が保存されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              name: "プレミアム植木鉢"
+          permissions:
+            photos: "granted"
+        steps:
+          - action: press
+            target: "#save-button"
+        assertions:
+          - type: function-called
+            target: "saveRewardImage"
+            params:
+              rewardId: "reward010"
+          - type: toast-message
+            message: "画像を保存しました"
+
+      - id: save-image-permission-denied
+        name: 画像保存許可なし
+        description: 写真アクセス許可がない場合、許可ダイアログが表示されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              name: "プレミアム植木鉢"
+          permissions:
+            photos: "denied"
+        steps:
+          - action: press
+            target: "#save-button"
+        assertions:
+          - type: function-called
+            target: "requestPhotosPermission"
+          - type: element-visible
+            target: "#permission-dialog"
+
+      - id: animation-interaction
+        name: アニメーション操作
+        description: 画像をタップするとアニメーションが再生されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              rarity: "rare"
+            animationPlaying: false
+        steps:
+          - action: press
+            target: "#reward-image"
+        assertions:
+          - type: state-change
+            target: "animationPlaying"
+            value: true
+          - type: element-visible
+            target: "#sparkle-effect"
+
+  - id: effect_animation
+    name: エフェクトアニメーションテスト
+    description: ガチャ結果のエフェクトアニメーションを検証
+    type: functional
+    cases:
+      - id: confetti-effect
+        name: 紙吹雪エフェクト
+        description: レアアイテム獲得時に紙吹雪エフェクトが表示されること
+        setup:
+          state:
+            reward:
+              rarity: "rare"
+              isNew: true
+            screenLoaded: true
+        assertions:
+          - type: element-visible
+            target: "#confetti-effect"
+          - type: animation-playing
+            target: "#confetti-effect"
+            playing: true
+
+      - id: sparkle-effect
+        name: キラキラエフェクト
+        description: アイテム画像にキラキラエフェクトが表示されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+            screenLoaded: true
+        assertions:
+          - type: element-visible
+            target: "#sparkle-effect"
+          - type: animation-playing
+            target: "#sparkle-effect"
+            playing: true
+
+      - id: retry-animation
+        name: アニメーション再生
+        description: 「もう一度見る」ボタンをタップするとアニメーションが再生されること
+        setup:
+          state:
+            reward:
+              id: "reward010"
+              rarity: "rare"
+            animationPlayed: true
+        steps:
+          - action: press
+            target: "#replay-animation-button"
+        assertions:
+          - type: function-called
+            target: "replayAnimation"
+          - type: element-visible
+            target: "#confetti-effect"
+          - type: animation-playing
+            target: "#confetti-effect"
+            playing: true
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#result-container"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load reward data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "報酬データの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load reward data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadRewardData"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: gacha_multi_draw
+    name: 複数ガチャテスト
+    description: 複数ガチャの結果表示を検証
+    type: functional
+    cases:
+      - id: multi-draw-navigation
+        name: 複数結果ナビゲーション
+        description: 複数のガチャ結果間を正しく移動できること
+        setup:
+          state:
+            rewards:
+              - id: "reward001"
+                name: "基本肥料"
+                rarity: "common"
+              - id: "reward010"
+                name: "プレミアム植木鉢"
+                rarity: "rare"
+            currentRewardIndex: 0
+            totalRewards: 2
+        assertions:
+          - type: element-exists
+            target: "#navigation-indicator"
+          - type: element-text
+            target: "#reward-counter"
+            value: "1/2"
+
+      - id: next-reward
+        name: 次の報酬表示
+        description: 「次へ」ボタンをタップすると次の報酬が表示されること
+        setup:
+          state:
+            rewards:
+              - id: "reward001"
+                name: "基本肥料"
+              - id: "reward010"
+                name: "プレミアム植木鉢"
+            currentRewardIndex: 0
+            totalRewards: 2
+        steps:
+          - action: press
+            target: "#next-reward-button"
+        assertions:
+          - type: state-change
+            target: "currentRewardIndex"
+            value: 1
+          - type: element-text
+            target: "#reward-name"
+            value: "プレミアム植木鉢"
+          - type: element-text
+            target: "#reward-counter"
+            value: "2/2"
+
+      - id: previous-reward
+        name: 前の報酬表示
+        description: 「前へ」ボタンをタップすると前の報酬が表示されること
+        setup:
+          state:
+            rewards:
+              - id: "reward001"
+                name: "基本肥料"
+              - id: "reward010"
+                name: "プレミアム植木鉢"
+            currentRewardIndex: 1
+            totalRewards: 2
+        steps:
+          - action: press
+            target: "#previous-reward-button"
+        assertions:
+          - type: state-change
+            target: "currentRewardIndex"
+            value: 0
+          - type: element-text
+            target: "#reward-name"
+            value: "基本肥料"
+          - type: element-text
+            target: "#reward-counter"
+            value: "1/2"
+
+      - id: swipe-navigation
+        name: スワイプナビゲーション
+        description: 左右スワイプで報酬間を移動できること
+        setup:
+          state:
+            rewards:
+              - id: "reward001"
+                name: "基本肥料"
+              - id: "reward010"
+                name: "プレミアム植木鉢"
+            currentRewardIndex: 0
+            totalRewards: 2
+        steps:
+          - action: swipe
+            target: "#result-container"
+            direction: "left"
+        assertions:
+          - type: state-change
+            target: "currentRewardIndex"
+            value: 1
+          - type: element-text
+            target: "#reward-name"
+            value: "プレミアム植木鉢"
+
+accessibility:
+  - test: color-contrast
+    description: 報酬名と説明のテキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: すべての報酬情報と操作ボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: 報酬の閲覧とボタンの操作がキーボード操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

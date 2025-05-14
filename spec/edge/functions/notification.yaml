@@ -1,0 +1,173 @@
+id: notification
+name: NotificationEdgeFunction
+description: |
+  プッシュ通知とアプリ内通知センターを管理するエッジ関数。
+  FCMデバイストークン登録、通知送信、通知履歴取得、既読管理を提供します。
+
+runtime: deno
+entrypoint: notification.ts
+version: 1.0.0
+environment: edge
+
+authentication:
+  scheme: bearer # JWT
+
+endpoints:
+  - id: register_device
+    path: /notifications/device
+    method: POST
+    summary: デバイストークンを登録する
+    description: |
+      モバイルアプリからFCM/APNsトークンを登録し、
+      ユーザーへプッシュ通知を送信できるようにします。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [deviceToken, platform]
+      properties:
+        deviceToken:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android, web]
+        lang:
+          type: string
+          enum: [ja, en, ko, zh]
+        timezone:
+          type: string
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+      - code: 401
+        reason: unauthorized
+
+  - id: list_notifications
+    path: /notifications
+    method: GET
+    summary: 通知履歴を取得する
+    description: ユーザーの通知履歴をページネーション付きで返却します。
+    security:
+      - bearer: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          maximum: 100
+    responseSchema:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            pages:
+              type: integer
+            hasNext:
+              type: boolean
+
+  - id: mark_read
+    path: /notifications/{notificationId}/read
+    method: POST
+    summary: 通知を既読にする
+    description: 指定した通知を既読状態に更新します。
+    security:
+      - bearer: []
+    pathParams:
+      notificationId:
+        type: string
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+      - code: 404
+        reason: not_found
+
+  - id: send_test_notification
+    path: /notifications/test
+    method: POST
+    summary: テスト通知を送信する
+    description: 開発用に指定デバイスへ即時プッシュ通知を送信します。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 403
+        reason: forbidden
+
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        type:
+          type: string
+          enum: [watering_reminder, comment, badge, system, other]
+        data:
+          type: object
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+dependencies:
+  - supabase
+  - firebase-admin
+  - zod
+
+monitoring:
+  metrics:
+    - notifications_sent
+    - notification_open_rate
+    - device_tokens_registered
+  alerts:
+    - name: high_failure_rate
+      condition: "notification_failure_rate > 0.1 for 10m"
+      severity: warning 

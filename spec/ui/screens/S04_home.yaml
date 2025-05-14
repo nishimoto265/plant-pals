@@ -1,0 +1,422 @@
+id: S04_home
+route: /home
+name: Home
+purpose: メインホーム画面（育成中の植物キャラクター表示）
+description: |
+  育成中のすべての植物キャラクターが集まるメインホーム画面。
+  3段の棚と両サイドの吊り鉢で構成され、キャラクターとの基本的なインタラクションや 
+  残水タイマーなどを表示。Draggable Spriteによるキャラクターの移動や、
+  タップでのリアクションなど、キャラクター要素との親しみやすいUIを実現。
+  右下のクイックアクションボタンからカメラとAR表示にアクセス可能。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+    - type: View # フッター
+      style:
+        height: 80
+        paddingHorizontal: 16
+        paddingVertical: 12
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: logo
+        type: Image
+        source: "assets/images/plant_pals_mini_logo.png"
+        style:
+          width: 40
+          height: 40
+      - id: header-title
+        type: Text
+        text: "マイガーデン"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: notifications-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          borderRadius: 20
+        onPress: "navigateToNotifications"
+        children:
+          - id: notification-icon
+            type: Icon
+            name: "bell-outline"
+            style:
+              fontSize: 24
+              color: "#2C6E49"
+          - id: notification-badge
+            type: View
+            style:
+              display: "flex" # または none（通知なし時）
+              position: absolute
+              top: 8
+              right: 8
+              width: 10
+              height: 10
+              borderRadius: 5
+              backgroundColor: "#EF476F" # アクセントカラー2
+              borderWidth: 1
+              borderColor: "#FFFFFF"
+
+  - id: main-content
+    type: View
+    style:
+      flex: 1
+      width: "100%"
+      padding: 16
+    children:
+      - id: room-background
+        type: Image
+        source: "assets/images/room_background.png"
+        style:
+          position: absolute
+          top: 0
+          left: 0
+          width: "100%"
+          height: "100%"
+          resizeMode: cover
+          opacity: 0.7
+      
+      - id: shelf-layout
+        type: View
+        style:
+          flex: 1
+          paddingTop: 16
+        children:
+          - id: top-hanging-plants
+            type: View
+            style:
+              flexDirection: row
+              justifyContent: space-between
+              marginBottom: 24
+              height: 140
+            children:
+              - id: hanging-plant-left
+                type: View
+                style:
+                  width: 100
+                  height: 140
+                  alignItems: center
+                children:
+                  - id: hanging-rope-left
+                    type: Image
+                    source: "assets/images/hanging_rope.png"
+                    style:
+                      width: 4
+                      height: 40
+                  - id: hanging-pot-left
+                    type: Image
+                    source: "assets/images/pot_hanging.png"
+                    style:
+                      width: 90
+                      height: 100
+                  - id: hanging-plant-character-left
+                    type: AnimatedSprite
+                    style:
+                      position: absolute
+                      top: 35
+                      width: 100
+                      height: 100
+                      zIndex: 2
+                    props:
+                      spritesheet: "assets/sprites/character_01.png"
+                      frameCount: 4
+                      fps: 8
+                      draggable: true
+                      onPress: "handleCharacterPress"
+                      onDragEnd: "handleCharacterPlace"
+              
+              - id: hanging-plant-right
+                type: View
+                style:
+                  width: 100
+                  height: 140
+                  alignItems: center
+                children:
+                  - id: hanging-rope-right
+                    type: Image
+                    source: "assets/images/hanging_rope.png"
+                    style:
+                      width: 4
+                      height: 40
+                  - id: hanging-pot-right
+                    type: Image
+                    source: "assets/images/pot_hanging.png"
+                    style:
+                      width: 90
+                      height: 100
+                  - id: hanging-plant-character-right
+                    type: AnimatedSprite
+                    style:
+                      position: absolute
+                      top: 35
+                      width: 100
+                      height: 100
+                      zIndex: 2
+                    props:
+                      spritesheet: "assets/sprites/character_02.png"
+                      frameCount: 4
+                      fps: 8
+                      draggable: true
+                      onPress: "handleCharacterPress"
+                      onDragEnd: "handleCharacterPlace"
+          
+          # 3段の棚 - 上段
+          - id: shelf-top
+            type: View
+            style:
+              width: "100%"
+              height: 140
+              marginBottom: 30
+            children:
+              - id: shelf-top-board
+                type: Image
+                source: "assets/images/shelf_wood.png"
+                style:
+                  width: "100%"
+                  height: 20
+                  position: absolute
+                  bottom: 0
+              - id: shelf-top-plants-container
+                type: ScrollView
+                style:
+                  position: absolute
+                  bottom: 20
+                  width: "100%"
+                  height: 120
+                contentContainerStyle:
+                  flexDirection: row
+                  paddingHorizontal: 10
+                props:
+                  horizontal: true
+                  showsHorizontalScrollIndicator: false
+                children:
+                  # 植木鉢とキャラクターのテンプレート（データに基づき繰り返し）
+                  - id: shelf-plant-template
+                    type: View
+                    style:
+                      width: 100
+                      height: 120
+                      marginHorizontal: 10
+                      alignItems: center
+                    children:
+                      - id: shelf-pot
+                        type: Image
+                        source: "assets/images/pot_regular.png"
+                        style:
+                          width: 80
+                          height: 70
+                          zIndex: 1
+                      - id: shelf-character
+                        type: AnimatedSprite
+                        style:
+                          position: absolute
+                          bottom: 40
+                          width: 100
+                          height: 100
+                          zIndex: 2
+                        props:
+                          spritesheet: "assets/sprites/character_placeholder.png"
+                          frameCount: 4
+                          fps: 8
+                          draggable: true
+                          onPress: "handleCharacterPress"
+                          onDragEnd: "handleCharacterPlace"
+                      
+                      - id: water-timer
+                        type: WaterTimer
+                        style:
+                          position: absolute
+                          bottom: 5
+                          right: 8
+                          width: 36
+                          height: 36
+                          zIndex: 3
+                        props:
+                          remainingHours: 24
+                          maxHours: 72
+                
+          # 3段の棚 - 中段
+          - id: shelf-middle
+            type: View
+            style:
+              width: "100%"
+              height: 140
+              marginBottom: 30
+            # 構造は shelf-top と基本的に同じ
+            
+          # 3段の棚 - 下段
+          - id: shelf-bottom
+            type: View
+            style:
+              width: "100%"
+              height: 140
+              marginBottom: 20
+            # 構造は shelf-top と基本的に同じ
+            
+  # フローティングアクションボタン（カメラとAR）
+  - id: floating-action-buttons
+    type: View
+    style:
+      position: absolute
+      bottom: 80
+      right: 16
+      flexDirection: column
+      alignItems: center
+    children:
+      - id: fab-ar
+        type: TouchableOpacity
+        style:
+          width: 56
+          height: 56
+          borderRadius: 28
+          backgroundColor: "#97BC62" # 若葉（サブカラー）
+          justifyContent: center
+          alignItems: center
+          marginBottom: 16
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.2
+          shadowRadius: 4
+          elevation: 3
+        onPress: "navigateToAR"
+        children:
+          - id: ar-icon
+            type: Icon
+            name: "augmented-reality"
+            style:
+              fontSize: 28
+              color: "#FFFFFF"
+              
+      - id: fab-camera
+        type: TouchableOpacity
+        style:
+          width: 60
+          height: 60
+          borderRadius: 30
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          justifyContent: center
+          alignItems: center
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 3 }
+          shadowOpacity: 0.27
+          shadowRadius: 4.65
+          elevation: 6
+        onPress: "navigateToCamera"
+        children:
+          - id: camera-icon
+            type: Icon
+            name: "camera-plus"
+            style:
+              fontSize: 28
+              color: "#FFFFFF"
+
+  # キャラクター詳細モーダル（タップ時に表示）
+  - id: character-detail-modal
+    type: Modal
+    props:
+      visible: false # 状態管理で制御
+      transparent: true
+      animationType: "slide"
+    children:
+      - id: modal-overlay
+        type: TouchableOpacity
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.5)"
+          justifyContent: flex-end
+        onPress: "closeModal"
+        children:
+          - id: modal-content
+            type: View
+            style:
+              backgroundColor: "#FFFFFF"
+              borderTopLeftRadius: 24
+              borderTopRightRadius: 24
+              padding: 20
+              height: "60%" # 画面の60%の高さ
+            children:
+              - id: modal-header
+                type: View
+                style:
+                  flexDirection: row
+                  justifyContent: space-between
+                  alignItems: center
+                  marginBottom: 16
+                children:
+                  - id: character-name
+                    type: Text
+                    text: "モンステラくん"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 22
+                      color: "#2C6E49"
+                  - id: close-modal-button
+                    type: TouchableOpacity
+                    style:
+                      padding: 8
+                    onPress: "closeModal"
+                    children:
+                      - id: close-modal-icon
+                        type: Icon
+                        name: "close"
+                        style:
+                          fontSize: 24
+                          color: "#333333"
+              # 以下、キャラクター詳細コンテンツ（略）
+                
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - 部屋をイメージした背景で、木製棚と観葉植物キャラクターの「マイガーデン」を表現
+  - 各棚はスクロール可能で、右にスワイプすると増えていく植物キャラクターがすべて見られる
+  - キャラクターは常にアニメーションし、タップすると反応（100ms以内の応答）
+  - ドラッグ機能で棚間の移動や配置変更が可能
+  - 残水タイマーは水滴アイコンにグラデーションで残量を視覚化
+  - ヘッダーのロゴとタイトル、通知アイコンはシンプルに
+  - カメラFABは目立つ緑色で、常に表示
+  - キャラクター詳細モーダルはタップで表示、下から上にスライド表示
+  - 全体的な色味は木目とやさしい緑で統一
+

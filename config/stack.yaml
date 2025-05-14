@@ -1,0 +1,40 @@
+project: plant-pals
+version: "1.0.0"
+description: "観葉植物キャラクター育成アプリ"
+layers:
+  mobile:
+    framework: React Native (Expo Router)
+    language: TypeScript
+    platforms: [iOS, Android]
+    remarks: "iOS / Android 同時リリース"
+  web:
+    framework: Next.js 14 (App Router / Server Actions)
+    language: TypeScript
+    remarks: "管理ポータル & SSR ランディング"
+  bff:
+    provider: Supabase Edge Functions
+    runtime: deno
+    language: TypeScript
+    remarks: "認証・DB・Realtime・Storage 一体運用"
+  ai_service:
+    framework: FastAPI
+    cloud: AWS EKS
+    language: Python
+    remarks: "Plant ID / Individual ID / Health / GenAI"
+  storage:
+    provider: Supabase Storage
+    cdn: Cloudflare Images
+    remarks: "画像/動画を変換・キャッシュ"
+  realtime:
+    provider: Supabase Realtime Channels
+    remarks: "SNS / Family Share 更新"
+  ar:
+    framework: Viro React
+    platforms: [ARCore, ARKit]
+    remarks: "鉢上に 3D キャラを表示"
+  ci_cd:
+    tools:
+      - GitHub Actions
+      - Supabase Deploy
+      - Expo EAS
+    remarks: "mono-repo ワンボタンデプロイ"

@@ -1,0 +1,568 @@
+id: S07_profile
+route: /profile
+name: Profile
+purpose: ユーザー情報表示・編集、ログアウト
+description: |
+  ユーザーのプロフィール情報を表示し、編集できる画面。
+  アバター画像、自己紹介、植物コレクション統計、投稿一覧などを表示します。
+  また、設定やログアウトなどのアカウント管理機能もここから利用可能です。
+  「ゆるふわBotanic Garden」テーマに沿った親しみやすいデザインを採用しています。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      contentContainerStyle:
+        paddingBottom: 24
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: header-title
+        type: Text
+        text: "マイプロフィール"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: settings-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+          borderRadius: 20
+        onPress: "navigateToSettings"
+        children:
+          - id: settings-icon
+            type: Icon
+            name: "cog"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  - id: profile-header
+    type: View
+    style:
+      alignItems: center
+      marginTop: 24
+      marginBottom: 32
+      paddingHorizontal: 16
+    children:
+      - id: avatar-container
+        type: View
+        style:
+          marginBottom: 16
+          position: relative
+        children:
+          - id: avatar-image
+            type: Image
+            style:
+              width: 120
+              height: 120
+              borderRadius: 60
+              borderWidth: 4
+              borderColor: "#FFFFFF"
+            props:
+              source: "user.avatarUrl" # データバインディング
+              resizeMode: "cover"
+              defaultSource: "assets/images/default_avatar.png"
+          - id: edit-avatar-button
+            type: TouchableOpacity
+            style:
+              position: absolute
+              bottom: 0
+              right: 0
+              width: 36
+              height: 36
+              backgroundColor: "#97BC62" # 若葉（サブカラー）
+              borderRadius: 18
+              justifyContent: center
+              alignItems: center
+              borderWidth: 2
+              borderColor: "#FFFFFF"
+            onPress: "selectAvatar"
+            children:
+              - id: edit-icon
+                type: Icon
+                name: "camera"
+                style:
+                  fontSize: 16
+                  color: "#FFFFFF"
+      
+      - id: display-name
+        type: Text
+        text: "user.displayName" # データバインディング
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 22
+          color: "#333333"
+          marginBottom: 8
+          
+      - id: username
+        type: Text
+        text: "@user.username" # データバインディング
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#666666"
+          marginBottom: 16
+          
+      - id: bio-text
+        type: Text
+        text: "user.bio || '自己紹介文はまだありません'" # データバインディング
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#333333"
+          textAlign: center
+          lineHeight: 20
+          marginBottom: 16
+          paddingHorizontal: 24
+          
+      - id: edit-profile-button
+        type: TouchableOpacity
+        style:
+          paddingVertical: 8
+          paddingHorizontal: 24
+          backgroundColor: "transparent"
+          borderWidth: 1
+          borderColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 20
+        onPress: "editProfile"
+        children:
+          - id: edit-profile-text
+            type: Text
+            text: "プロフィールを編集"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  - id: stats-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-around
+      marginHorizontal: 16
+      marginBottom: 24
+      backgroundColor: "#FFFFFF"
+      borderRadius: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    children:
+      - id: plants-stat
+        type: View
+        style:
+          alignItems: center
+        children:
+          - id: plants-count
+            type: Text
+            text: "user.stats.plantsCount || '0'" # データバインディング
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 20
+              color: "#2C6E49" # 深緑（メインカラー）
+              marginBottom: 4
+          - id: plants-label
+            type: Text
+            text: "植物"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+      
+      - id: posts-stat
+        type: View
+        style:
+          alignItems: center
+        children:
+          - id: posts-count
+            type: Text
+            text: "user.stats.postsCount || '0'" # データバインディング
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 20
+              color: "#2C6E49" # 深緑（メインカラー）
+              marginBottom: 4
+          - id: posts-label
+            type: Text
+            text: "投稿"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+      
+      - id: followers-stat
+        type: View
+        style:
+          alignItems: center
+        children:
+          - id: followers-count
+            type: Text
+            text: "user.stats.followersCount || '0'" # データバインディング
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 20
+              color: "#2C6E49" # 深緑（メインカラー）
+              marginBottom: 4
+          - id: followers-label
+            type: Text
+            text: "フォロワー"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+      
+      - id: following-stat
+        type: View
+        style:
+          alignItems: center
+        children:
+          - id: following-count
+            type: Text
+            text: "user.stats.followingCount || '0'" # データバインディング
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 20
+              color: "#2C6E49" # 深緑（メインカラー）
+              marginBottom: 4
+          - id: following-label
+            type: Text
+            text: "フォロー中"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+
+  - id: content-tabs
+    type: View
+    style:
+      flexDirection: row
+      marginHorizontal: 16
+      marginBottom: 16
+      borderRadius: 8
+      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+      padding: 4
+    children:
+      - id: tab-posts
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'posts' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('posts')"
+        children:
+          - id: posts-text
+            type: Text
+            text: "投稿"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'posts' ? '#2C6E49' : '#97BC62'"
+              
+      - id: tab-plants
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'plants' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('plants')"
+        children:
+          - id: plants-text
+            type: Text
+            text: "マイ植物"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'plants' ? '#2C6E49' : '#97BC62'"
+              
+      - id: tab-badges
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "selectedTab === 'badges' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setSelectedTab('badges')"
+        children:
+          - id: badges-text
+            type: Text
+            text: "バッジ"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "selectedTab === 'badges' ? '#2C6E49' : '#97BC62'"
+
+  - id: content-container
+    type: View
+    style:
+      marginHorizontal: 16
+    children:
+      - id: posts-grid
+        type: FlatList
+        style:
+          display: "selectedTab === 'posts' ? 'flex' : 'none'"
+        props:
+          data: "userPosts" # データバインディング
+          renderItem: "renderPostItem"
+          keyExtractor: "item => item.id"
+          numColumns: 3
+          showsVerticalScrollIndicator: false
+          
+      - id: plants-list
+        type: FlatList
+        style:
+          display: "selectedTab === 'plants' ? 'flex' : 'none'"
+        props:
+          data: "userPlants" # データバインディング
+          renderItem: "renderPlantItem"
+          keyExtractor: "item => item.id"
+          showsVerticalScrollIndicator: false
+          
+      - id: badges-grid
+        type: FlatList
+        style:
+          display: "selectedTab === 'badges' ? 'flex' : 'none'"
+        props:
+          data: "userBadges" # データバインディング
+          renderItem: "renderBadgeItem"
+          keyExtractor: "item => item.id"
+          numColumns: 3
+          showsVerticalScrollIndicator: false
+
+  # 投稿アイテムのテンプレート（renderPostItem関数内でレンダリング）
+  - id: post-item-template
+    type: TouchableOpacity
+    style:
+      width: "32%"
+      aspectRatio: 1
+      margin: "1%"
+    onPress: "openPostDetail"
+    children:
+      - id: post-thumbnail
+        type: Image
+        style:
+          width: "100%"
+          height: "100%"
+          borderRadius: 8
+        props:
+          source: "item.thumbnailUrl"
+          resizeMode: "cover"
+
+  # 植物アイテムのテンプレート（renderPlantItem関数内でレンダリング）
+  - id: plant-item-template
+    type: TouchableOpacity
+    style:
+      flexDirection: row
+      alignItems: center
+      backgroundColor: "#FFFFFF"
+      borderRadius: 12
+      marginBottom: 12
+      padding: 12
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 1 }
+      shadowOpacity: 0.1
+      shadowRadius: 2
+      elevation: 1
+    onPress: "openPlantDetail"
+    children:
+      - id: plant-thumbnail
+        type: Image
+        style:
+          width: 60
+          height: 60
+          borderRadius: 8
+          marginRight: 12
+        props:
+          source: "item.thumbnailUrl"
+          resizeMode: "cover"
+      - id: plant-info
+        type: View
+        style:
+          flex: 1
+        children:
+          - id: plant-name
+            type: Text
+            text: "item.nickname || item.speciesName"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#333333"
+              marginBottom: 4
+          - id: plant-species
+            type: Text
+            text: "item.nickname ? item.speciesName : ''"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+              marginBottom: 4
+          - id: plant-status
+            type: Text
+            text: "item.statusText" # 例: '元気です！' or '水が必要です'
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "item.needsAttention ? '#EF476F' : '#97BC62'"
+      - id: plant-arrow
+        type: Icon
+        name: "chevron-right"
+        style:
+          fontSize: 20
+          color: "#97BC62"
+
+  # バッジアイテムのテンプレート（renderBadgeItem関数内でレンダリング）
+  - id: badge-item-template
+    type: View
+    style:
+      width: "32%"
+      aspectRatio: 1
+      margin: "1%"
+      alignItems: center
+    children:
+      - id: badge-image
+        type: Image
+        style:
+          width: "70%"
+          height: "70%"
+          opacity: "item.earned ? 1 : 0.4"
+        props:
+          source: "item.imageUrl"
+          resizeMode: "contain"
+      - id: badge-name
+        type: Text
+        text: "item.name"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 10
+          color: "#333333"
+          textAlign: center
+          marginTop: 4
+          
+  # 空のコンテンツ表示（投稿/植物/バッジがない場合）
+  - id: empty-content
+    type: View
+    style:
+      alignItems: center
+      justifyContent: center
+      padding: 24
+      height: 200
+    children:
+      - id: empty-icon
+        type: Icon
+        name: "selectedTab === 'posts' ? 'image-multiple' : selectedTab === 'plants' ? 'flower' : 'medal'"
+        style:
+          fontSize: 48
+          color: "rgba(151, 188, 98, 0.4)" # 薄い若葉色
+          marginBottom: 16
+      - id: empty-text
+        type: Text
+        text: "selectedTab === 'posts' ? '投稿がありません' : selectedTab === 'plants' ? '植物がありません' : 'バッジがありません'"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#666666"
+          textAlign: center
+      - id: empty-action-button
+        type: TouchableOpacity
+        style:
+          marginTop: 16
+          paddingVertical: 8
+          paddingHorizontal: 16
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 20
+        onPress: "selectedTab === 'posts' ? navigateToCamera : selectedTab === 'plants' ? navigateToCamera : navigateToBadgeCenter"
+        children:
+          - id: action-text
+            type: Text
+            text: "selectedTab === 'posts' ? '投稿を作成する' : selectedTab === 'plants' ? '植物を追加する' : 'バッジを獲得する'"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#FFFFFF"
+  
+  # ログアウトボタン
+  - id: logout-section
+    type: View
+    style:
+      alignItems: center
+      marginTop: 32
+      marginBottom: 16
+    children:
+      - id: logout-button
+        type: TouchableOpacity
+        style:
+          flexDirection: row
+          alignItems: center
+          paddingVertical: 10
+          paddingHorizontal: 20
+        onPress: "handleLogout"
+        children:
+          - id: logout-icon
+            type: Icon
+            name: "logout"
+            style:
+              fontSize: 18
+              color: "#666666"
+              marginRight: 8
+          - id: logout-text
+            type: Text
+            text: "ログアウト"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+
+designNotes: |
+  - ユーザープロフィールを中心とした親しみやすいデザイン
+  - プロフィール画像は大きく表示し、編集ボタンを右下に配置
+  - 統計情報（植物数、投稿数など）は白背景のカードで視覚的に分離
+  - コンテンツタブで「投稿」「マイ植物」「バッジ」を切り替え可能
+  - 投稿はグリッド表示、植物はリスト表示、バッジはグリッド表示
+  - 空の状態には適切なアイコンと案内テキスト、アクションボタンを表示
+  - ログアウトボタンはページ下部に控えめに配置
+  - 全体的に丸みを帯びたデザインと「ゆるふわ」テーマに合わせた配色

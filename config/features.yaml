@@ -1,0 +1,155 @@
+auth_login:
+  id: F00
+  name: "認証/ログイン"
+  description: "メール、OAuth2 (Google, Apple, GitHub) でのログイン機能。ゲストモード対応。"
+  requirements:
+    - "メール＋パスワード認証"
+    - "Google OAuth2"
+    - "Apple OAuth2"
+    - "GitHub OAuth2"
+    - "ゲストモード（投稿不可、後からアカウント連携）"
+    - "JWT を SecureStore に暗号化保存"
+    - "Refresh Token で 7 日サイレントログイン"
+plant_identification:
+  id: F01
+  name: "植物識別"
+  description: "撮影画像から植物の品種をAIで識別する。"
+  requirements:
+    - "モデル: Swin-V2 Large (Fine-Tune)"
+    - "Top-1 Accuracy ≥ 92%"
+    - "Macro F1 ≥ 0.90"
+individual_identification:
+  id: F02
+  name: "個体識別"
+  description: "同一品種内の植物を葉模様などから個体として識別する。"
+  requirements:
+    - "モデル: ArcFace × ConvNeXt-Tiny Embedding"
+    - "類似度 < 0.7 を別個体と判定"
+avatar_generation:
+  id: F03
+  name: "キャラクター生成"
+  description: "植物画像と特徴タグに基づいて2D/3Dアバターを生成する。"
+  requirements:
+    - "モデル: SDXL Turbo"
+    - "生成速度: 512px PNG ≤ 3s"
+    - "性格タグ付与（陽気／クール…）"
+home_screen:
+  id: F04
+  name: "ホーム画面"
+  description: "棚と吊り鉢レイアウトで育成中のキャラクターを常時表示・操作。"
+  requirements:
+    - "Draggable Sprite"
+    - "残水タイマー表示"
+    - "タップリアクション < 100ms"
+ar_mode:
+  id: F05
+  name: "ARモード"
+  description: "現実の鉢などに3DキャラクターをARで表示・撮影。"
+  requirements:
+    - "技術: Viro React (ARCore / ARKit)"
+    - "平面検出後 1s 以内にキャラ配置"
+    - "表示フレームレート: 30fps"
+sns_timeline:
+  id: F06
+  name: "SNS/タイムライン"
+  description: "ユーザー間で植物育成の様子を画像・動画で共有・交流。"
+  requirements:
+    - "画像/動画(≤60s)投稿"
+    - "Like/Reply/フォロー/ブロック機能"
+    - "AI + 人手によるモデレーション"
+    - "通報機能（< 2h 対応）"
+gamification:
+  id: F07
+  name: "ゲーミフィケーション"
+  description: "継続利用を促すためのバッジ、ガチャ、ログインボーナス。"
+  requirements:
+    - "バッジ（育成／SNS／連続ログイン）"
+    - "ガチャ機能 (S12 Gacha Result画面へ連携)"
+    - "ログインボーナス"
+family_share:
+  id: F08
+  name: "Family Share"
+  description: "家族や友人と植物の世話状況を共有・分担。"
+  requirements:
+    - "Roles: owner / editor / viewer"
+    - "Supabase Row Level Security (RLS) によるアクセス制御"
+notifications:
+  id: F09
+  name: "通知"
+  description: "重要なイベントをPush通知でお知らせ。"
+  requirements:
+    - "FCM Push通知"
+    - "通知種別: 水やりリマインダー、コメント返信、バッジ獲得"
+health_check:
+  id: F10
+  name: "健康チェック"
+  description: "植物の画像を解析し、健康状態を診断、音声でアドバイス。"
+  requirements:
+    - "画像/センサー解析"
+    - "AIモデル: ResNet-101 FT (F1 ≥ 0.85)"
+    - "音声アドバイス (TTS: VITS multi-lang, MOS ≥ 4.0)"
+customizer:
+  id: F11
+  name: "きせかえ/カスタマイザー"
+  description: "キャラクターの外見を編集・カスタマイズ。"
+  requirements:
+    - "ガチャ & Customizer (S11) で外見編集"
+    - "AvatarEditor, ColorPicker (S11 Customizer)"
+plant_library:
+  id: F12
+  name: "植物ライブラリ"
+  description: "植物の品種情報を検索・閲覧できる辞典機能。"
+  requirements:
+    - "品種検索 (S13 Plant Library)"
+    - "育て方情報 (CareTips)"
+onboarding:
+  id: F13
+  name: "オンボーディング"
+  description: "アプリ初回起動時の権限許可や使い方説明。"
+  requirements:
+    - "Carousel UI (S02 Onboarding)"
+    - "PermissionDialog"
+user_profile:
+  id: F14
+  name: "ユーザープロフィール"
+  description: "ユーザー情報表示・編集、ログアウト。"
+  requirements:
+    - "Avatar, Bio, Logout (S07 Profile)"
+settings:
+  id: F15
+  name: "設定"
+  description: "アプリの言語設定や通知設定など。"
+  requirements:
+    - "ToggleList, LocalePicker (S08 Settings)"
+store:
+  id: F16
+  name: "ストア"
+  description: "きせかえアイテムやガチャの購入。"
+  requirements:
+    - "ItemGrid, PurchaseBtn (S10 Store)"
+    - "課金処理 (S16 Checkout)"
+offline_support:
+  id: F17
+  name: "オフライン対応"
+  description: "オフライン時にも一部機能を利用可能にする。"
+  requirements:
+    - "キャラクター表示"
+    - "閲覧済みタイムライン表示"
+    - "設定画面アクセス"
+security:
+  id: F18
+  name: "セキュリティ"
+  description: "ユーザーデータとプライバシー保護。"
+  requirements:
+    - "OAuth2"
+    - "E2E暗号化 (該当箇所)"
+    - "GDPR / JP個人情報保護法遵守"
+accessibility:
+  id: F19
+  name: "アクセシビリティ"
+  description: "WCAG AA準拠、スクリーンリーダー対応。"
+  requirements:
+    - "WCAG AAレベル準拠"
+    - "VoiceOver (iOS) 対応"
+    - "TalkBack (Android) 対応"
+

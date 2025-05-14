@@ -1,0 +1,438 @@
+id: S14_notification
+route: /notification
+name: Notification
+purpose: 水やりリマインダーや活動通知の管理
+description: |
+  水やりリマインダーやSNS活動通知の一覧を表示・管理する画面。
+  既読/未読の視覚的区別や、通知ごとのアクション（水やり完了マークなど）を提供します。
+  「ゆるふわBotanic Garden」テーマに沿った見やすいデザインで、
+  ユーザーが必要な情報にスムーズにアクセスできるようにします。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: View # メインコンテンツ
+      style:
+        flex: 1
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "お知らせ"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: settings-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "navigateToSettings"
+        children:
+          - id: settings-icon
+            type: Icon
+            name: "cog"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+
+  # フィルターセグメント
+  - id: filter-segment
+    type: View
+    style:
+      flexDirection: row
+      marginHorizontal: 16
+      marginVertical: 16
+      borderRadius: 8
+      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+      padding: 4
+      height: 40
+    children:
+      - id: filter-all
+        type: TouchableOpacity
+        style:
+          flex: 1
+          borderRadius: 6
+          backgroundColor: "activeFilter === 'all' ? '#FFFFFF' : 'transparent'"
+          justifyContent: center
+          alignItems: center
+        onPress: "setActiveFilter('all')"
+        children:
+          - id: all-text
+            type: Text
+            text: "すべて"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeFilter === 'all' ? '#2C6E49' : '#97BC62'"
+              
+      - id: filter-watering
+        type: TouchableOpacity
+        style:
+          flex: 1
+          borderRadius: 6
+          backgroundColor: "activeFilter === 'watering' ? '#FFFFFF' : 'transparent'"
+          justifyContent: center
+          alignItems: center
+        onPress: "setActiveFilter('watering')"
+        children:
+          - id: watering-text
+            type: Text
+            text: "水やり"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeFilter === 'watering' ? '#2C6E49' : '#97BC62'"
+              
+      - id: filter-social
+        type: TouchableOpacity
+        style:
+          flex: 1
+          borderRadius: 6
+          backgroundColor: "activeFilter === 'social' ? '#FFFFFF' : 'transparent'"
+          justifyContent: center
+          alignItems: center
+        onPress: "setActiveFilter('social')"
+        children:
+          - id: social-text
+            type: Text
+            text: "SNS"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeFilter === 'social' ? '#2C6E49' : '#97BC62'"
+      
+      - id: filter-system
+        type: TouchableOpacity
+        style:
+          flex: 1
+          borderRadius: 6
+          backgroundColor: "activeFilter === 'system' ? '#FFFFFF' : 'transparent'"
+          justifyContent: center
+          alignItems: center
+        onPress: "setActiveFilter('system')"
+        children:
+          - id: system-text
+            type: Text
+            text: "システム"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeFilter === 'system' ? '#2C6E49' : '#97BC62'"
+
+  # 通知リスト
+  - id: notifications-list
+    type: FlatList
+    style:
+      flex: 1
+      paddingHorizontal: 16
+    props:
+      data: "filteredNotifications"
+      renderItem: "renderNotification"
+      keyExtractor: "item => item.id"
+      showsVerticalScrollIndicator: false
+      refreshControl: "refreshControl"
+      ListEmptyComponent: "EmptyNotifications"
+      contentContainerStyle:
+        paddingBottom: 24
+        flexGrow: 1
+
+  # 空の通知表示
+  - id: empty-notifications
+    type: View
+    style:
+      flex: 1
+      justifyContent: center
+      alignItems: center
+      paddingHorizontal: 40
+    children:
+      - id: empty-illustration
+        type: Image
+        style:
+          width: 160
+          height: 160
+          marginBottom: 24
+        props:
+          source: "assets/illustrations/empty_notifications.png"
+          resizeMode: "contain"
+      - id: empty-title
+        type: Text
+        text: "通知はありません"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#2C6E49"
+          marginBottom: 8
+          textAlign: center
+      - id: empty-message
+        type: Text
+        text: "wateringFilter ? '水やりの通知はありません。' : socialFilter ? 'SNSの通知はありません。' : systemFilter ? 'システム通知はありません。' : '新しい通知が届くとここに表示されます。'"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#666666"
+          textAlign: center
+          lineHeight: 20
+
+  # 通知アイテムテンプレート
+  - id: notification-template
+    type: View
+    style:
+      backgroundColor: "item.read ? '#FFFFFF' : 'rgba(151, 188, 98, 0.1)'"
+      borderRadius: 12
+      marginBottom: 12
+      padding: 16
+      flexDirection: row
+    children:
+      # 通知タイプアイコン
+      - id: notification-icon-container
+        type: View
+        style:
+          width: 48
+          height: 48
+          borderRadius: 24
+          backgroundColor: "item.type === 'watering' ? 'rgba(44, 110, 73, 0.1)' : item.type === 'social' ? 'rgba(239, 71, 111, 0.1)' : 'rgba(255, 209, 102, 0.1)'"
+          justifyContent: center
+          alignItems: center
+          marginRight: 16
+        children:
+          - id: notification-icon
+            type: Icon
+            name: "item.type === 'watering' ? 'water' : item.type === 'social' ? 'account-group' : 'bell'"
+            style:
+              fontSize: 24
+              color: "item.type === 'watering' ? '#2C6E49' : item.type === 'social' ? '#EF476F' : '#FFD166'"
+      
+      # 通知コンテンツ
+      - id: notification-content
+        type: View
+        style:
+          flex: 1
+          justifyContent: center
+        children:
+          - id: notification-title
+            type: Text
+            text: "item.title"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#333333"
+              marginBottom: 4
+          - id: notification-body
+            type: Text
+            text: "item.body"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+              marginBottom: 8
+          # 水やり通知の場合はアクションボタンを表示
+          - id: watering-action
+            type: TouchableOpacity
+            style:
+              alignSelf: "flex-start"
+              backgroundColor: "#2C6E49"
+              paddingHorizontal: 12
+              paddingVertical: 6
+              borderRadius: 16
+              display: "item.type === 'watering' && !item.actionTaken ? 'flex' : 'none'"
+            onPress: "() => handleWateringAction(item.id)"
+            children:
+              - id: watering-action-text
+                type: Text
+                text: "水やり完了をマーク"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#FFFFFF"
+          # SNS通知の場合は詳細へのリンクを表示
+          - id: social-link
+            type: TouchableOpacity
+            style:
+              alignSelf: "flex-start"
+              flexDirection: row
+              alignItems: center
+              display: "item.type === 'social' ? 'flex' : 'none'"
+            onPress: "() => navigateToSocialDetail(item.referenceId)"
+            children:
+              - id: social-link-text
+                type: Text
+                text: "詳細を見る"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 12
+                  color: "#2C6E49"
+                  marginRight: 4
+              - id: social-link-icon
+                type: Icon
+                name: "chevron-right"
+                style:
+                  fontSize: 14
+                  color: "#2C6E49"
+          - id: notification-time
+            type: Text
+            text: "formatTime(item.createdAt)"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#999999"
+              marginTop: 4
+      
+      # 通知オプションボタン
+      - id: notification-options
+        type: TouchableOpacity
+        style:
+          width: 32
+          height: 32
+          justifyContent: center
+          alignItems: center
+        onPress: "() => openNotificationOptions(item.id)"
+        children:
+          - id: options-icon
+            type: Icon
+            name: "dots-vertical"
+            style:
+              fontSize: 20
+              color: "#666666"
+
+  # 通知オプションモーダル
+  - id: options-modal
+    type: Modal
+    props:
+      visible: "optionsModalVisible"
+      transparent: true
+      animationType: "fade"
+    children:
+      - id: modal-overlay
+        type: TouchableOpacity
+        style:
+          flex: 1
+          backgroundColor: "rgba(0, 0, 0, 0.4)"
+          justifyContent: "center"
+          alignItems: "center"
+        onPress: "closeOptionsModal"
+        children:
+          - id: modal-content
+            type: TouchableWithoutFeedback # 内部タップはモーダルを閉じない
+            children:
+              - id: options-menu
+                type: View
+                style:
+                  width: 240
+                  backgroundColor: "#FFFFFF"
+                  borderRadius: 12
+                  overflow: "hidden"
+                  shadowColor: "#000"
+                  shadowOffset: { width: 0, height: 4 }
+                  shadowOpacity: 0.2
+                  shadowRadius: 8
+                  elevation: 6
+                children:
+                  - id: mark-read-option
+                    type: TouchableOpacity
+                    style:
+                      flexDirection: "row"
+                      alignItems: "center"
+                      paddingVertical: 14
+                      paddingHorizontal: 16
+                      borderBottomWidth: 1
+                      borderBottomColor: "rgba(151, 188, 98, 0.1)"
+                    onPress: "handleMarkAsRead"
+                    children:
+                      - id: mark-read-icon
+                        type: Icon
+                        name: "check-circle"
+                        style:
+                          fontSize: 20
+                          color: "#97BC62"
+                          marginRight: 12
+                      - id: mark-read-text
+                        type: Text
+                        text: "既読にする"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#333333"
+                  - id: delete-option
+                    type: TouchableOpacity
+                    style:
+                      flexDirection: "row"
+                      alignItems: "center"
+                      paddingVertical: 14
+                      paddingHorizontal: 16
+                    onPress: "handleDeleteNotification"
+                    children:
+                      - id: delete-icon
+                        type: Icon
+                        name: "delete"
+                        style:
+                          fontSize: 20
+                          color: "#EF476F"
+                          marginRight: 12
+                      - id: delete-text
+                        type: Text
+                        text: "削除"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 14
+                          color: "#333333"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - 通知は「すべて」「水やり」「SNS」「システム」にカテゴリ分け
+  - 未読通知は薄い背景色で区別し、一目で識別可能
+  - 水やり通知には「水やり完了をマーク」のクイックアクション
+  - SNS通知には投稿詳細へのクイックリンク
+  - 通知ごとに既読マーク・削除などのオプションを提供
+  - 何も通知がない場合は、フレンドリーなイラストと説明文を表示
+  - 全体的に「ゆるふわ」テーマに沿った優しい色使いと丸みのあるデザイン要素

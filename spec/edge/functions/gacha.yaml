@@ -1,0 +1,163 @@
+id: gacha
+name: GachaEdgeFunction
+description: |
+  ガチャ抽選・演出結果生成を行うエッジ関数。アイテム・キャラクタースキンをランダムに排出し、
+  ユーザーインベントリへ付与します。排出率・天井・重複補償ロジックに対応。
+
+runtime: deno
+entrypoint: gacha.ts
+version: 1.0.0
+environment: edge
+
+authentication:
+  scheme: bearer
+
+endpoints:
+  - id: list_gacha_pools
+    path: /gacha/pools
+    method: GET
+    summary: 利用可能なガチャプール一覧を取得
+    description: 現在開催中のガチャプール情報を返却します。
+    security: []
+    responseSchema:
+      type: object
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: '#/components/schemas/GachaPool'
+
+  - id: draw_gacha
+    path: /gacha/draw
+    method: POST
+    summary: ガチャを実行する
+    description: 指定したプールでガチャを1回または10回まとめて引きます。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [poolId, times]
+      properties:
+        poolId:
+          type: string
+        times:
+          type: integer
+          enum: [1, 10]
+        useTicket:
+          type: boolean
+          default: false
+    responseSchema:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GachaResult'
+        pityCounter:
+          type: integer
+        remainingCoins:
+          type: integer
+        bonusItems:
+          type: array
+          items:
+            type: string
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+      - code: 402
+        reason: insufficient_currency
+      - code: 404
+        reason: pool_not_found
+
+  - id: gacha_history
+    path: /gacha/history
+    method: GET
+    summary: ガチャ履歴を取得する
+    security:
+      - bearer: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          maximum: 100
+    responseSchema:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/GachaResult'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            pages:
+              type: integer
+            currentPage:
+              type: integer
+            hasNext:
+              type: boolean
+
+components:
+  schemas:
+    GachaPool:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        bannerImage:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        rarityRates:
+          type: object
+          properties:
+            common:
+              type: number
+            rare:
+              type: number
+            epic:
+              type: number
+            legendary:
+              type: number
+        price:
+          type: integer
+    GachaResult:
+      type: object
+      properties:
+        itemId:
+          type: string
+        itemName:
+          type: string
+        rarity:
+          type: string
+          enum: [common, rare, epic, legendary]
+        isNew:
+          type: boolean
+        duplicateCompensation:
+          type: integer
+
+monitoring:
+  metrics:
+    - gacha_draws
+    - legendary_drop_rate
+  alerts:
+    - name: drop_rate_anomaly
+      condition: "legendary_drop_rate < expected - 3sigma for 1h"
+      severity: warning 

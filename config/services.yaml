@@ -1,0 +1,80 @@
+auth:
+  provider: Supabase Auth
+  strategies:
+    - email_password
+    - google_oauth
+    - apple_oauth
+    - github_oauth
+  guest_mode_enabled: true
+  jwt_storage: SecureStore
+  refresh_token_lifetime: 7 days
+api:
+  edge_functions:
+    - name: auth
+      path: /auth
+    - name: plant
+      path: /plant
+ai:
+  inference_api:
+    plant_id:
+      endpoint: /identify # 6.1 植物識別
+      model: Swin-V2 Large
+      accuracy_target: "Top-1 Accuracy ≥ 92%, Macro F1 ≥ 0.90"
+      inference_env: "Cloud GPU / TFLite"
+    individual_id:
+      endpoint: /identify/individual # 6.2 個体識別
+      model: ConvNeXtTiny+ArcFace
+      accuracy_target: "ROC-AUC ≥ 0.95, 類似度 < 0.7 を別個体"
+      inference_env: "Edge"
+    avatar_generation:
+      endpoint: /avatar # 6.3 キャラクター生成
+      model: SDXL Turbo
+      latency_target: "≤ 3s (512px PNG)"
+      output_format: PNG
+      attributes: ["性格タグ（陽気／クール…）"]
+      inference_env: "Cloud GPU"
+    health_assessment:
+      endpoint: /health # 健康チェック (4)
+      model: ResNet-101 FT
+      accuracy_target: "F1 ≥ 0.85"
+      inference_env: "Edge / Cloud"
+    speech_to_text:
+      model: Whisper v3
+      metric_target: "WER ≤ 10%"
+      inference_env: "Cloud"
+    text_to_speech:
+      model: VITS multi-lang
+      metric_target: "MOS ≥ 4.0"
+      inference_env: "Edge"
+    dialogue_system:
+      model: GPT-4o
+      metric_target: "CSAT ≥ 4.2/5"
+      inference_env: "Cloud"
+storage:
+  media:
+    provider: Supabase Storage
+    cdn: Cloudflare Images
+    bucket: plant_media # 9. データ要件 (Media) より
+    formats: [WebP, H.265]
+realtime:
+  provider: Supabase Realtime Channels # 2. スコープ より
+  channels:
+    - timeline
+    - family_share
+notifications:
+  provider: FCM # 6.9 通知 より
+  events:
+    - water_reminder
+    - comment_reply
+    - badge_unlocked
+sns_sharing:
+  platforms: [X, Instagram, TikTok] # 11. 外部連携 より
+payments:
+  providers: # 11. 外部連携 より
+    - App Store In-App Purchase
+    - Google Play In-App Purchase
+logging:
+  tools: [Supabase Logs, Sentry, Datadog] # 12. 運用・保守 より
+monitoring:
+  tools: [OpenTelemetry Tracing, Prometheus Metrics] # 12. 運用・保守 より
+

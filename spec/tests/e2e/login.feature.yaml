@@ -1,0 +1,363 @@
+id: login_e2e_test
+name: ログイン機能のE2Eテスト
+description: |
+  ユーザーのログインフローを検証するEnd-to-Endテスト。
+  メールログイン、SNSログイン、エラー処理、リダイレクトなどを検証します。
+
+tags:
+  - auth
+  - critical
+  - smoke
+
+platform: mobile  # モバイルアプリ向けテスト
+
+fixtures:
+  - id: test_user
+    type: user
+    data:
+      email: test@example.com
+      password: Test@1234
+      displayName: テストユーザー
+  
+  - id: invalid_user
+    type: data
+    data:
+      email: nonexistent@example.com
+      password: wrong_password
+
+scenarios:
+  - id: successful_email_login
+    name: メールアドレスとパスワードによる正常ログイン
+    priority: critical
+    steps:
+      - action: launch
+        description: アプリを起動する
+        params:
+          resetState: true
+      
+      - action: waitVisible
+        description: ウェルカム画面の表示を待つ
+        element:
+          id: welcome_screen
+        timeout: 5000
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: login_button
+      
+      - action: waitVisible
+        description: ログイン画面の表示を待つ
+        element:
+          id: login_screen
+      
+      - action: input
+        description: メールアドレスを入力
+        element:
+          id: email_input
+        value: "{{test_user.email}}"
+      
+      - action: input
+        description: パスワードを入力
+        element:
+          id: password_input
+        value: "{{test_user.password}}"
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: submit_button
+      
+      - action: waitVisible
+        description: ホーム画面の表示を待つ
+        element:
+          id: home_screen
+        timeout: 10000
+      
+      - action: assertVisible
+        description: ユーザー名が表示されていることを確認
+        element:
+          text: "{{test_user.displayName}}"
+      
+      - action: assertNotVisible
+        description: ログインエラーメッセージが表示されていないことを確認
+        element:
+          id: login_error
+  
+  - id: failed_login_invalid_credentials
+    name: 不正なログイン情報によるエラー処理
+    priority: high
+    steps:
+      - action: launch
+        description: アプリを起動する
+        params:
+          resetState: true
+      
+      - action: waitVisible
+        description: ウェルカム画面の表示を待つ
+        element:
+          id: welcome_screen
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: login_button
+      
+      - action: waitVisible
+        description: ログイン画面の表示を待つ
+        element:
+          id: login_screen
+      
+      - action: input
+        description: 存在しないメールアドレスを入力
+        element:
+          id: email_input
+        value: "{{invalid_user.email}}"
+      
+      - action: input
+        description: 不正なパスワードを入力
+        element:
+          id: password_input
+        value: "{{invalid_user.password}}"
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: submit_button
+      
+      - action: waitVisible
+        description: エラーメッセージの表示を待つ
+        element:
+          id: login_error
+        timeout: 5000
+      
+      - action: assertText
+        description: 適切なエラーメッセージが表示されることを確認
+        element:
+          id: login_error
+        text: "メールアドレスまたはパスワードが間違っています"
+      
+      - action: assertVisible
+        description: ログイン画面が引き続き表示されていることを確認
+        element:
+          id: login_screen
+  
+  - id: google_social_login
+    name: Googleアカウントによるソーシャルログイン
+    priority: medium
+    tags:
+      - social
+    steps:
+      - action: launch
+        description: アプリを起動する
+        params:
+          resetState: true
+      
+      - action: waitVisible
+        description: ウェルカム画面の表示を待つ
+        element:
+          id: welcome_screen
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: login_button
+      
+      - action: waitVisible
+        description: ログイン画面の表示を待つ
+        element:
+          id: login_screen
+      
+      - action: tap
+        description: Googleログインボタンをタップ
+        element:
+          id: google_login_button
+      
+      - action: waitVisible
+        description: Googleログイン画面の表示を待つ（OS/ブラウザによる外部認証）
+        element:
+          id: google_auth_webview
+        timeout: 10000
+      
+      - action: mockExternalAuth
+        description: 外部認証をモック（テスト環境向け）
+        provider: google
+        success: true
+        userData:
+          email: google_user@example.com
+          name: Google User
+      
+      - action: waitVisible
+        description: ホーム画面の表示を待つ
+        element:
+          id: home_screen
+        timeout: 15000
+      
+      - action: assertVisible
+        description: ユーザー名が表示されていることを確認
+        element:
+          text: "Google User"
+  
+  - id: remember_me_functionality
+    name: ログイン情報の記憶機能
+    priority: medium
+    steps:
+      - action: launch
+        description: アプリを起動する
+        params:
+          resetState: true
+      
+      - action: waitVisible
+        description: ウェルカム画面の表示を待つ
+        element:
+          id: welcome_screen
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: login_button
+      
+      - action: waitVisible
+        description: ログイン画面の表示を待つ
+        element:
+          id: login_screen
+      
+      - action: input
+        description: メールアドレスを入力
+        element:
+          id: email_input
+        value: "{{test_user.email}}"
+      
+      - action: input
+        description: パスワードを入力
+        element:
+          id: password_input
+        value: "{{test_user.password}}"
+      
+      - action: tap
+        description: ログイン情報を記憶するチェックボックスをタップ
+        element:
+          id: remember_me_checkbox
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: submit_button
+      
+      - action: waitVisible
+        description: ホーム画面の表示を待つ
+        element:
+          id: home_screen
+      
+      # アプリを再起動してログイン状態が維持されることを確認
+      - action: restart
+        description: アプリを再起動
+      
+      - action: waitVisible
+        description: ホーム画面が直接表示されることを確認（ログイン画面をスキップ）
+        element:
+          id: home_screen
+        timeout: 10000
+  
+  - id: password_reset_flow
+    name: パスワードリセットフロー
+    priority: medium
+    steps:
+      - action: launch
+        description: アプリを起動する
+        params:
+          resetState: true
+      
+      - action: waitVisible
+        description: ウェルカム画面の表示を待つ
+        element:
+          id: welcome_screen
+      
+      - action: tap
+        description: ログインボタンをタップ
+        element:
+          id: login_button
+      
+      - action: waitVisible
+        description: ログイン画面の表示を待つ
+        element:
+          id: login_screen
+      
+      - action: tap
+        description: パスワードを忘れたリンクをタップ
+        element:
+          id: forgot_password_link
+      
+      - action: waitVisible
+        description: パスワードリセット画面の表示を待つ
+        element:
+          id: password_reset_screen
+      
+      - action: input
+        description: メールアドレスを入力
+        element:
+          id: reset_email_input
+        value: "{{test_user.email}}"
+      
+      - action: tap
+        description: リセットボタンをタップ
+        element:
+          id: reset_button
+      
+      - action: waitVisible
+        description: 確認メッセージの表示を待つ
+        element:
+          id: reset_confirmation
+        timeout: 5000
+      
+      - action: assertText
+        description: 適切な確認メッセージが表示されることを確認
+        element:
+          id: reset_confirmation
+        contains: "パスワードリセットのメールを送信しました"
+
+assertions:
+  - id: login_security
+    description: ログイン後にセキュアなストレージにトークンが保存されていること
+    implementation: |
+      // SecureStoreのトークンを検証
+      const token = await SecureStore.getItem('auth_token');
+      expect(token).not.toBeNull();
+      expect(typeof token).toBe('string');
+
+  - id: token_expiry
+    description: トークンに適切な有効期限が設定されていること
+    implementation: |
+      // トークンをデコードして有効期限を検証
+      const token = await SecureStore.getItem('auth_token');
+      const decoded = jwtDecode(token);
+      const now = Math.floor(Date.now() / 1000);
+      expect(decoded.exp).toBeGreaterThan(now);
+      // デフォルトの有効期限は1時間
+      expect(decoded.exp - now).toBeLessThanOrEqual(3600);
+
+hooks:
+  before:
+    - action: setupTestUser
+      description: テストユーザーをデータベースに作成
+      params:
+        userData: "{{test_user}}"
+
+  after:
+    - action: cleanupTestUser
+      description: テストユーザーをデータベースから削除
+      params:
+        email: "{{test_user.email}}"
+
+environment:
+  devices:
+    - type: ios
+      model: iPhone 14
+      version: 15.0
+    - type: android
+      model: Pixel 6
+      version: 12.0
+  network:
+    - type: wifi
+    - type: 4g
+      throttling: true

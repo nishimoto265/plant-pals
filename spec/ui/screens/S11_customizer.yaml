@@ -1,0 +1,445 @@
+id: S11_customizer
+route: /customizer
+name: Customizer
+purpose: キャラクターの外見編集
+description: |
+  植物キャラクターの外見を自由にカスタマイズする画面。
+  所持アイテム（帽子、眼鏡、装飾品など）を装着したり、
+  カラーパレットから色合いを調整したりすることができます。
+  「ゆるふわBotanic Garden」テーマに沿った親しみやすいUIで、
+  ユーザーの創造性を引き出します。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: View # メインコンテンツ
+      style:
+        flex: 1
+      
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "キャラクターカスタマイズ"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: save-button
+        type: TouchableOpacity
+        style:
+          paddingHorizontal: 16
+          paddingVertical: 6
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 16
+        onPress: "saveCustomizations"
+        children:
+          - id: save-text
+            type: Text
+            text: "保存"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#FFFFFF"
+              
+  # キャラクター表示エリア
+  - id: character-preview-area
+    type: View
+    style:
+      flex: 1
+      alignItems: "center"
+      justifyContent: "center"
+      marginVertical: 16
+    children:
+      - id: character-container
+        type: View
+        style:
+          width: 240
+          height: 240
+          borderRadius: 120
+          backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+          alignItems: "center"
+          justifyContent: "center"
+        children:
+          - id: character-sprite
+            type: AnimatedSprite
+            style:
+              width: 200
+              height: 200
+            props:
+              spritesheet: "characterData.baseSprite"
+              frameCount: 4
+              fps: 8
+              loop: true
+          # 装着アイテム（帽子）
+          - id: hat-item
+            type: Image
+            style:
+              position: "absolute"
+              top: 50
+              width: 100
+              height: 60
+              display: "customizations.hat ? 'flex' : 'none'"
+            props:
+              source: "customizations.hat?.imageUrl"
+              resizeMode: "contain"
+          # 装着アイテム（眼鏡）
+          - id: glasses-item
+            type: Image
+            style:
+              position: "absolute"
+              top: 100
+              width: 80
+              height: 40
+              display: "customizations.glasses ? 'flex' : 'none'"
+            props:
+              source: "customizations.glasses?.imageUrl"
+              resizeMode: "contain"
+          # 装着アイテム（アクセサリー）
+          - id: accessory-item
+            type: Image
+            style:
+              position: "absolute"
+              bottom: 70
+              width: 60
+              height: 60
+              display: "customizations.accessory ? 'flex' : 'none'"
+            props:
+              source: "customizations.accessory?.imageUrl"
+              resizeMode: "contain"
+              
+  # カスタマイズタブ
+  - id: customization-tabs
+    type: View
+    style:
+      flexDirection: row
+      marginHorizontal: 16
+      marginBottom: 16
+      borderRadius: 8
+      backgroundColor: "rgba(151, 188, 98, 0.1)" # 薄い若葉色
+      padding: 4
+    children:
+      - id: tab-items
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "activeTab === 'items' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setActiveTab('items')"
+        children:
+          - id: items-text
+            type: Text
+            text: "アイテム"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeTab === 'items' ? '#2C6E49' : '#97BC62'"
+      - id: tab-color
+        type: TouchableOpacity
+        style:
+          flex: 1
+          paddingVertical: 10
+          borderRadius: 6
+          backgroundColor: "activeTab === 'color' ? '#FFFFFF' : 'transparent'"
+          alignItems: center
+        onPress: "setActiveTab('color')"
+        children:
+          - id: color-text
+            type: Text
+            text: "カラー"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "activeTab === 'color' ? '#2C6E49' : '#97BC62'"
+              
+  # アイテム選択パネル（アクティブタブが'items'の場合）
+  - id: items-panel
+    type: View
+    style:
+      height: 260
+      display: "activeTab === 'items' ? 'flex' : 'none'"
+    children:
+      - id: item-category-selector
+        type: ScrollView
+        style:
+          marginHorizontal: 16
+          marginBottom: 12
+        props:
+          horizontal: true
+          showsHorizontalScrollIndicator: false
+        children:
+          - id: category-all
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemCategory === 'all' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemCategory('all')"
+            children:
+              - id: all-text
+                type: Text
+                text: "すべて"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemCategory === 'all' ? '#FFFFFF' : '#2C6E49'"
+          - id: category-hats
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemCategory === 'hats' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemCategory('hats')"
+            children:
+              - id: hats-text
+                type: Text
+                text: "帽子"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemCategory === 'hats' ? '#FFFFFF' : '#2C6E49'"
+          - id: category-glasses
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemCategory === 'glasses' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemCategory('glasses')"
+            children:
+              - id: glasses-text
+                type: Text
+                text: "眼鏡"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemCategory === 'glasses' ? '#FFFFFF' : '#2C6E49'"
+          - id: category-accessories
+            type: TouchableOpacity
+            style:
+              paddingVertical: 8
+              paddingHorizontal: 16
+              borderRadius: 20
+              backgroundColor: "itemCategory === 'accessories' ? '#2C6E49' : 'rgba(151, 188, 98, 0.1)'"
+              marginRight: 8
+            onPress: "setItemCategory('accessories')"
+            children:
+              - id: accessories-text
+                type: Text
+                text: "アクセサリー"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "itemCategory === 'accessories' ? '#FFFFFF' : '#2C6E49'"
+                  
+      - id: items-grid
+        type: FlatList
+        style:
+          marginHorizontal: 16
+        props:
+          data: "filteredItems"
+          renderItem: "renderCustomizationItem"
+          keyExtractor: "item => item.id"
+          numColumns: 4
+          showsVerticalScrollIndicator: false
+          contentContainerStyle:
+            paddingBottom: 16
+            
+  # カラー選択パネル（アクティブタブが'color'の場合）
+  - id: color-panel
+    type: View
+    style:
+      height: 260
+      paddingHorizontal: 16
+      display: "activeTab === 'color' ? 'flex' : 'none'"
+    children:
+      - id: color-panel-scrollview
+        type: ScrollView
+        style:
+          flex: 1
+        props:
+          showsVerticalScrollIndicator: false
+        children:
+          - id: primary-color-section
+            type: View
+            style:
+              marginBottom: 24
+            children:
+              - id: primary-color-label
+                type: Text
+                text: "ベースカラー"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  marginBottom: 12
+              - id: primary-color-slider
+                type: ColorSlider
+                style:
+                  height: 40
+                  marginBottom: 12
+                props:
+                  value: "customizations.primaryColor"
+                  onChange: "handlePrimaryColorChange"
+                  colors: ["#FFD166", "#97BC62", "#2C6E49", "#4D9DE0", "#E15554", "#7768AE"]
+                  
+          - id: secondary-color-section
+            type: View
+            style:
+              marginBottom: 24
+            children:
+              - id: secondary-color-label
+                type: Text
+                text: "アクセントカラー"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  marginBottom: 12
+              - id: secondary-color-slider
+                type: ColorSlider
+                style:
+                  height: 40
+                  marginBottom: 12
+                props:
+                  value: "customizations.secondaryColor"
+                  onChange: "handleSecondaryColorChange"
+                  colors: ["#FFD166", "#97BC62", "#2C6E49", "#4D9DE0", "#E15554", "#7768AE"]
+                  
+          - id: pattern-section
+            type: View
+            style:
+              marginBottom: 24
+            children:
+              - id: pattern-label
+                type: Text
+                text: "パターン"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  marginBottom: 12
+              - id: pattern-grid
+                type: View
+                style:
+                  flexDirection: "row"
+                  flexWrap: "wrap"
+                  justifyContent: "space-between"
+                children:
+                  - id: pattern-none
+                    type: TouchableOpacity
+                    style:
+                      width: "23%"
+                      aspectRatio: 1
+                      borderRadius: 8
+                      backgroundColor: "#FFFFFF"
+                      justifyContent: "center"
+                      alignItems: "center"
+                      marginBottom: 8
+                      borderWidth: "customizations.pattern === 'none' ? 2 : 0.5"
+                      borderColor: "customizations.pattern === 'none' ? '#2C6E49' : '#CCCCCC'"
+                    onPress: "setPattern('none')"
+                    children:
+                      - id: pattern-none-text
+                        type: Text
+                        text: "なし"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 12
+                          color: "#333333"
+                  - id: pattern-dots
+                    type: TouchableOpacity
+                    style:
+                      width: "23%"
+                      aspectRatio: 1
+                      borderRadius: 8
+                      backgroundColor: "#FFFFFF"
+                      justifyContent: "center"
+                      alignItems: "center"
+                      marginBottom: 8
+                      borderWidth: "customizations.pattern === 'dots' ? 2 : 0.5"
+                      borderColor: "customizations.pattern === 'dots' ? '#2C6E49' : '#CCCCCC'"
+                    onPress: "setPattern('dots')"
+                    children:
+                      - id: pattern-dots-image
+                        type: Image
+                        style:
+                          width: "80%"
+                          height: "80%"
+                        props:
+                          source: "assets/patterns/dots.png"
+                          resizeMode: "cover"
+                  - id: pattern-stripes
+                    type: TouchableOpacity
+                    style:
+                      width: "23%"
+                      aspectRatio: 1
+                      borderRadius: 8
+                      backgroundColor: "#FFFFFF"
+                      justifyContent: "center"
+                      alignItems: "center"
+                      marginBottom: 8
+                      borderWidth: "customizations.pattern === 'stripes' ? 2 : 0.5"
+                      borderColor: "customizations.pattern === 'stripes' ? '#2C6E49' : '#CCCCCC'"
+                    onPress: "setPattern('stripes')"
+                    children:
+                      - id: pattern-stripes-image
+                        type: Image
+                        style:
+                          width: "80%"
+                          height: "80%"
+                        props:
+                          source: "assets/patterns/stripes.png"
+                          resizeMode: "cover"
+                  - id: pattern-zigzag
+                    type: TouchableOpacity
+                    style:
+                      width: "23%"
+                      aspectRatio: 1
+                      borderRadius: 8
+                      backgroundColor: "#FFFFFF"
+                      justifyContent: "center"
+                      alignItems: "center"
+                      marginBottom: 8
+                      borderWidth: "customizations.pattern === 'zigzag' ? 2 : 0.5"
+                      borderColor: "customizations.pattern === 

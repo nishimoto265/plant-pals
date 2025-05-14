@@ -1,0 +1,137 @@
+id: family
+name: FamilyEdgeFunction
+description: |
+  家族・友人との植物共有機能を提供するエッジ関数。
+  メンバー招待、権限管理、リアルタイム更新通知を行います。
+
+runtime: deno
+entrypoint: family.ts
+version: 1.0.0
+environment: edge
+
+authentication:
+  scheme: bearer
+
+endpoints:
+  - id: list_members
+    path: /family/members
+    method: GET
+    summary: 共有メンバー一覧を取得
+    security:
+      - bearer: []
+    responseSchema:
+      type: object
+      properties:
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/Member'
+
+  - id: invite_member
+    path: /family/invite
+    method: POST
+    summary: メンバーを招待する
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [viewer, editor]
+        message:
+          type: string
+          maxLength: 200
+    responseSchema:
+      type: object
+      properties:
+        inviteUrl:
+          type: string
+          format: uri
+        success:
+          type: boolean
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+      - code: 409
+        reason: already_invited
+
+  - id: update_role
+    path: /family/members/{memberId}
+    method: PUT
+    summary: メンバー権限を変更する
+    security:
+      - bearer: []
+    pathParams:
+      memberId:
+        type: string
+    requestSchema:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [viewer, editor]
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 404
+        reason: member_not_found
+
+  - id: remove_member
+    path: /family/members/{memberId}
+    method: DELETE
+    summary: メンバーを削除する
+    security:
+      - bearer: []
+    pathParams:
+      memberId:
+        type: string
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 404
+        reason: member_not_found
+
+components:
+  schemas:
+    Member:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        avatar:
+          type: string
+        role:
+          type: string
+          enum: [owner, editor, viewer]
+        joinedAt:
+          type: string
+          format: date-time
+
+dependencies:
+  - supabase
+  - zod
+
+monitoring:
+  metrics:
+    - invites_sent
+    - members_count
+  alerts:
+    - name: high_invite_failure
+      condition: "invite_failure_rate > 0.2 for 1h"
+      severity: warning 

@@ -1,0 +1,184 @@
+id: S00_welcome
+route: /
+name: Welcome
+purpose: アプリ初回起動時のロゴアニメーションと多言語選択
+description: |
+  「ゆるふわ Botanic Garden」テーマに沿ったウェルカム画面。
+  シンプルかつ温かみのある雰囲気で、アプリの世界観を伝える最初の接点。
+  
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View
+      style:
+        flex: 1
+        padding: 24
+        justifyContent: center
+        alignItems: center
+        backgroundImage: "assets/images/welcome_bg_pattern.png" # 淡い植物模様の背景
+
+components:
+  - id: header-container
+    type: View
+    style:
+      width: "100%"
+      alignItems: center
+      marginTop: 40
+    children:
+      - id: app-logo-animation
+        type: Lottie
+        source: "assets/animations/plant_pals_logo.json"
+        style:
+          width: 220
+          height: 220
+        props:
+          autoPlay: true
+          loop: false
+          speed: 0.8
+          onAnimationFinish: "showWelcomeText"
+        animation:
+          initial: { opacity: 0, scale: 0.8 }
+          animate: { opacity: 1, scale: 1 }
+          transition: { duration: 600, ease: "easeOut" }
+          
+  - id: welcome-content
+    type: View
+    style:
+      width: "100%"
+      alignItems: center
+      marginTop: 24
+    children:
+      - id: app-title
+        type: Text
+        text: "Plant Pals"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 32
+          color: "#2C6E49" # 深緑（メインカラー）
+          marginBottom: 8
+        animation:
+          initial: { opacity: 0, y: 20 }
+          animate: { opacity: 1, y: 0 }
+          transition: { delay: 300, duration: 300, ease: "easeOut" }
+          
+      - id: welcome-message
+        type: Text
+        text: "ようこそ！植物との新しい暮らし"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 16
+          color: "#97BC62" # 若葉（サブカラー）
+          marginBottom: 40
+          textAlign: center
+        animation:
+          initial: { opacity: 0 }
+          animate: { opacity: 1 }
+          transition: { delay: 600, duration: 300 }
+
+  - id: language-selector-container
+    type: View
+    style:
+      width: "100%"
+      alignItems: center
+      marginTop: 16
+    animation:
+      initial: { opacity: 0, y: 20 }
+      animate: { opacity: 1, y: 0 }
+      transition: { delay: 900, duration: 300, ease: "easeOut" }
+    children:
+      - id: language-label
+        type: Text
+        text: "言語を選択"
+        style:
+          fontFamily: "Noto Sans JP"
+          fontSize: 14
+          color: "#2C6E49"
+          marginBottom: 12
+          
+      - id: language-selector
+        type: LocalePicker
+        style:
+          width: 240
+          borderRadius: 12
+          backgroundColor: "rgba(151, 188, 98, 0.1)" # 若葉色の薄い背景
+          borderWidth: 1
+          borderColor: "#97BC62"
+          padding: 12
+        options:
+          - { value: "ja", label: "日本語" }
+          - { value: "en", label: "English" }
+          - { value: "zh", label: "中文" }
+          - { value: "ko", label: "한국어" }
+        defaultValue: "ja"
+        
+  - id: start-button-container
+    type: View
+    style:
+      width: "100%"
+      alignItems: center
+      marginTop: 48
+      marginBottom: 24
+    animation:
+      initial: { opacity: 0 }
+      animate: { opacity: 1 }
+      transition: { delay: 1200, duration: 300, ease: "easeOut" }
+    children:
+      - id: start-button
+        type: TouchableOpacity
+        style:
+          width: 220
+          height: 56
+          backgroundColor: "#2C6E49" # 深緑（メインカラー）
+          borderRadius: 28
+          justifyContent: center
+          alignItems: center
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 4
+          elevation: 2
+        onPress: "navigateToOnboarding"
+        activeOpacity: 0.85
+        children:
+          - id: button-text
+            type: Text
+            text: "はじめる"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#F2EFEA" # アイボリー（テキスト色）
+              
+  - id: decoration-bottom
+    type: Image
+    source: "assets/images/leaf_decoration.png" # 装飾的な葉のイラスト
+    style:
+      position: absolute
+      bottom: -20
+      right: -30
+      width: 150
+      height: 150
+      opacity: 0.2
+      zIndex: -1 # 背景に配置
+      
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - 画面全体に「ゆるふわ感」を表現するため、シャドウは柔らかく、角は丸みを持たせる
+  - ロゴアニメーションは植物がゆっくり成長するような表現
+  - 背景は薄い植物模様のパターン
+  - 右下に装飾的な葉のイラストを配置し奥行きを演出
+  - アニメーションは段階的に要素を表示（カスケード効果）
+  - 「はじめる」ボタンはフローティング感を持たせるためわずかに浮いた表現
+

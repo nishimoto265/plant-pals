@@ -1,0 +1,219 @@
+id: TS01_auth
+name: 認証画面テスト
+target:
+  screen: S01_auth
+  path: src/ui/screens/S01_auth/AuthScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: 認証画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態での画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/images/plant_pals_logo.png
+            - asset: assets/icons/google.png
+            - asset: assets/icons/apple.png
+            - asset: assets/icons/github.png
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#title"
+            value: "アカウント"
+          - type: element-exists
+            target: "#subtitle"
+            value: "ログインまたは新規登録"
+
+  - id: form-validation
+    name: フォーム検証テスト
+    description: フォーム入力の検証機能の動作確認
+    type: interaction
+    cases:
+      - id: empty-fields
+        name: 空フィールド検証
+        description: 空のメール・パスワードで送信するとエラーが表示されること
+        steps:
+          - action: press
+            target: "#submit-button"
+        assertions:
+          - type: error-message
+            target: "#email-input-container"
+            value: "メールアドレスを入力してください"
+          - type: error-message
+            target: "#password-input-container"
+            value: "パスワードを入力してください"
+          - type: style
+            target: "#email-input"
+            property: "borderColor"
+            value: "#EF476F"
+
+      - id: invalid-email
+        name: 無効なメールアドレス検証
+        description: 無効な形式のメールアドレスでエラーが表示されること
+        steps:
+          - action: type
+            target: "#email-input"
+            value: "invalid-email"
+          - action: type
+            target: "#password-input"
+            value: "password123"
+          - action: press
+            target: "#submit-button"
+        assertions:
+          - type: error-message
+            target: "#email-input-container"
+            value: "有効なメールアドレスを入力してください"
+          - type: style
+            target: "#email-input"
+            property: "borderColor"
+            value: "#EF476F"
+
+      - id: short-password
+        name: 短いパスワード検証
+        description: 短すぎるパスワードでエラーが表示されること
+        steps:
+          - action: type
+            target: "#email-input"
+            value: "test@example.com"
+          - action: type
+            target: "#password-input"
+            value: "123"
+          - action: press
+            target: "#submit-button"
+        assertions:
+          - type: error-message
+            target: "#password-input-container"
+            value: "パスワードは8文字以上にしてください"
+
+      - id: valid-form
+        name: 有効なフォーム入力
+        description: 有効なメール・パスワードで送信が成功すること
+        steps:
+          - action: type
+            target: "#email-input"
+            value: "test@example.com"
+          - action: type
+            target: "#password-input"
+            value: "password123"
+          - action: press
+            target: "#submit-button"
+        assertions:
+          - type: function-called
+            target: "submitCredentials"
+            args: 
+              - "test@example.com"
+              - "password123"
+          - type: no-error-message
+            target: "#email-input-container"
+          - type: no-error-message
+            target: "#password-input-container"
+
+  - id: social-login
+    name: ソーシャルログインテスト
+    description: 各種ソーシャルログインボタンの動作確認
+    type: interaction
+    cases:
+      - id: google-login
+        name: Googleログイン
+        description: Googleログインボタンが正しく動作すること
+        steps:
+          - action: press
+            target: "#google-button"
+        assertions:
+          - type: function-called
+            target: "signInWithGoogle"
+
+      - id: apple-login
+        name: Appleログイン
+        description: Appleログインボタンが正しく動作すること
+        steps:
+          - action: press
+            target: "#apple-button"
+        assertions:
+          - type: function-called
+            target: "signInWithApple"
+
+      - id: github-login
+        name: GitHubログイン
+        description: GitHubログインボタンが正しく動作すること
+        steps:
+          - action: press
+            target: "#github-button"
+        assertions:
+          - type: function-called
+            target: "signInWithGitHub"
+
+  - id: guest-mode
+    name: ゲストモードテスト
+    description: ゲストモードボタンの動作確認
+    type: interaction
+    cases:
+      - id: guest-login
+        name: ゲストログイン
+        description: ゲストモードボタンが正しく動作すること
+        steps:
+          - action: press
+            target: "#guest-button"
+        assertions:
+          - type: function-called
+            target: "signInAsGuest"
+          - type: navigation
+            route: "Onboarding"
+
+  - id: forgot-password
+    name: パスワードリセットテスト
+    description: パスワードリセットリンクの動作確認
+    type: interaction
+    cases:
+      - id: forgot-password-link
+        name: パスワード忘れリンク
+        description: パスワード忘れリンククリックでリセット画面に遷移すること
+        steps:
+          - action: press
+            target: "#forgot-password"
+        assertions:
+          - type: navigation
+            route: "PasswordReset"
+
+  - id: keyboard-behavior
+    name: キーボード動作テスト
+    description: キーボード表示時の動作確認
+    type: interaction
+    cases:
+      - id: scroll-with-keyboard
+        name: キーボード表示時スクロール
+        description: キーボード表示時にスクロール可能であること
+        steps:
+          - action: focus
+            target: "#email-input"
+        assertions:
+          - type: keyboard-shown
+          - type: scrollable
+            target: "ScrollView"
+
+accessibility:
+  - test: color-contrast
+    description: テキストと背景のコントラストが適切である
+  - test: screen-reader
+    description: スクリーンリーダーで全要素にアクセス可能
+  - test: keyboard-navigation
+    description: キーボードで全要素に移動可能
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet 
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

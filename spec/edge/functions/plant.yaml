@@ -1,0 +1,834 @@
+id: plant
+name: PlantEdgeFunction
+description: |
+  植物データ管理に関するエッジ関数。
+  植物の登録、更新、閲覧、共有設定、水やりスケジュール管理、
+  育成履歴の記録などの機能を提供します。
+
+runtime: deno
+entrypoint: plant.ts
+version: 1.0.0
+environment: edge
+
+endpoints:
+  - id: list_plants
+    path: /plants
+    method: GET
+    description: |
+      ユーザーが登録した植物の一覧を取得します。
+      フィルタリングやソート、ページネーションに対応。
+    security:
+      - bearer: []
+    parameters:
+      - name: filter
+        in: query
+        description: フィルタリング条件
+        required: false
+        schema:
+          type: string
+          enum: [all, indoor, outdoor, edible, flowering, succulent]
+          default: all
+      - name: sort
+        in: query
+        description: ソート条件
+        required: false
+        schema:
+          type: string
+          enum: [created_desc, created_asc, name_asc, name_desc, health_desc]
+          default: created_desc
+      - name: page
+        in: query
+        description: ページ番号
+        required: false
+        schema:
+          type: integer
+          default: 1
+      - name: limit
+        in: query
+        description: 1ページあたりの件数
+        required: false
+        schema:
+          type: integer
+          default: 20
+          maximum: 50
+      - name: search
+        in: query
+        description: 検索キーワード
+        required: false
+        schema:
+          type: string
+    responseSchema:
+      type: object
+      properties:
+        plants:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantSummary'
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            pages:
+              type: integer
+            currentPage:
+              type: integer
+            hasMore:
+              type: boolean
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 400
+        reason: invalid_parameters
+        message: パラメータが不正です
+
+  - id: get_plant
+    path: /plants/{plantId}
+    method: GET
+    description: |
+      特定の植物の詳細情報を取得します。
+      育成履歴、水やりスケジュール、画像履歴なども含みます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    responseSchema:
+      type: object
+      properties:
+        plant:
+          $ref: '#/components/schemas/PlantDetail'
+        careHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/CareEvent'
+        imageHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlantImage'
+        wateringSchedule:
+          $ref: '#/components/schemas/WateringSchedule'
+        sharedWith:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedUser'
+        character:
+          $ref: '#/components/schemas/PlantCharacter'
+        healthReport:
+          $ref: '#/components/schemas/HealthReport'
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物へのアクセス権がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+
+  - id: create_plant
+    path: /plants
+    method: POST
+    description: |
+      新しい植物を登録します。
+      基本情報、画像、種類情報を設定し、初期キャラクター生成を行います。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [nickname, speciesId]
+      properties:
+        nickname:
+          type: string
+          description: 植物のニックネーム
+          minLength: 1
+          maxLength: 50
+        speciesId:
+          type: string
+          description: 植物の種類ID
+        acquisitionDate:
+          type: string
+          format: date
+          description: 入手日
+        notes:
+          type: string
+          maxLength: 500
+          description: メモ
+        location:
+          type: string
+          maxLength: 100
+          description: 設置場所
+        imageUrl:
+          type: string
+          format: uri
+          description: 画像URL
+        size:
+          type: object
+          properties:
+            height:
+              type: number
+              description: 高さ(cm)
+            width:
+              type: number
+              description: 幅(cm)
+            unit:
+              type: string
+              enum: [cm, inch]
+              default: cm
+        wateringFrequency:
+          type: object
+          properties:
+            value:
+              type: integer
+              minimum: 1
+            unit:
+              type: string
+              enum: [day, week, month]
+              default: week
+          description: 水やり頻度
+        sunlightLevel:
+          type: string
+          enum: [full, partial, shade]
+          description: 日光の条件
+        generateCharacter:
+          type: boolean
+          default: true
+          description: キャラクターを自動生成するか
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        nickname:
+          type: string
+        speciesName:
+          type: string
+        scientificName:
+          type: string
+        imageUrl:
+          type: string
+        character:
+          $ref: '#/components/schemas/PlantCharacter'
+        wateringSchedule:
+          $ref: '#/components/schemas/WateringSchedule'
+        createdAt:
+          type: string
+          format: date-time
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+      - code: 404
+        reason: species_not_found
+        message: 指定された植物種が見つかりません
+
+  - id: update_plant
+    path: /plants/{plantId}
+    method: PUT
+    description: |
+      植物の情報を更新します。
+      基本情報、育成環境などを変更できます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    requestSchema:
+      type: object
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+        acquisitionDate:
+          type: string
+          format: date
+        notes:
+          type: string
+          maxLength: 500
+        location:
+          type: string
+          maxLength: 100
+        size:
+          type: object
+          properties:
+            height:
+              type: number
+            width:
+              type: number
+            unit:
+              type: string
+              enum: [cm, inch]
+        wateringFrequency:
+          type: object
+          properties:
+            value:
+              type: integer
+              minimum: 1
+            unit:
+              type: string
+              enum: [day, week, month]
+        sunlightLevel:
+          type: string
+          enum: [full, partial, shade]
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        nickname:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+        wateringSchedule:
+          $ref: '#/components/schemas/WateringSchedule'
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物の編集権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+
+  - id: delete_plant
+    path: /plants/{plantId}
+    method: DELETE
+    description: |
+      植物を削除します。関連する育成履歴、画像なども一括で削除されます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物の削除権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+
+  - id: record_watering
+    path: /plants/{plantId}/watering
+    method: POST
+    description: |
+      植物の水やり記録を登録します。
+      次回の水やりスケジュールも自動更新されます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    requestSchema:
+      type: object
+      properties:
+        amount:
+          type: number
+          description: 水やり量(ml)
+        notes:
+          type: string
+          maxLength: 200
+          description: メモ
+        image:
+          type: string
+          format: uri
+          description: 水やり時の画像（オプション）
+        timestamp:
+          type: string
+          format: date-time
+          description: 水やり時刻（デフォルトは現在時刻）
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 水やり記録のID
+        timestamp:
+          type: string
+          format: date-time
+        nextWateringDate:
+          type: string
+          format: date
+          description: 次回の水やり予定日
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物への操作権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+
+  - id: upload_plant_image
+    path: /plants/{plantId}/images
+    method: POST
+    description: |
+      植物の新しい画像をアップロードします。
+      成長記録や状態変化の追跡に使用されます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    requestSchema:
+      type: object
+      required: [imageData]
+      properties:
+        imageData:
+          type: string
+          format: binary
+          description: 画像データ（Base64エンコード）
+        notes:
+          type: string
+          maxLength: 200
+          description: 画像に関するメモ
+        captureDate:
+          type: string
+          format: date-time
+          description: 撮影日時（デフォルトは現在時刻）
+        updateMainImage:
+          type: boolean
+          default: false
+          description: メイン画像として設定するか
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 画像のID
+        url:
+          type: string
+          format: uri
+          description: 画像のURL
+        thumbnailUrl:
+          type: string
+          format: uri
+          description: サムネイルURL
+        captureDate:
+          type: string
+          format: date-time
+        isMainImage:
+          type: boolean
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物への操作権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+      - code: 400
+        reason: invalid_image
+        message: 画像形式が不正です
+      - code: 413
+        reason: image_too_large
+        message: 画像サイズが大きすぎます
+
+  - id: share_plant
+    path: /plants/{plantId}/share
+    method: POST
+    description: |
+      植物の共有設定を更新します。
+      家族や友人に対して閲覧・編集権限を付与できます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    requestSchema:
+      type: object
+      required: [users]
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            required: [userId, role]
+            properties:
+              userId:
+                type: string
+                description: 共有するユーザーのID
+              role:
+                type: string
+                enum: [viewer, editor]
+                description: 権限（閲覧者または編集者）
+        inviteEmail:
+          type: string
+          format: email
+          description: メールアドレスで招待（ユーザー登録されていない人向け）
+        inviteRole:
+          type: string
+          enum: [viewer, editor]
+          description: 招待するユーザーの権限
+        message:
+          type: string
+          maxLength: 200
+          description: 招待メッセージ
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        sharedWith:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedUser'
+        inviteUrl:
+          type: string
+          format: uri
+          description: 招待用URL（メール招待した場合）
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物の共有権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物またはユーザーが見つかりません
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+
+  - id: update_character
+    path: /plants/{plantId}/character
+    method: PUT
+    description: |
+      植物キャラクターの設定を更新します。
+      見た目や性格などをカスタマイズできます。
+    security:
+      - bearer: []
+    pathParams:
+      plantId:
+        type: string
+        description: 植物のID
+    requestSchema:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: キャラクターの名前
+        personality:
+          type: array
+          items:
+            type: string
+          maxItems: 3
+          description: 性格特性
+        appearance:
+          type: object
+          properties:
+            primaryColor:
+              type: string
+              pattern: "^#[0-9a-fA-F]{6}$"
+            secondaryColor:
+              type: string
+              pattern: "^#[0-9a-fA-F]{6}$"
+            accessory:
+              type: string
+              enum: [none, hat, glasses, scarf, ribbon]
+            expression:
+              type: string
+              enum: [happy, sleepy, energetic, shy, grumpy]
+    responseSchema:
+      type: object
+      properties:
+        id:
+          type: string
+        character:
+          $ref: '#/components/schemas/PlantCharacter'
+        updatedAt:
+          type: string
+          format: date-time
+    errorCodes:
+      - code: 401
+        reason: unauthorized
+        message: 認証が必要です
+      - code: 403
+        reason: forbidden
+        message: この植物の編集権限がありません
+      - code: 404
+        reason: not_found
+        message: 植物が見つかりません
+      - code: 400
+        reason: invalid_input
+        message: 入力値が不正です
+
+components:
+  schemas:
+    PlantSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        nickname:
+          type: string
+        speciesName:
+          type: string
+        scientificName:
+          type: string
+        thumbnailUrl:
+          type: string
+        wateringStatus:
+          type: string
+          enum: [due_today, overdue, upcoming, unknown]
+        nextWateringDate:
+          type: string
+          format: date
+        health:
+          type: string
+          enum: [excellent, good, fair, poor, critical, unknown]
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        characterThumbnailUrl:
+          type: string
+    
+    PlantDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        nickname:
+          type: string
+        speciesId:
+          type: string
+        speciesName:
+          type: string
+        scientificName:
+          type: string
+        imageUrl:
+          type: string
+        acquisitionDate:
+          type: string
+          format: date
+        notes:
+          type: string
+        location:
+          type: string
+        size:
+          type: object
+          properties:
+            height:
+              type: number
+            width:
+              type: number
+            unit:
+              type: string
+        wateringFrequency:
+          type: object
+          properties:
+            value:
+              type: integer
+            unit:
+              type: string
+        sunlightLevel:
+          type: string
+        ownerUserId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    CareEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [watering, fertilizing, repotting, pruning, treatment]
+        timestamp:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        userId:
+          type: string
+        imageUrl:
+          type: string
+    
+    PlantImage:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        captureDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        isMainImage:
+          type: boolean
+    
+    WateringSchedule:
+      type: object
+      properties:
+        lastWateredAt:
+          type: string
+          format: date-time
+        nextWateringDate:
+          type: string
+          format: date
+        frequency:
+          type: object
+          properties:
+            value:
+              type: integer
+            unit:
+              type: string
+              enum: [day, week, month]
+        status:
+          type: string
+          enum: [due_today, overdue, upcoming]
+        daysUntilNext:
+          type: integer
+    
+    SharedUser:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        avatar:
+          type: string
+        role:
+          type: string
+          enum: [owner, editor, viewer]
+        lastActivityAt:
+          type: string
+          format: date-time
+    
+    PlantCharacter:
+      type: object
+      properties:
+        name:
+          type: string
+        personality:
+          type: array
+          items:
+            type: string
+        level:
+          type: integer
+        experience:
+          type: integer
+        imageUrl:
+          type: string
+        appearance:
+          type: object
+          properties:
+            primaryColor:
+              type: string
+            secondaryColor:
+              type: string
+            accessory:
+              type: string
+            expression:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    HealthReport:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [excellent, good, fair, poor, critical]
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [watering, sunlight, pest, disease, nutrient]
+              severity:
+                type: string
+                enum: [mild, moderate, severe]
+              description:
+                type: string
+              recommendation:
+                type: string
+        analyzedAt:
+          type: string
+          format: date-time
+        trend:
+          type: string
+          enum: [improving, stable, declining]
+
+securitySchemes:
+  bearer:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: JWT認証トークン
+
+dependencies:
+  - @supabase/supabase-js
+  - jose
+  - zod
+  - luxon
+
+environment:
+  variables:
+    - SUPABASE_URL
+    - SUPABASE_SERVICE_ROLE_KEY
+    - STORAGE_BUCKET
+    - AI_SERVICE_URL
+
+monitoring:
+  metrics:
+    - plants_created
+    - watering_events
+    - image_uploads
+    - api_latency
+  alerts:
+    - name: high_api_latency
+      condition: "p95_latency > 1s for 5m"
+      severity: warning

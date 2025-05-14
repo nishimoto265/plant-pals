@@ -1,0 +1,138 @@
+id: checkout
+name: CheckoutEdgeFunction
+description: |
+  アプリ内課金とサブスクリプションのレシート検証・権限付与を行うエッジ関数。
+  iOS App Store / Google Play / Web Stripe に対応。
+
+runtime: deno
+entrypoint: checkout.ts
+version: 1.0.0
+environment: edge
+
+authentication:
+  scheme: bearer
+
+endpoints:
+  - id: verify_purchase
+    path: /checkout/verify
+    method: POST
+    summary: 購入レシートを検証する
+    description: |
+      クライアントで取得した購入レシート(トランザクション)を検証し、
+      ユーザーへアイテムやサブスクリプション権限を付与します。
+      iOS: App Store Server API, Android: Google Play Developer API。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [platform, receipt]
+      properties:
+        platform:
+          type: string
+          enum: [ios, android, web]
+        receipt:
+          type: string
+          description: Base64エンコードされたレシートデータまたはPurchaseToken
+        productId:
+          type: string
+        transactionId:
+          type: string
+        currency:
+          type: string
+        price:
+          type: number
+    responseSchema:
+      type: object
+      properties:
+        success:
+          type: boolean
+        granted:
+          type: array
+          items:
+            type: string
+          description: 付与されたアイテムIDまたは権限ID
+        nextRenewalDate:
+          type: string
+          format: date-time
+    errorCodes:
+      - code: 400
+        reason: invalid_receipt
+        message: レシートが不正です
+      - code: 409
+        reason: already_consumed
+        message: すでに消費済みです
+      - code: 401
+        reason: unauthorized
+
+  - id: create_stripe_session
+    path: /checkout/stripe/session
+    method: POST
+    summary: Stripe決済セッションを作成
+    description: Web決済用にStripe Checkout Sessionを生成します。
+    security:
+      - bearer: []
+    requestSchema:
+      type: object
+      required: [priceId, successUrl, cancelUrl]
+      properties:
+        priceId:
+          type: string
+        successUrl:
+          type: string
+          format: uri
+        cancelUrl:
+          type: string
+          format: uri
+    responseSchema:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        url:
+          type: string
+          format: uri
+    errorCodes:
+      - code: 400
+        reason: invalid_input
+      - code: 500
+        reason: stripe_error
+
+  - id: webhook
+    path: /checkout/webhook
+    method: POST
+    summary: Stripe Webhookエンドポイント
+    description: 決済完了イベントを受信し、ユーザーへ権限付与します。
+    security: []  # 署名検証のみ
+    requestSchema:
+      type: object
+    responseSchema:
+      type: object
+      properties:
+        received:
+          type: boolean
+
+components:
+  schemas: {}
+
+dependencies:
+  - stripe
+  - supabase
+  - googleapis
+  - itunesiap
+  - zod
+
+environment:
+  variables:
+    - STRIPE_SECRET_KEY
+    - APPSTORE_SHARED_SECRET
+    - GOOGLE_SERVICE_ACCOUNT
+
+monitoring:
+  metrics:
+    - purchases_verified
+    - revenue
+    - verification_failures
+  alerts:
+    - name: high_failure_rate
+      condition: "purchase_verification_failure_rate > 0.05 for 1h"
+      severity: critical 

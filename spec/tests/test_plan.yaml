@@ -1,0 +1,179 @@
+version: 1
+owner: QA-Team
+lastUpdated: '2025-05-15'
+ui_tests:
+  - id: TS00_welcome
+    screen: S00_welcome
+    status: implemented
+  - id: TS01_auth
+    screen: S01_auth
+    status: implemented
+  - id: TS02_onboarding
+    screen: S02_onboarding
+    status: implemented
+  - id: TS03_camera
+    screen: S03_camera
+    status: implemented
+  - id: TS04_home
+    screen: S04_home
+    status: implemented
+  - id: TS05_timeline
+    screen: S05_timeline
+    status: implemented
+  - id: TS06_ar_viewer
+    screen: S06_ar_viewer
+    status: implemented
+  - id: TS07_profile
+    screen: S07_profile
+    status: implemented
+  - id: TS08_settings
+    screen: S08_settings
+    status: implemented
+  - id: TS09_badge_center
+    screen: S09_badge_center
+    status: implemented
+  - id: TS10_store
+    screen: S10_store
+    status: implemented
+  - id: TS11_customizer
+    screen: S11_customizer
+    status: implemented
+  - id: TS12_gacha_result
+    screen: S12_gacha_result
+    status: implemented
+  - id: TS13_plant_library
+    screen: S13_plant_library
+    status: implemented
+  - id: TS14_notification
+    screen: S14_notification
+    status: implemented
+  - id: TS15_family_manager
+    screen: S15_family_manager
+    status: implemented
+  - id: TS16_checkout
+    screen: S16_checkout
+    status: implemented
+  - id: TS17_error_offline
+    screen: S17_error_offline
+    status: implemented
+feature_tests:
+  - id: TF00_auth_login
+    feature: F00_auth_login
+    status: todo
+  - id: TF01_plant_identification
+    feature: F01_plant_identification
+    status: todo
+  - id: TF02_individual_identification
+    feature: F02_individual_identification
+    status: todo
+  - id: TF03_avatar_generation
+    feature: F03_avatar_generation
+    status: todo
+  - id: TF04_home_screen
+    feature: F04_home_screen
+    status: todo
+  - id: TF05_ar_mode
+    feature: F05_ar_mode
+    status: todo
+  - id: TF06_sns_timeline
+    feature: F06_sns_timeline
+    status: todo
+  - id: TF07_gamification
+    feature: F07_gamification
+    status: todo
+  - id: TF08_family_share
+    feature: F08_family_share
+    status: todo
+  - id: TF09_notifications
+    feature: F09_notifications
+    status: todo
+  - id: TF10_health_check
+    feature: F10_health_check
+    status: implemented
+  - id: TF11_customizer
+    feature: F11_customizer
+    status: todo
+  - id: TF12_plant_library
+    feature: F12_plant_library
+    status: todo
+  - id: TF13_onboarding
+    feature: F13_onboarding
+    status: todo
+  - id: TF14_user_profile
+    feature: F14_user_profile
+    status: todo
+  - id: TF15_settings
+    feature: F15_settings
+    status: todo
+  - id: TF16_store
+    feature: F16_store
+    status: todo
+  - id: TF17_offline_support
+    feature: F17_offline_support
+    status: todo
+  - id: TF18_security
+    feature: F18_security
+    status: todo
+  - id: TF19_accessibility
+    feature: F19_accessibility
+    status: todo
+e2e_tests:
+  - id: TE00_welcome_flow
+    flow: welcome_to_onboarding
+    status: todo
+  - id: TE01_auth_flow
+    flow: login_logout
+    status: todo
+  - id: TE02_camera_identification_flow
+    flow: capture_identify_avatar
+    status: todo
+  - id: TE03_home_timeline_flow
+    flow: view_post_timeline
+    status: todo
+  - id: TE04_ar_flow
+    flow: ar_place_capture
+    status: todo
+  - id: TE05_store_purchase_flow
+    flow: purchase_item_flow
+    status: todo
+  - id: TE06_offline_flow
+    flow: offline_mode_behavior
+    status: todo
+contract_tests:
+  - id: TC00_locale_api
+    endpoint_group: locale
+    status: todo
+  - id: TC01_auth_api
+    endpoint_group: auth
+    status: todo
+  - id: TC02_plant_identification_api
+    endpoint_group: plant_identification
+    status: todo
+  - id: TC03_individual_identification_api
+    endpoint_group: individual_identification
+    status: todo
+  - id: TC04_avatar_generation_api
+    endpoint_group: avatar_generation
+    status: todo
+  - id: TC05_health_assessment_api
+    endpoint_group: health_assessment
+    status: todo
+  - id: TC06_notifications_api
+    endpoint_group: notifications
+    status: todo
+  - id: TC07_payments_api
+    endpoint_group: payments
+    status: todo
+  - id: TC08_realtime_api
+    endpoint_group: realtime
+    status: todo
+non_functional_tests:
+  - id: TNF01_performance_ai
+    target: ai_inference_latency
+    status: implemented
+  - id: TNF02_security_oauth
+    target: oauth_security
+    status: implemented
+  - id: TNF03_accessibility_wcag
+    target: wcag_aa_compliance
+    status: todo

@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-ingress
+  namespace: plant-pals # Deployment/Serviceと同じ名前空間
+  labels:
+    app: fastapi-app
+  annotations:
+    # --- NGINX Ingress Controller を使用する場合の例 --- 
+    kubernetes.io/ingress.class: "nginx" # or your specific nginx ingress class
+    nginx.ingress.kubernetes.io/rewrite-target: / # パス書き換えが必要な場合
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod" # cert-managerでTLS証明書を自動取得する場合
+    
+    # --- AWS ALB Ingress Controller を使用する場合の例 --- 
+    # kubernetes.io/ingress.class: "alb"
+    # alb.ingress.kubernetes.io/scheme: internet-facing # public facing ALB
+    # alb.ingress.kubernetes.io/target-type: ip # IPターゲットタイプ (FargateやCNIによっては必要)
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:123456789012:certificate/your-certificate-id # ACM証明書のARN
+    # alb.ingress.kubernetes.io/healthcheck-path: /health # Serviceのヘルスチェックパス
+    # alb.ingress.kubernetes.io/healthcheck-port: '80' # Serviceのヘルスチェックポート (fastapi-serviceのport)
+    # alb.ingress.kubernetes.io/load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=your-alb-logs-bucket # ALBのアクセスログなど
+
+spec:
+  # ingressClassName: nginx # NGINX Ingressの場合、明示的に指定 (Controllerのバージョンによる)
+  # ingressClassName: alb # AWS ALB Ingress Controllerの場合、明示的に指定
+  tls:
+    - hosts:
+        - api.plant-pals.yourdomain.com # ★要変更: あなたのドメイン名
+      secretName: plant-pals-tls-secret # TLS証明書とキーが格納されたSecret名 (cert-managerが自動生成 or 手動作成)
+  rules:
+    - host: api.plant-pals.yourdomain.com # ★要変更: あなたのドメイン名
+      http:
+        paths:
+          - path: / # ルートパス以下すべてを転送
+            pathType: Prefix # Prefix or Exact
+            backend:
+              service:
+                name: fastapi-service # 前のステップで作成したService名
+                port:
+                  number: 80 # fastapi-serviceが公開しているポート

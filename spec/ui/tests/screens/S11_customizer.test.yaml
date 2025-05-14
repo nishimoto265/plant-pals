@@ -1,0 +1,614 @@
+id: TS11_customizer
+name: カスタマイザー画面テスト
+target:
+  screen: S11_customizer
+  path: src/ui/screens/S11_customizer/CustomizerScreen.tsx
+
+testSuites:
+  - id: snapshot
+    name: スナップショットテスト
+    description: カスタマイザー画面が正しくレンダリングされることを確認
+    type: snapshot
+    cases:
+      - id: default-render
+        name: 標準レンダリング
+        description: デフォルト状態でのカスタマイザー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/save.png
+            - asset: assets/icons/reset.png
+            - asset: assets/icons/tab_pot.png
+            - asset: assets/icons/tab_accessories.png
+            - asset: assets/icons/tab_background.png
+            - asset: assets/3d/default_plant.glb
+            - asset: assets/3d/default_pot.glb
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#customizer-header"
+          - type: element-exists
+            target: "#customizer-tabs"
+          - type: element-exists
+            target: "#customizer-preview"
+          - type: element-exists
+            target: "#customizer-options"
+          - type: element-exists
+            target: "#save-button"
+
+      - id: plant-loaded
+        name: 植物データ読み込み
+        description: 植物データが読み込まれた状態でのカスタマイザー画面表示が仕様通りであること
+        setup:
+          mocks:
+            - asset: assets/icons/back.png
+            - asset: assets/icons/save.png
+            - asset: assets/icons/reset.png
+            - asset: assets/icons/tab_pot.png
+            - asset: assets/icons/tab_accessories.png
+            - asset: assets/icons/tab_background.png
+            - asset: assets/3d/monstera.glb
+            - asset: assets/3d/terracotta_pot.glb
+          state:
+            plant:
+              id: "plant123"
+              name: "モンちゃん"
+              species: "monstera_deliciosa"
+              modelUrl: "assets/3d/monstera.glb"
+              customization:
+                potId: "pot001"
+                potColor: "#8B4513"
+                accessoryIds: ["acc001"]
+                backgroundId: "bg001"
+            customizationItems:
+              pots:
+                - id: "pot001"
+                  name: "テラコッタ鉢"
+                  modelUrl: "assets/3d/terracotta_pot.glb"
+                  availableColors: ["#8B4513", "#A0522D", "#CD853F"]
+                - id: "pot002"
+                  name: "セラミック鉢"
+                  modelUrl: "assets/3d/ceramic_pot.glb"
+                  availableColors: ["#FFFFFF", "#87CEEB", "#98FB98"]
+              accessories:
+                - id: "acc001"
+                  name: "小石"
+                  modelUrl: "assets/3d/pebbles.glb"
+                - id: "acc002"
+                  name: "ミニフィギュア"
+                  modelUrl: "assets/3d/mini_figure.glb"
+              backgrounds:
+                - id: "bg001"
+                  name: "リビング"
+                  imageUrl: "assets/backgrounds/living_room.jpg"
+                - id: "bg002"
+                  name: "窓際"
+                  imageUrl: "assets/backgrounds/window.jpg"
+            currentTab: "pot"
+        assertions:
+          - type: snapshot
+            description: レンダリング結果がスナップショットと一致すること
+          - type: element-exists
+            target: "#plant-model"
+          - type: element-exists
+            target: "#pot-model"
+          - type: element-exists
+            target: "#pot-options"
+          - type: element-count
+            target: ".pot-option"
+            count: 2
+          - type: element-attribute
+            target: "#tab-pot"
+            attribute: "selected"
+            value: "true"
+
+  - id: navigation
+    name: ナビゲーションテスト
+    description: 画面遷移の動作を検証
+    type: navigation
+    cases:
+      - id: back-navigation
+        name: 戻る確認ダイアログ
+        description: 戻るボタンをタップすると確認ダイアログが表示されること
+        setup:
+          state:
+            customizationChanged: true
+        steps:
+          - action: press
+            target: "#back-button"
+        assertions:
+          - type: element-visible
+            target: "#leave-confirmation-dialog"
+          - type: element-text
+            target: "#leave-confirmation-message"
+            value: "変更を保存せずに終了しますか？"
+
+      - id: confirm-leave
+        name: 保存せず終了
+        description: 確認ダイアログで確認すると変更を保存せずに前の画面に戻ること
+        setup:
+          state:
+            leaveConfirmationVisible: true
+        steps:
+          - action: press
+            target: "#confirm-leave-button"
+        assertions:
+          - type: navigation
+            route: "back"
+
+      - id: cancel-leave
+        name: 終了キャンセル
+        description: 確認ダイアログでキャンセルするとダイアログが閉じること
+        setup:
+          state:
+            leaveConfirmationVisible: true
+        steps:
+          - action: press
+            target: "#cancel-leave-button"
+        assertions:
+          - type: element-not-visible
+            target: "#leave-confirmation-dialog"
+
+      - id: save-and-exit
+        name: 保存して終了
+        description: 保存ボタンをタップすると変更を保存して前の画面に戻ること
+        setup:
+          state:
+            customizationChanged: true
+            plant:
+              id: "plant123"
+              customization:
+                potId: "pot002"
+                potColor: "#FFFFFF"
+                accessoryIds: ["acc001"]
+                backgroundId: "bg001"
+        mocks:
+          - api:
+              endpoint: "/api/plants/customize"
+              method: "POST"
+              response:
+                success: true
+                plant:
+                  id: "plant123"
+                  customization:
+                    potId: "pot002"
+                    potColor: "#FFFFFF"
+                    accessoryIds: ["acc001"]
+                    backgroundId: "bg001"
+        steps:
+          - action: press
+            target: "#save-button"
+        assertions:
+          - type: function-called
+            target: "saveCustomization"
+          - type: toast-message
+            message: "カスタマイズを保存しました"
+          - type: navigation
+            route: "back"
+
+  - id: tab_switching
+    name: タブ切り替えテスト
+    description: タブ切り替えの動作を検証
+    type: interaction
+    cases:
+      - id: switch-to-accessories-tab
+        name: アクセサリータブ切り替え
+        description: アクセサリータブをタップするとアクセサリーのオプションが表示されること
+        setup:
+          state:
+            currentTab: "pot"
+            customizationItems:
+              accessories:
+                - id: "acc001"
+                  name: "小石"
+                - id: "acc002"
+                  name: "ミニフィギュア"
+        steps:
+          - action: press
+            target: "#tab-accessories"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "accessories"
+          - type: element-exists
+            target: "#accessories-options"
+          - type: element-count
+            target: ".accessory-option"
+            count: 2
+          - type: element-not-exists
+            target: "#pot-options"
+          - type: element-attribute
+            target: "#tab-accessories"
+            attribute: "selected"
+            value: "true"
+          - type: element-attribute
+            target: "#tab-pot"
+            attribute: "selected"
+            value: "false"
+
+      - id: switch-to-background-tab
+        name: 背景タブ切り替え
+        description: 背景タブをタップすると背景のオプションが表示されること
+        setup:
+          state:
+            currentTab: "pot"
+            customizationItems:
+              backgrounds:
+                - id: "bg001"
+                  name: "リビング"
+                - id: "bg002"
+                  name: "窓際"
+        steps:
+          - action: press
+            target: "#tab-background"
+        assertions:
+          - type: state-change
+            target: "currentTab"
+            value: "background"
+          - type: element-exists
+            target: "#background-options"
+          - type: element-count
+            target: ".background-option"
+            count: 2
+          - type: element-not-exists
+            target: "#pot-options"
+          - type: element-attribute
+            target: "#tab-background"
+            attribute: "selected"
+            value: "true"
+
+  - id: customization
+    name: カスタマイズテスト
+    description: 植物のカスタマイズ操作を検証
+    type: interaction
+    cases:
+      - id: change-pot
+        name: 鉢変更
+        description: 別の鉢を選択すると3Dモデルが更新されること
+        setup:
+          state:
+            currentTab: "pot"
+            plant:
+              customization:
+                potId: "pot001"
+            customizationItems:
+              pots:
+                - id: "pot001"
+                  name: "テラコッタ鉢"
+                - id: "pot002"
+                  name: "セラミック鉢"
+        steps:
+          - action: press
+            target: "#pot-option-pot002"
+        assertions:
+          - type: function-called
+            target: "updatePot"
+            params:
+              potId: "pot002"
+          - type: state-change
+            target: "plant.customization.potId"
+            value: "pot002"
+          - type: element-attribute
+            target: "#pot-option-pot002"
+            attribute: "selected"
+            value: "true"
+          - type: element-attribute
+            target: "#pot-option-pot001"
+            attribute: "selected"
+            value: "false"
+          - type: element-attribute
+            target: "#pot-model"
+            attribute: "model"
+            value: "assets/3d/ceramic_pot.glb"
+
+      - id: change-pot-color
+        name: 鉢色変更
+        description: 鉢の色を選択すると3Dモデルの色が更新されること
+        setup:
+          state:
+            currentTab: "pot"
+            plant:
+              customization:
+                potId: "pot001"
+                potColor: "#8B4513"
+            customizationItems:
+              pots:
+                - id: "pot001"
+                  name: "テラコッタ鉢"
+                  availableColors: ["#8B4513", "#A0522D", "#CD853F"]
+        steps:
+          - action: press
+            target: "#color-option-#A0522D"
+        assertions:
+          - type: function-called
+            target: "updatePotColor"
+            params:
+              color: "#A0522D"
+          - type: state-change
+            target: "plant.customization.potColor"
+            value: "#A0522D"
+          - type: element-attribute
+            target: "#color-option-#A0522D"
+            attribute: "selected"
+            value: "true"
+          - type: element-style
+            target: "#pot-model"
+            property: "color"
+            value: "#A0522D"
+
+      - id: toggle-accessory
+        name: アクセサリー追加/削除
+        description: アクセサリーを選択/解除すると3Dモデルが更新されること
+        setup:
+          state:
+            currentTab: "accessories"
+            plant:
+              customization:
+                accessoryIds: []
+            customizationItems:
+              accessories:
+                - id: "acc001"
+                  name: "小石"
+        steps:
+          - action: press
+            target: "#accessory-option-acc001"
+        assertions:
+          - type: function-called
+            target: "toggleAccessory"
+            params:
+              accessoryId: "acc001"
+          - type: state-change
+            target: "plant.customization.accessoryIds"
+            value: ["acc001"]
+          - type: element-attribute
+            target: "#accessory-option-acc001"
+            attribute: "selected"
+            value: "true"
+          - type: element-exists
+            target: "#accessory-model-acc001"
+
+      - id: change-background
+        name: 背景変更
+        description: 背景を選択すると3D表示の背景が更新されること
+        setup:
+          state:
+            currentTab: "background"
+            plant:
+              customization:
+                backgroundId: "bg001"
+            customizationItems:
+              backgrounds:
+                - id: "bg001"
+                  name: "リビング"
+                  imageUrl: "assets/backgrounds/living_room.jpg"
+                - id: "bg002"
+                  name: "窓際"
+                  imageUrl: "assets/backgrounds/window.jpg"
+        steps:
+          - action: press
+            target: "#background-option-bg002"
+        assertions:
+          - type: function-called
+            target: "updateBackground"
+            params:
+              backgroundId: "bg002"
+          - type: state-change
+            target: "plant.customization.backgroundId"
+            value: "bg002"
+          - type: element-attribute
+            target: "#background-option-bg002"
+            attribute: "selected"
+            value: "true"
+          - type: element-attribute
+            target: "#preview-background"
+            attribute: "style"
+            value: "background-image: url('assets/backgrounds/window.jpg')"
+
+  - id: reset_customization
+    name: カスタマイズリセットテスト
+    description: カスタマイズリセット機能の動作を検証
+    type: functional
+    cases:
+      - id: reset-confirmation
+        name: リセット確認
+        description: リセットボタンをタップすると確認ダイアログが表示されること
+        steps:
+          - action: press
+            target: "#reset-button"
+        assertions:
+          - type: element-visible
+            target: "#reset-confirmation-dialog"
+          - type: element-text
+            target: "#reset-confirmation-message"
+            value: "すべてのカスタマイズをリセットしますか？"
+
+      - id: confirm-reset
+        name: リセット実行
+        description: リセット確認ダイアログで確認するとカスタマイズがリセットされること
+        setup:
+          state:
+            resetConfirmationVisible: true
+            originalCustomization:
+              potId: "pot001"
+              potColor: "#8B4513"
+              accessoryIds: []
+              backgroundId: "bg001"
+            plant:
+              customization:
+                potId: "pot002"
+                potColor: "#FFFFFF"
+                accessoryIds: ["acc001"]
+                backgroundId: "bg002"
+        steps:
+          - action: press
+            target: "#confirm-reset-button"
+        assertions:
+          - type: function-called
+            target: "resetCustomization"
+          - type: state-change
+            target: "plant.customization.potId"
+            value: "pot001"
+          - type: state-change
+            target: "plant.customization.potColor"
+            value: "#8B4513"
+          - type: state-change
+            target: "plant.customization.accessoryIds"
+            value: []
+          - type: state-change
+            target: "plant.customization.backgroundId"
+            value: "bg001"
+          - type: element-not-visible
+            target: "#reset-confirmation-dialog"
+          - type: toast-message
+            message: "カスタマイズをリセットしました"
+
+      - id: cancel-reset
+        name: リセットキャンセル
+        description: リセット確認ダイアログでキャンセルするとダイアログが閉じること
+        setup:
+          state:
+            resetConfirmationVisible: true
+        steps:
+          - action: press
+            target: "#cancel-reset-button"
+        assertions:
+          - type: element-not-visible
+            target: "#reset-confirmation-dialog"
+          - type: function-not-called
+            target: "resetCustomization"
+
+  - id: data_loading
+    name: データ読み込みテスト
+    description: データの読み込み状態を検証
+    type: functional
+    cases:
+      - id: loading-state
+        name: 読み込み中表示
+        description: データ読み込み中にローディング表示が出ること
+        setup:
+          state:
+            loading: true
+        assertions:
+          - type: element-visible
+            target: "#loading-indicator"
+          - type: element-not-exists
+            target: "#customizer-preview"
+
+      - id: error-state
+        name: エラー表示
+        description: データ読み込みエラー時に適切なメッセージが表示されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load customization data"
+        assertions:
+          - type: element-visible
+            target: "#error-message"
+          - type: element-text
+            target: "#error-message"
+            value: "カスタマイズデータの読み込みに失敗しました"
+          - type: element-exists
+            target: "#retry-button"
+
+      - id: retry-loading
+        name: 再読み込み
+        description: 再読み込みボタンをタップするとデータが再取得されること
+        setup:
+          state:
+            loading: false
+            error: "Failed to load customization data"
+        steps:
+          - action: press
+            target: "#retry-button"
+        assertions:
+          - type: function-called
+            target: "loadCustomizationData"
+          - type: state-change
+            target: "loading"
+            value: true
+
+  - id: model_interactions
+    name: モデル操作テスト
+    description: 3Dモデルの操作を検証
+    type: interaction
+    cases:
+      - id: rotate-model
+        name: モデル回転
+        description: プレビュー領域をドラッグすると3Dモデルが回転すること
+        setup:
+          state:
+            initialModelRotation: { x: 0, y: 0, z: 0 }
+        steps:
+          - action: press-and-move
+            target: "#customizer-preview"
+            fromX: 200
+            fromY: 200
+            toX: 300
+            toY: 200
+        assertions:
+          - type: function-called
+            target: "rotateModel"
+          - type: state-change
+            target: "modelRotation.y"
+            operator: "not-equal"
+            value: 0
+
+      - id: zoom-model
+        name: モデルズーム
+        description: ピンチジェスチャーで3Dモデルをズームできること
+        setup:
+          state:
+            initialModelScale: 1.0
+        steps:
+          - action: pinch
+            target: "#customizer-preview"
+            scale: 1.5
+        assertions:
+          - type: function-called
+            target: "zoomModel"
+          - type: state-change
+            target: "modelScale"
+            value: 1.5
+
+      - id: reset-view
+        name: 視点リセット
+        description: リセットビューボタンをタップすると3Dモデルの視点がリセットされること
+        setup:
+          state:
+            modelRotation: { x: 45, y: 30, z: 0 }
+            modelScale: 1.5
+        steps:
+          - action: press
+            target: "#reset-view-button"
+        assertions:
+          - type: function-called
+            target: "resetView"
+          - type: state-change
+            target: "modelRotation"
+            value: { x: 0, y: 0, z: 0 }
+          - type: state-change
+            target: "modelScale"
+            value: 1.0
+
+accessibility:
+  - test: color-contrast
+    description: オプション名と背景のコントラストが適切である
+  - test: screen-reader
+    description: すべてのカスタマイズオプションと操作ボタンが音声読み上げに対応している
+  - test: keyboard-navigation
+    description: タブパネルとオプションがキーボード操作可能である
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12", "iPhone 13 Pro Max"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21", "Samsung Galaxy A52"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)", "iPad Pro 11-inch"]
+  - type: tablet
+    os: Android
+    models: ["Samsung Galaxy Tab S7"] 

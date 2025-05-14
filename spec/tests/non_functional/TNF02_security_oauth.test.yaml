@@ -1,0 +1,237 @@
+id: TNF02_security_oauth
+name: OAuth認証セキュリティテスト
+description: アプリケーションのOAuth認証フローとセキュリティ対策を検証するテスト
+
+components:
+  - oauth_client
+  - authentication_service
+  - token_management
+  - session_handling
+  - authorization_system
+
+testSuites:
+  - id: oauth_flow_security
+    name: OAuthフローセキュリティ
+    description: OAuth認証フローの各段階におけるセキュリティ対策を検証
+    cases:
+      - id: authorization_request
+        name: 認可リクエスト
+        description: 認可リクエストの安全性を検証
+        setup:
+          oauth_providers:
+            - provider: "google"
+              client_id: "test_client_id_google"
+            - provider: "apple"
+              client_id: "test_client_id_apple"
+            - provider: "facebook"
+              client_id: "test_client_id_facebook"
+        assertions:
+          - type: state-parameter
+            condition: "random-and-unpredictable"
+            description: "stateパラメータがランダムで予測不可能であること"
+          - type: pkce-challenge
+            condition: "implemented"
+            description: "PKCE (Proof Key for Code Exchange)が実装されていること"
+          - type: redirect-uri
+            condition: "pre-registered-only"
+            description: "事前登録済みのリダイレクトURIのみが許可されること"
+          - type: scope-limitation
+            condition: "minimum-required-only"
+            description: "必要最小限のスコープのみが要求されること"
+
+      - id: token_exchange
+        name: トークン交換
+        description: 認可コードとトークン交換の安全性を検証
+        assertions:
+          - type: code-exchange
+            condition: "single-use-only"
+            description: "認可コードが1回のみ使用可能であること"
+          - type: client-authentication
+            condition: "client-secret-or-pkce-verified"
+            description: "クライアント認証が適切に行われること"
+          - type: transport-security
+            condition: "tls-1.2-or-higher"
+            description: "TLS 1.2以上で通信が保護されていること"
+          - type: token-transmission
+            condition: "secure-channel-only"
+            description: "トークンが安全なチャネルでのみ送信されること"
+
+      - id: token_validation
+        name: トークン検証
+        description: 受け取ったトークンの検証プロセスを検証
+        assertions:
+          - type: signature-verification
+            condition: "cryptographically-verified"
+            description: "トークンの署名が暗号的に検証されること"
+          - type: expiration-check
+            condition: "enforced"
+            description: "トークンの有効期限が確認されること"
+          - type: issuer-validation
+            condition: "validated-against-trusted-issuers"
+            description: "発行者が信頼できる発行者と照合されること"
+          - type: audience-validation
+            condition: "intended-audience-verified"
+            description: "対象者（aud）が検証されること"
+
+  - id: token_management
+    name: トークン管理
+    description: アクセストークンとリフレッシュトークンの管理を検証
+    cases:
+      - id: token_storage
+        name: トークン保存
+        description: トークンの安全な保存を検証
+        assertions:
+          - type: access-token-storage
+            condition: "memory-only-or-secure-storage"
+            description: "アクセストークンがメモリのみまたは安全なストレージに保存されること"
+          - type: refresh-token-storage
+            condition: "secure-storage-only"
+            description: "リフレッシュトークンが安全なストレージにのみ保存されること"
+          - type: token-encryption
+            condition: "encrypted-at-rest"
+            description: "保存されたトークンが暗号化されていること"
+          - type: secure-enclave
+            condition: "used-when-available"
+            description: "可能な場合はセキュアエンクレーブが使用されること"
+
+      - id: token_refresh
+        name: トークン更新
+        description: トークン更新プロセスの安全性を検証
+        assertions:
+          - type: refresh-token-rotation
+            condition: "implemented"
+            description: "リフレッシュトークンローテーションが実装されていること"
+          - type: token-reuse-detection
+            condition: "detected-and-revoked"
+            description: "使用済みトークンの再利用が検出され無効化されること"
+          - type: refresh-token-expiry
+            condition: "reasonable-lifetime"
+            description: "リフレッシュトークンに適切な有効期限が設定されていること"
+
+      - id: token_revocation
+        name: トークン無効化
+        description: トークン無効化プロセスを検証
+        assertions:
+          - type: logout-revocation
+            condition: "tokens-revoked-on-logout"
+            description: "ログアウト時にトークンが無効化されること"
+          - type: server-side-revocation
+            condition: "immediate-effect"
+            description: "サーバー側での無効化が即時に反映されること"
+          - type: revocation-propagation
+            condition: "across-devices"
+            description: "無効化が全デバイスに伝播すること"
+
+  - id: session_security
+    name: セッションセキュリティ
+    description: 認証後のセッション管理とセキュリティを検証
+    cases:
+      - id: session_management
+        name: セッション管理
+        description: ユーザーセッションの管理を検証
+        assertions:
+          - type: session-timeout
+            condition: "appropriate-timeout"
+            description: "適切なセッションタイムアウトが設定されていること"
+          - type: session-binding
+            condition: "bound-to-token"
+            description: "セッションが特定のトークンに紐づけられていること"
+          - type: concurrent-session-handling
+            condition: "controlled"
+            description: "同時セッション数が適切に制御されていること"
+
+      - id: cross_site_request_forgery
+        name: CSRF対策
+        description: クロスサイトリクエストフォージェリ対策を検証
+        assertions:
+          - type: csrf-token
+            condition: "implemented-for-state-changing-actions"
+            description: "状態変更アクションにCSRFトークンが実装されていること"
+          - type: same-site-cookies
+            condition: "strict-or-lax"
+            description: "SameSite属性がStrictまたはLaxに設定されていること"
+          - type: origin-verification
+            condition: "enforced"
+            description: "リクエスト元の検証が実施されていること"
+
+  - id: error_handling
+    name: エラー処理
+    description: 認証エラー時の安全な処理を検証
+    cases:
+      - id: authentication_failures
+        name: 認証失敗
+        description: 認証失敗時の処理を検証
+        assertions:
+          - type: error-messages
+            condition: "generic-not-specific"
+            description: "エラーメッセージが具体的な情報を漏洩しないこと"
+          - type: logging
+            condition: "detailed-but-secure"
+            description: "詳細なログが安全に記録されること"
+          - type: rate-limiting
+            condition: "implemented"
+            description: "認証試行の回数制限が実装されていること"
+
+      - id: invalid_tokens
+        name: 無効トークン
+        description: 無効なトークンの処理を検証
+        assertions:
+          - type: expired-token-handling
+            condition: "graceful-refresh-attempt"
+            description: "期限切れトークンが適切に処理され更新が試みられること"
+          - type: malformed-token-handling
+            condition: "rejected-with-appropriate-error"
+            description: "不正な形式のトークンが適切なエラーで拒否されること"
+          - type: user-notification
+            condition: "clear-action-required"
+            description: "ユーザーに明確なアクション要求が通知されること"
+
+vulnerability_tests:
+  - id: token_leakage
+    name: トークン漏洩テスト
+    description: トークン漏洩の可能性を検証
+    test_cases:
+      - name: "URL漏洩"
+        description: "URLにトークンが含まれていないことを確認"
+        severity: "critical"
+      - name: "ログ漏洩"
+        description: "ログにトークンが記録されていないことを確認"
+        severity: "high"
+      - name: "リファラーヘッダー漏洩"
+        description: "外部リンク時にリファラーヘッダーでトークンが漏洩しないことを確認"
+        severity: "high"
+
+  - id: implementation_vulnerabilities
+    name: 実装脆弱性テスト
+    description: 一般的な実装脆弱性を検証
+    test_cases:
+      - name: "リダイレクト検証の不備"
+        description: "オープンリダイレクトの脆弱性がないことを確認"
+        severity: "critical"
+      - name: "状態パラメータの検証不足"
+        description: "状態パラメータが適切に検証されることを確認"
+        severity: "high"
+      - name: "IDトークン検証の不備"
+        description: "IDトークンが適切に検証されることを確認"
+        severity: "critical"
+
+compliance:
+  - standard: "OAuth 2.0"
+    reference: "RFC 6749"
+  - standard: "OpenID Connect"
+    reference: "OpenID Connect Core 1.0"
+  - standard: "OAuth 2.0 for Native Apps"
+    reference: "RFC 8252"
+  - standard: "OAuth 2.0 PKCE"
+    reference: "RFC 7636"
+
+platforms:
+  - os: iOS
+    versions: ["15.0", "16.0"]
+    auth_frameworks: ["AuthenticationServices", "AppAuth"]
+  - os: Android
+    versions: ["11", "12", "13"]
+    auth_frameworks: ["AppAuth", "Custom Implementation"]
+  - os: Web
+    browsers: ["Chrome", "Safari", "Firefox"]
+    auth_frameworks: ["OIDC Certified Libraries"] 

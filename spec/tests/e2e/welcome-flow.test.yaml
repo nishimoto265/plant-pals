@@ -1,0 +1,144 @@
+id: TE00_welcome_flow
+name: ウェルカムフローE2Eテスト
+description: |
+  ウェルカム画面からオンボーディング画面へのユーザーフローを検証するE2Eテスト。
+  ユーザーが初めてアプリを起動してからオンボーディングまでの流れを確認する。
+
+testSuites:
+  - id: app-startup
+    name: アプリ起動フロー
+    description: アプリ初回起動時の動作検証
+    type: e2e
+    cases:
+      - id: initial-launch
+        name: 初回起動
+        description: アプリ初回起動時にウェルカム画面が表示されること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 2000
+        assertions:
+          - type: screen-visible
+            screenId: S00_welcome
+
+      - id: logo-animation-shown
+        name: ロゴアニメーション表示
+        description: 起動時にロゴアニメーションが再生されること
+        setup:
+          clearStorage: true
+          resetApp: true
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: element-visible
+            target: "#app-logo-animation"
+
+  - id: language-selection
+    name: 言語選択フロー
+    description: 言語選択機能の動作検証
+    type: e2e
+    cases:
+      - id: default-language
+        name: デフォルト言語
+        description: 初回起動時にデフォルト言語（日本語）が選択されていること
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 3000
+        assertions:
+          - type: element-value
+            target: "LocalePicker"
+            value: "ja"
+          - type: element-text
+            target: "#language-label"
+            value: "言語を選択"
+
+      - id: change-language
+        name: 言語変更
+        description: 言語を日本語から英語に変更できること
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 3000
+          - action: select
+            target: "LocalePicker"
+            value: "en"
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: element-text
+            target: "#language-label"
+            value: "Select language"
+          - type: element-text
+            target: "#welcome-message"
+            value: "Welcome! A new life with plants"
+          - type: element-text
+            target: "#button-text"
+            value: "Get Started"
+
+  - id: navigation
+    name: 画面遷移フロー
+    description: ウェルカム画面からオンボーディング画面への遷移を検証
+    type: e2e
+    cases:
+      - id: navigate-to-onboarding
+        name: オンボーディング画面遷移
+        description: 「はじめる」ボタンタップでオンボーディング画面に遷移すること
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 3000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+        assertions:
+          - type: screen-visible
+            screenId: S02_onboarding
+
+      - id: cannot-return-to-welcome
+        name: ウェルカム画面に戻れないこと
+        description: オンボーディング開始後はウェルカム画面に戻れないこと
+        steps:
+          - action: launch-app
+          - action: wait
+            duration: 3000
+          - action: tap
+            target: "#start-button"
+          - action: wait
+            duration: 1000
+          - action: back
+          - action: wait
+            duration: 500
+        assertions:
+          - type: screen-visible
+            screenId: S02_onboarding
+          - type: screen-not-visible
+            screenId: S00_welcome
+
+devices:
+  - type: phone
+    os: iOS
+    models: ["iPhone SE", "iPhone 12"]
+  - type: phone
+    os: Android
+    models: ["Pixel 4a", "Samsung Galaxy S21"]
+  - type: tablet
+    os: iOS
+    models: ["iPad (9th gen)"]
+  - type: tablet 
+    os: Android
+    models: ["Samsung Galaxy Tab S7"]
+
+environments:
+  - type: development
+    baseUrl: "http://localhost:8000"
+  - type: staging
+    baseUrl: "https://staging.plant-pals.example.com"
+  - type: production
+    baseUrl: "https://app.plant-pals.example.com" 

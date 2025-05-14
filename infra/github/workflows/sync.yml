@@ -1,0 +1,64 @@
+name: Sync Spec and Source
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'spec/**.yaml'
+      - 'spec/**.yml'
+  pull_request:
+    paths:
+      - 'spec/**.yaml'
+      - 'spec/**.yml'
+
+jobs:
+  generate-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8 # pnpmのバージョンはプロジェクトに合わせて調整
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x' # プロジェクトのNode.jsバージョンに合わせて調整
+          cache: 'pnpm'
+
+      # Pythonスクリプトも使うため、Pythonのセットアップも追加
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' # プロジェクトのPythonバージョンに合わせて調整
+
+      - name: Install dependencies (Node & Python)
+        run: |
+          pnpm install
+          # Pythonの依存関係インストール (例: pip install -r requirements.txt)
+          # このプロジェクトでは scripts/*.py が直接実行される想定だが、必要ならpipenvやpoetryなども利用
+
+      - name: Generate code from spec (Run all generate_* scripts)
+        # 22.1 自動生成スクリプト一覧 / `pnpm generate` が各種スクリプトを呼び出す想定
+        run: pnpm generate # 例: generate_ui.ts, generate_routes.py, generate_edge.ts, generate_tests.ts を実行
+
+      - name: Validate spec and generated code (Run validate_spec.py)
+        # 16. YAML運用ポリシー / 21. Git 並列開発フロー
+        run: pnpm validate:spec # 例: scripts/validate_spec.py を実行
+
+      # オプション: 生成されたコードに差分があればコミットしてプッシュする
+      # - name: Commit and push changes
+      #   uses: stefanzweifel/git-auto-commit-action@v4
+      #   with:
+      #     commit_message: "chore: auto-generate code from spec changes"
+      #     branch: ${{ github.head_ref || github.ref_name }}
+      #     commit_options: '--no-verify --signoff'
+      #     file_pattern: 'src/** tests/**' # コミット対象のパターン
+      #     repository: '.'
+      #     commit_user_name: "github-actions[bot]"
+      #     commit_user_email: "github-actions[bot]@users.noreply.github.com"
+      #     commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"

@@ -1,0 +1,828 @@
+id: S16_checkout
+route: /checkout
+name: Checkout
+purpose: 課金アイテム購入・決済処理
+description: |
+  プレミアム会員・ガチャチケット・特別なデコレーションアイテムなどの
+  購入オプションと決済手続きを行う画面。
+  安全で使いやすい決済プロセスを提供し、購入特典の説明も明確に表示します。
+  「ゆるふわBotanic Garden」テーマに沿った親しみやすいデザインで、
+  ユーザーが快適に課金決断を行えるようにします。
+
+layout:
+  type: SafeAreaView
+  backgroundColor: "#F2EFEA" # アイボリー（背景色）
+  children:
+    - type: View # ヘッダー
+      style:
+        height: 60
+        paddingHorizontal: 16
+        flexDirection: row
+        justifyContent: space-between
+        alignItems: center
+        borderBottomWidth: 1
+        borderBottomColor: "rgba(151, 188, 98, 0.2)" # 薄い若葉色
+    - type: ScrollView # メインコンテンツ
+      style:
+        flex: 1
+      props:
+        showsVerticalScrollIndicator: false
+        contentContainerStyle:
+          paddingBottom: 120 # 下部の決済ボタンのためのスペース
+
+components:
+  - id: header-container
+    type: View
+    style:
+      flexDirection: row
+      justifyContent: space-between
+      alignItems: center
+      width: "100%"
+      paddingVertical: 8
+    children:
+      - id: back-button
+        type: TouchableOpacity
+        style:
+          width: 40
+          height: 40
+          justifyContent: center
+          alignItems: center
+        onPress: "goBack"
+        children:
+          - id: back-icon
+            type: Icon
+            name: "arrow-left"
+            style:
+              fontSize: 24
+              color: "#2C6E49" # 深緑（メインカラー）
+      - id: header-title
+        type: Text
+        text: "お支払い"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 20
+          color: "#2C6E49" # 深緑（メインカラー）
+      - id: placeholder
+        type: View
+        style:
+          width: 40
+          height: 40
+
+  # 購入アイテム
+  - id: purchase-item
+    type: View
+    style:
+      backgroundColor: "#FFFFFF"
+      marginHorizontal: 16
+      marginTop: 16
+      marginBottom: 24
+      borderRadius: 16
+      padding: 16
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: 2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 2
+    children:
+      - id: item-header
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          marginBottom: 16
+        children:
+          - id: item-image
+            type: Image
+            style:
+              width: 60
+              height: 60
+              borderRadius: 8
+              marginRight: 12
+            props:
+              source: "selectedItem.imageUrl"
+              resizeMode: "contain"
+          - id: item-info
+            type: View
+            style:
+              flex: 1
+            children:
+              - id: item-name
+                type: Text
+                text: "selectedItem.name"
+                style:
+                  fontFamily: "Poppins-SemiBold"
+                  fontSize: 18
+                  color: "#333333"
+                  marginBottom: 2
+              - id: item-price
+                type: Text
+                text: "¥" + selectedItem.price
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#2C6E49"
+                  fontWeight: "bold"
+      
+      # アイテム詳細
+      - id: item-details
+        type: View
+        style:
+          backgroundColor: "rgba(151, 188, 98, 0.1)"
+          borderRadius: 8
+          padding: 12
+          marginBottom: 16
+        children:
+          - id: item-description
+            type: Text
+            text: "selectedItem.description"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#333333"
+              lineHeight: 20
+
+      # プレミアム特典（プレミアム会員購入時のみ）
+      - id: premium-benefits
+        type: View
+        style:
+          display: "selectedItem.type === 'premium' ? 'flex' : 'none'"
+          marginBottom: 16
+        children:
+          - id: benefits-title
+            type: Text
+            text: "プレミアム特典"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#333333"
+              marginBottom: 8
+          
+          # 特典リスト
+          - id: benefits-list
+            type: View
+            style:
+              marginLeft: 8
+            children:
+              - id: benefit1
+                type: View
+                style:
+                  flexDirection: row
+                  alignItems: flex-start
+                  marginBottom: 8
+                children:
+                  - id: check1
+                    type: Icon
+                    name: "check-circle"
+                    style:
+                      fontSize: 16
+                      color: "#97BC62"
+                      marginRight: 8
+                      marginTop: 2
+                  - id: benefit-text1
+                    type: Text
+                    text: "毎月5枚のガチャチケット"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      flex: 1
+                      
+              - id: benefit2
+                type: View
+                style:
+                  flexDirection: row
+                  alignItems: flex-start
+                  marginBottom: 8
+                children:
+                  - id: check2
+                    type: Icon
+                    name: "check-circle"
+                    style:
+                      fontSize: 16
+                      color: "#97BC62"
+                      marginRight: 8
+                      marginTop: 2
+                  - id: benefit-text2
+                    type: Text
+                    text: "レア植物キャラクター出現確率アップ"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      flex: 1
+                      
+              - id: benefit3
+                type: View
+                style:
+                  flexDirection: row
+                  alignItems: flex-start
+                  marginBottom: 8
+                children:
+                  - id: check3
+                    type: Icon
+                    name: "check-circle"
+                    style:
+                      fontSize: 16
+                      color: "#97BC62"
+                      marginRight: 8
+                      marginTop: 2
+                  - id: benefit-text3
+                    type: Text
+                    text: "限定インテリアアイテム"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      flex: 1
+                      
+              - id: benefit4
+                type: View
+                style:
+                  flexDirection: row
+                  alignItems: flex-start
+                children:
+                  - id: check4
+                    type: Icon
+                    name: "check-circle"
+                    style:
+                      fontSize: 16
+                      color: "#97BC62"
+                      marginRight: 8
+                      marginTop: 2
+                  - id: benefit-text4
+                    type: Text
+                    text: "広告非表示"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      flex: 1
+
+      # 期間選択（サブスクリプション購入時のみ）
+      - id: subscription-period
+        type: View
+        style:
+          display: "selectedItem.isSubscription ? 'flex' : 'none'"
+          marginBottom: 16
+        children:
+          - id: period-title
+            type: Text
+            text: "プラン選択"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 16
+              color: "#333333"
+              marginBottom: 8
+              
+          - id: period-options
+            type: View
+            style:
+              flexDirection: row
+              justifyContent: space-between
+            children:
+              # 月額プラン
+              - id: monthly-option
+                type: TouchableOpacity
+                style:
+                  flex: 1
+                  borderWidth: 2
+                  borderColor: "selectedPeriod === 'monthly' ? '#2C6E49' : '#E0E0E0'"
+                  borderRadius: 8
+                  padding: 12
+                  alignItems: center
+                  backgroundColor: "selectedPeriod === 'monthly' ? 'rgba(44, 110, 73, 0.1)' : '#FFFFFF'"
+                  marginRight: 8
+                onPress: "() => selectPeriod('monthly')"
+                children:
+                  - id: monthly-label
+                    type: Text
+                    text: "月額"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      marginBottom: 4
+                  - id: monthly-price
+                    type: Text
+                    text: "¥480/月"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 16
+                      color: "#2C6E49"
+                      
+              # 年額プラン
+              - id: yearly-option
+                type: TouchableOpacity
+                style:
+                  flex: 1
+                  borderWidth: 2
+                  borderColor: "selectedPeriod === 'yearly' ? '#2C6E49' : '#E0E0E0'"
+                  borderRadius: 8
+                  padding: 12
+                  alignItems: center
+                  backgroundColor: "selectedPeriod === 'yearly' ? 'rgba(44, 110, 73, 0.1)' : '#FFFFFF'"
+                children:
+                  - id: yearly-label
+                    type: Text
+                    text: "年額（お得）"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#333333"
+                      marginBottom: 4
+                  - id: yearly-price
+                    type: Text
+                    text: "¥4,800/年"
+                    style:
+                      fontFamily: "Poppins-SemiBold"
+                      fontSize: 16
+                      color: "#2C6E49"
+                  - id: discount-badge
+                    type: View
+                    style:
+                      position: "absolute"
+                      top: -10
+                      right: -10
+                      backgroundColor: "#FFD166"
+                      borderRadius: 12
+                      paddingHorizontal: 8
+                      paddingVertical: 2
+                    children:
+                      - id: discount-text
+                        type: Text
+                        text: "20%OFF"
+                        style:
+                          fontFamily: "Noto Sans JP"
+                          fontSize: 10
+                          fontWeight: "bold"
+
+  # 支払い方法
+  - id: payment-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+    children:
+      - id: payment-header
+        type: Text
+        text: "お支払い方法"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#333333"
+          marginBottom: 12
+          
+      # 支払いオプション
+      - id: payment-options
+        type: View
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          overflow: "hidden"
+        children:
+          # Apple Pay / Google Pay
+          - id: platform-pay-option
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              padding: 16
+              borderBottomWidth: 1
+              borderBottomColor: "rgba(151, 188, 98, 0.1)"
+            onPress: "() => selectPaymentMethod('platform_pay')"
+            children:
+              - id: platform-pay-radio
+                type: View
+                style:
+                  width: 20
+                  height: 20
+                  borderRadius: 10
+                  borderWidth: 2
+                  borderColor: "#2C6E49"
+                  justifyContent: center
+                  alignItems: center
+                  marginRight: 12
+                children:
+                  - id: platform-pay-selected
+                    type: View
+                    style:
+                      width: 10
+                      height: 10
+                      borderRadius: 5
+                      backgroundColor: "#2C6E49"
+                      opacity: "selectedPayment === 'platform_pay' ? 1 : 0"
+              - id: platform-pay-icon
+                type: Image
+                style:
+                  width: 50
+                  height: 30
+                  marginRight: 12
+                props:
+                  source: "isIOS ? 'assets/images/apple_pay.png' : 'assets/images/google_pay.png'"
+                  resizeMode: "contain"
+              - id: platform-pay-label
+                type: Text
+                text: "isIOS ? 'Apple Pay' : 'Google Pay'"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  flex: 1
+              
+          # クレジット/デビットカード
+          - id: card-option
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              padding: 16
+              borderBottomWidth: 1
+              borderBottomColor: "rgba(151, 188, 98, 0.1)"
+            onPress: "() => selectPaymentMethod('card')"
+            children:
+              - id: card-radio
+                type: View
+                style:
+                  width: 20
+                  height: 20
+                  borderRadius: 10
+                  borderWidth: 2
+                  borderColor: "#2C6E49"
+                  justifyContent: center
+                  alignItems: center
+                  marginRight: 12
+                children:
+                  - id: card-selected
+                    type: View
+                    style:
+                      width: 10
+                      height: 10
+                      borderRadius: 5
+                      backgroundColor: "#2C6E49"
+                      opacity: "selectedPayment === 'card' ? 1 : 0"
+              - id: card-icon
+                type: Icon
+                name: "credit-card"
+                style:
+                  fontSize: 24
+                  color: "#666666"
+                  marginRight: 12
+                  width: 50
+                  textAlign: center
+              - id: card-label
+                type: Text
+                text: "クレジット/デビットカード"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  flex: 1
+            
+          # 携帯キャリア決済
+          - id: carrier-option
+            type: TouchableOpacity
+            style:
+              flexDirection: row
+              alignItems: center
+              padding: 16
+            onPress: "() => selectPaymentMethod('carrier')"
+            children:
+              - id: carrier-radio
+                type: View
+                style:
+                  width: 20
+                  height: 20
+                  borderRadius: 10
+                  borderWidth: 2
+                  borderColor: "#2C6E49"
+                  justifyContent: center
+                  alignItems: center
+                  marginRight: 12
+                children:
+                  - id: carrier-selected
+                    type: View
+                    style:
+                      width: 10
+                      height: 10
+                      borderRadius: 5
+                      backgroundColor: "#2C6E49"
+                      opacity: "selectedPayment === 'carrier' ? 1 : 0"
+              - id: carrier-icon
+                type: Icon
+                name: "cellphone"
+                style:
+                  fontSize: 24
+                  color: "#666666"
+                  marginRight: 12
+                  width: 50
+                  textAlign: center
+              - id: carrier-label
+                type: Text
+                text: "キャリア決済"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                  flex: 1
+
+  # カード情報入力（カード支払い選択時のみ表示）
+  - id: card-input-section
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+      display: "selectedPayment === 'card' ? 'flex' : 'none'"
+    children:
+      - id: card-input-header
+        type: Text
+        text: "カード情報"
+        style:
+          fontFamily: "Poppins-SemiBold"
+          fontSize: 18
+          color: "#333333"
+          marginBottom: 12
+          
+      - id: card-form
+        type: View
+        style:
+          backgroundColor: "#FFFFFF"
+          borderRadius: 12
+          padding: 16
+        children:
+          # カード番号
+          - id: card-number-input
+            type: View
+            style:
+              marginBottom: 16
+            children:
+              - id: number-label
+                type: Text
+                text: "カード番号"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+                  marginBottom: 4
+              - id: number-field
+                type: TextInput
+                style:
+                  height: 48
+                  borderWidth: 1
+                  borderColor: "#E0E0E0"
+                  borderRadius: 8
+                  paddingHorizontal: 12
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                props:
+                  placeholder: "1234 5678 9012 3456"
+                  keyboardType: "numeric"
+                  maxLength: 19
+                  value: "cardNumber"
+                  onChangeText: "handleCardNumberChange"
+                  
+          # 有効期限とCVC
+          - id: card-details
+            type: View
+            style:
+              flexDirection: row
+              marginBottom: 16
+            children:
+              # 有効期限
+              - id: expiry-container
+                type: View
+                style:
+                  flex: 1
+                  marginRight: 8
+                children:
+                  - id: expiry-label
+                    type: Text
+                    text: "有効期限 (MM/YY)"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#666666"
+                      marginBottom: 4
+                  - id: expiry-field
+                    type: TextInput
+                    style:
+                      height: 48
+                      borderWidth: 1
+                      borderColor: "#E0E0E0"
+                      borderRadius: 8
+                      paddingHorizontal: 12
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 16
+                      color: "#333333"
+                    props:
+                      placeholder: "MM/YY"
+                      keyboardType: "numeric"
+                      maxLength: 5
+                      value: "expiryDate"
+                      onChangeText: "handleExpiryChange"
+              
+              # CVC
+              - id: cvc-container
+                type: View
+                style:
+                  flex: 1
+                children:
+                  - id: cvc-label
+                    type: Text
+                    text: "CVC"
+                    style:
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 14
+                      color: "#666666"
+                      marginBottom: 4
+                  - id: cvc-field
+                    type: TextInput
+                    style:
+                      height: 48
+                      borderWidth: 1
+                      borderColor: "#E0E0E0"
+                      borderRadius: 8
+                      paddingHorizontal: 12
+                      fontFamily: "Noto Sans JP"
+                      fontSize: 16
+                      color: "#333333"
+                    props:
+                      placeholder: "123"
+                      keyboardType: "numeric"
+                      maxLength: 4
+                      secureTextEntry: true
+                      value: "cvc"
+                      onChangeText: "handleCvcChange"
+                      
+          # カード保有者名
+          - id: name-input
+            type: View
+            children:
+              - id: name-label
+                type: Text
+                text: "カード名義人"
+                style:
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 14
+                  color: "#666666"
+                  marginBottom: 4
+              - id: name-field
+                type: TextInput
+                style:
+                  height: 48
+                  borderWidth: 1
+                  borderColor: "#E0E0E0"
+                  borderRadius: 8
+                  paddingHorizontal: 12
+                  fontFamily: "Noto Sans JP"
+                  fontSize: 16
+                  color: "#333333"
+                props:
+                  placeholder: "TARO YAMADA"
+                  autoCapitalize: "characters"
+                  value: "cardholderName"
+                  onChangeText: "handleNameChange"
+
+  # 注意書き
+  - id: disclaimer
+    type: View
+    style:
+      marginHorizontal: 16
+      marginBottom: 24
+    children:
+      - id: secure-payment
+        type: View
+        style:
+          flexDirection: row
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: lock-icon
+            type: Icon
+            name: "lock"
+            style:
+              fontSize: 16
+              color: "#97BC62"
+              marginRight: 8
+          - id: secure-text
+            type: Text
+            text: "お支払い情報は安全に暗号化されています"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+      - id: terms-container
+        type: View
+        style:
+          flexDirection: row
+          alignItems: flex-start
+        children:
+          - id: info-icon
+            type: Icon
+            name: "information-outline"
+            style:
+              fontSize: 16
+              color: "#97BC62"
+              marginRight: 8
+              marginTop: 2
+          - id: terms-text
+            type: Text
+            text: "お支払いを完了することで、利用規約とプライバシーポリシーに同意したことになります。サブスクリプションは自動更新され、いつでもキャンセル可能です。"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 12
+              color: "#666666"
+              flex: 1
+              lineHeight: 18
+
+  # 固定決済ボタン
+  - id: checkout-footer
+    type: View
+    style:
+      position: "absolute"
+      bottom: 0
+      left: 0
+      right: 0
+      backgroundColor: "#FFFFFF"
+      paddingTop: 16
+      paddingBottom: 24
+      paddingHorizontal: 16
+      borderTopWidth: 1
+      borderTopColor: "rgba(151, 188, 98, 0.2)"
+      shadowColor: "#000"
+      shadowOffset: { width: 0, height: -2 }
+      shadowOpacity: 0.1
+      shadowRadius: 3
+      elevation: 5
+    children:
+      # 小計
+      - id: price-info
+        type: View
+        style:
+          flexDirection: row
+          justifyContent: space-between
+          alignItems: center
+          marginBottom: 12
+        children:
+          - id: total-label
+            type: Text
+            text: "お支払い合計"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 14
+              color: "#666666"
+          - id: total-price
+            type: Text
+            text: "selectedPeriod === 'yearly' ? '¥4,800' : '¥' + selectedItem.price"
+            style:
+              fontFamily: "Poppins-SemiBold"
+              fontSize: 18
+              color: "#2C6E49"
+      
+      # 購入ボタン
+      - id: purchase-button
+        type: TouchableOpacity
+        style:
+          backgroundColor: "#2C6E49"
+          paddingVertical: 14
+          borderRadius: 24
+          alignItems: center
+          justifyContent: center
+          shadowColor: "#000"
+          shadowOffset: { width: 0, height: 2 }
+          shadowOpacity: 0.1
+          shadowRadius: 3
+          elevation: 2
+        onPress: "handlePayment"
+        children:
+          - id: purchase-text
+            type: Text
+            text: "selectedItem.isSubscription ? '購入して続ける' : '購入する'"
+            style:
+              fontFamily: "Noto Sans JP"
+              fontSize: 16
+              fontWeight: "bold"
+              color: "#FFFFFF"
+
+theme:
+  colors:
+    primary: "#2C6E49" # 深緑（メインカラー）
+    secondary: "#97BC62" # 若葉（サブカラー）
+    background: "#F2EFEA" # アイボリー（背景色）
+    accent1: "#FFD166" # アクセントカラー1
+    accent2: "#EF476F" # アクセントカラー2
+  typography:
+    heading: "Poppins-SemiBold"
+    body: "Noto Sans JP"
+  spacing:
+    baseUnit: 8
+    
+designNotes: |
+  - 購入アイテムの詳細と価格を明確に表示
+  - プレミアム会員の場合は特典をリスト形式で明示
+  - サブスクリプションの場合は月額/年額の選択肢を提供
+  - 複数の支払い方法を選択できるラジオボタン形式のUI
+  - カード情報入力フォームはミニマルでわかりやすいデザイン
+  - 利用規約やプライバシーポリシー、自動更新に関する注意書き
+  - 決済情報のセキュリティを視覚的に伝えるロックアイコン
+  - 全体を「ゆるふわ」テーマに合わせた丸みを帯びたUIとやさしい配色で統一

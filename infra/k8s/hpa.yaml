@@ -1,0 +1,62 @@
+apiVersion: autoscaling/v2 # autoscaling/v2beta2 も利用可能でしたが、v2が推奨です
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fastapi-hpa
+  namespace: plant-pals # Deploymentと同じ名前空間
+  labels:
+    app: fastapi-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fastapi-app # スケーリング対象のDeployment名
+  minReplicas: 2 # Pod数の最小値 (fastapi-deploy.yamlのreplicasと合わせるか、それ以上)
+  maxReplicas: 5 # Pod数の最大値
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization # 平均CPU使用率
+          averageUtilization: 70 # CPU使用率が70%を超えたらスケールアップを検討
+    # - type: Resource # メモリベースのスケーリングも可能
+    #   resource:
+    #     name: memory
+    #     target:
+    #       type: Utilization
+    #       averageUtilization: 75
+    # - type: Pods # Podsメトリクス (例: 1秒あたりのリクエスト数など、カスタムメトリクスアダプタが必要)
+    #   pods:
+    #     metric:
+    #       name: http_requests_per_second
+    #     target:
+    #       type: AverageValue
+    #       averageValue: "100" # 1 Podあたり平均100リクエスト/秒
+    # - type: Object # 外部メトリクスやカスタムメトリクス (例: SQSキューの長さなど KEDAと連携する場合など)
+    #   object:
+    #     metric:
+    #       name: sqs_queue_length
+    #     describedObject:
+    #       apiVersion: "keda.sh/v1alpha1"
+    #       kind: ScaledObject # or other custom resource
+    #       name: my-sqs-scaler
+    #     target:
+    #       type: Value
+    #       value: "10"
+  # behavior: # スケーリングの挙動を細かく制御する場合 (オプション)
+  #   scaleUp:
+  #     stabilizationWindowSeconds: 60 # スケールアップ判断後の安定化期間
+  #     policies:
+  #     - type: Percent
+  #       value: 100 # 現在のレプリカ数の100%まで一度にスケールアップ可能
+  #       periodSeconds: 15
+  #     - type: Pods
+  #       value: 4 # 一度に4 Podsまでスケールアップ可能
+  #       periodSeconds: 15
+  #     selectPolicy: Max # 上記ポリシーのうち最大のものを採用
+  #   scaleDown:
+  #     stabilizationWindowSeconds: 300 # スケールダウン判断後の安定化期間
+  #     policies:
+  #     - type: Percent
+  #       value: 100 # 一度に全てのPodをスケールダウン可能 (minReplicasまで)
+  #       periodSeconds: 15

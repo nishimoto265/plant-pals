@@ -1,0 +1,302 @@
+id: TF10_health_check
+name: 植物健康チェック機能テスト
+description: 植物の健康状態を分析・診断・通知する機能のテスト
+
+components:
+  - health_assessment_engine
+  - disease_recognition
+  - care_recommendation_system
+  - notification_service
+
+testSuites:
+  - id: health_detection
+    name: 健康状態検出テスト
+    description: 様々な健康状態の検出精度を検証
+    cases:
+      - id: detect_healthy
+        name: 健康な状態検出
+        description: 健康な植物の状態を正しく判定できること
+        input:
+          images:
+            - path: test_assets/plants/healthy/monstera_healthy.jpg
+            - path: test_assets/plants/healthy/ficus_healthy.jpg
+            - path: test_assets/plants/healthy/snake_plant_healthy.jpg
+        assertions:
+          - type: detection
+            condition: result.healthStatus == "healthy"
+            accuracy: ">= 0.95"
+          - type: response-time
+            condition: "< 2000ms"
+
+      - id: detect_overwatering
+        name: 水やり過多検出
+        description: 水やり過多の状態を正しく判定できること
+        input:
+          images:
+            - path: test_assets/plants/issues/monstera_overwatered.jpg
+            - path: test_assets/plants/issues/ficus_overwatered.jpg
+            - path: test_assets/plants/issues/pothos_overwatered.jpg
+        assertions:
+          - type: detection
+            condition: result.healthStatus == "issue"
+          - type: detection
+            condition: result.issueType == "overwatering"
+            accuracy: ">= 0.90"
+          - type: response-time
+            condition: "< 2500ms"
+
+      - id: detect_underwatering
+        name: 水不足検出
+        description: 水不足の状態を正しく判定できること
+        input:
+          images:
+            - path: test_assets/plants/issues/cactus_underwatered.jpg
+            - path: test_assets/plants/issues/ficus_underwatered.jpg
+            - path: test_assets/plants/issues/aloe_underwatered.jpg
+        assertions:
+          - type: detection
+            condition: result.healthStatus == "issue"
+          - type: detection
+            condition: result.issueType == "underwatering"
+            accuracy: ">= 0.90"
+
+      - id: detect_pest_infection
+        name: 病害虫検出
+        description: 病害虫感染を正しく判定できること
+        input:
+          images:
+            - path: test_assets/plants/issues/monstera_spider_mites.jpg
+            - path: test_assets/plants/issues/ficus_mealybugs.jpg
+            - path: test_assets/plants/issues/jade_aphids.jpg
+        assertions:
+          - type: detection
+            condition: result.healthStatus == "issue"
+          - type: detection
+            condition: result.issueType == "pest"
+            accuracy: ">= 0.85"
+          - type: data-quality
+            condition: result.pestType != null
+            coverage: ">= 0.80"
+
+  - id: trend_analysis
+    name: 経時変化分析テスト
+    description: 植物の健康状態の経時的な変化を分析する機能を検証
+    cases:
+      - id: health_trend_detection
+        name: 健康トレンド検出
+        description: 時間経過に伴う植物の健康状態の変化を検出できること
+        input:
+          plantHistories:
+            - plantId: "plant001"
+              healthRecords:
+                - timestamp: "2025-04-01T10:00:00Z"
+                  healthStatus: "healthy"
+                  metrics:
+                    leafColor: 0.95
+                    soilMoisture: 0.70
+                - timestamp: "2025-04-05T10:00:00Z"
+                  healthStatus: "healthy"
+                  metrics:
+                    leafColor: 0.90
+                    soilMoisture: 0.60
+                - timestamp: "2025-04-10T10:00:00Z"
+                  healthStatus: "warning"
+                  metrics:
+                    leafColor: 0.80
+                    soilMoisture: 0.40
+                - timestamp: "2025-04-15T10:00:00Z"
+                  healthStatus: "issue"
+                  metrics:
+                    leafColor: 0.60
+                    soilMoisture: 0.25
+        assertions:
+          - type: trend-detection
+            condition: result.trendDirection == "declining"
+          - type: trend-detection
+            condition: result.riskLevel == "high"
+          - type: trend-detection
+            condition: result.recommendedAction == "increase_watering"
+
+      - id: recovery_trend_detection
+        name: 回復トレンド検出
+        description: 処置後の回復傾向を検出できること
+        input:
+          plantHistories:
+            - plantId: "plant002"
+              healthRecords:
+                - timestamp: "2025-04-01T10:00:00Z"
+                  healthStatus: "issue"
+                  metrics:
+                    leafColor: 0.60
+                    soilMoisture: 0.25
+                - timestamp: "2025-04-05T10:00:00Z"
+                  healthStatus: "warning"
+                  metrics:
+                    leafColor: 0.75
+                    soilMoisture: 0.50
+                - timestamp: "2025-04-10T10:00:00Z"
+                  healthStatus: "healthy"
+                  metrics:
+                    leafColor: 0.85
+                    soilMoisture: 0.65
+                - timestamp: "2025-04-15T10:00:00Z"
+                  healthStatus: "healthy"
+                  metrics:
+                    leafColor: 0.95
+                    soilMoisture: 0.70
+        assertions:
+          - type: trend-detection
+            condition: result.trendDirection == "improving"
+          - type: trend-detection
+            condition: result.recoveryRate == "good"
+
+  - id: care_recommendations
+    name: お手入れ推奨テスト
+    description: 健康状態に応じた適切なお手入れ推奨を提供する機能を検証
+    cases:
+      - id: watering_recommendations
+        name: 水やり推奨
+        description: 水不足の植物に適切な水やり推奨が提供されること
+        input:
+          plantData:
+            id: "plant001"
+            species: "monstera_deliciosa" 
+            healthAssessment:
+              status: "issue"
+              issueType: "underwatering"
+              severity: "moderate"
+              metrics:
+                soilMoisture: 0.15
+                leafDroop: 0.7
+        assertions:
+          - type: recommendation
+            condition: result.primaryAction == "watering"
+          - type: recommendation
+            condition: result.waterAmount != null
+          - type: recommendation
+            condition: result.immediacy == "soon"
+          - type: personalization
+            condition: result.instructions.contains(plant.species)
+
+      - id: fertilizing_recommendations
+        name: 肥料推奨
+        description: 栄養不足の植物に適切な肥料推奨が提供されること
+        input:
+          plantData:
+            id: "plant002"
+            species: "ficus_lyrata"
+            lastFertilized: "2025-02-01T00:00:00Z"
+            healthAssessment:
+              status: "warning"
+              issueType: "nutrient_deficiency"
+              severity: "mild"
+              metrics:
+                leafColor: 0.7
+                growth: 0.5
+        assertions:
+          - type: recommendation
+            condition: result.primaryAction == "fertilizing"
+          - type: recommendation
+            condition: result.fertilizerType != null
+          - type: recommendation
+            condition: result.schedule != null
+          - type: personalization
+            condition: result.instructions.contains(plant.species)
+
+      - id: pest_treatment_recommendations
+        name: 病害虫治療推奨
+        description: 病害虫感染の植物に適切な治療推奨が提供されること
+        input:
+          plantData:
+            id: "plant003"
+            species: "calathea_ornata"
+            healthAssessment:
+              status: "issue" 
+              issueType: "pest"
+              pestType: "spider_mites"
+              severity: "severe"
+              affectedAreas: ["leaves", "stems"]
+        assertions:
+          - type: recommendation
+            condition: result.primaryAction == "pest_treatment"
+          - type: recommendation
+            condition: result.treatmentMethod != null
+          - type: recommendation
+            condition: result.immediacy == "immediate"
+          - type: safety
+            condition: result.organicOption != null
+
+  - id: notification_triggers
+    name: 通知トリガーテスト
+    description: 健康状態の変化に基づく通知生成機能を検証
+    cases:
+      - id: issue_detected_notification
+        name: 問題検出通知
+        description: 健康問題検出時に適切な通知が生成されること
+        setup:
+          plantData:
+            id: "plant001"
+            name: "モンちゃん"
+            species: "monstera_deliciosa"
+            userId: "user001"
+          healthAssessment:
+            status: "issue"
+            issueType: "pest"
+            pestType: "spider_mites"
+            severity: "moderate"
+            timestamp: "2025-05-15T14:30:00Z"
+        assertions:
+          - type: notification-created
+            condition: result.notificationType == "health_issue"
+          - type: notification-content
+            condition: result.title.contains("健康問題が検出されました")
+          - type: notification-content
+            condition: result.message.contains(plant.name)
+          - type: notification-content
+            condition: result.message.contains("ハダニ")
+          - type: notification-priority
+            condition: result.priority == "high"
+
+      - id: deteriorating_health_notification
+        name: 悪化傾向通知
+        description: 健康状態の悪化傾向検出時に適切な通知が生成されること
+        setup:
+          plantData:
+            id: "plant002"
+            name: "フィカス"
+            species: "ficus_lyrata"
+            userId: "user001"
+          healthTrend:
+            trendDirection: "declining"
+            rate: "fast"
+            metrics:
+              leafColor: [-0.05, -0.10, -0.15]  # 過去3回の変化率
+              leafDrop: [0.0, 0.02, 0.05]
+              timestamp: "2025-05-15T16:00:00Z"
+        assertions:
+          - type: notification-created
+            condition: result.notificationType == "health_trend"
+          - type: notification-content
+            condition: result.title.contains("健康状態が悪化しています")
+          - type: notification-content
+            condition: result.message.contains(plant.name)
+          - type: notification-content
+            condition: result.message.contains("早めの対応")
+          - type: notification-action
+            condition: result.actionButton != null
+
+performance:
+  - test: detection-speed
+    threshold: "p95 < 3000ms"
+  - test: recommendation-relevance
+    threshold: "> 85% positive user feedback"
+
+security:
+  - test: data-privacy
+    description: 植物健康データの適切なプライバシー保護
+
+platforms:
+  - os: iOS
+    versions: ["15.0", "16.0"]
+  - os: Android
+    versions: ["11", "12", "13"] 
