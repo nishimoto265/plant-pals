@@ -1,6 +1,23 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
-plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven {
+            url("$rootDir/../node_modules/@react-native/gradle-plugin")
+        }
+    }
+}
+
+// 新しい方法に変更したので、この行は必要ありません
+
 rootProject.name = 'PlantPals'
+
 include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// React Nativeのincludeを追加
+includeBuild('../node_modules/react-native') {
+    dependencySubstitution {
+        substitute(module("com.facebook.react:react-android")).using(project(":packages:react-native:ReactAndroid"))
+    }
+}

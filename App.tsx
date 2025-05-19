@@ -15,6 +15,9 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import 'react-native-gesture-handler';
 
 import {
   Colors,
@@ -25,7 +28,8 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 
 // S00_welcome/index.tsx をインポート
-import WelcomeScreen from './src/ui/screens/S00_welcome';
+import WelcomeScreen from './src/ui/screens/S00_welcome/WelcomeScreen';
+import AuthScreen from './src/ui/screens/S01_auth/AuthScreen'; // S01のAuthScreenをインポート
 
 // src/ui/screens/S00_welcome/index.tsx がなければディレクトリを作成
 // mkdir -p PlantPals/src/ui/screens/S00_welcome/
@@ -60,9 +64,32 @@ function Section({children, title}: SectionProps): React.JSX.Element {
   );
 }
 
+export type RootStackParamList = {
+  Welcome: undefined;
+  Auth: undefined; // S01に対応するAuthスクリーン
+  // 他のスクリーンもここに追加
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 function App(): React.JSX.Element {
-  // WelcomeScreenコンポーネントを返す
-  return <WelcomeScreen />;
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen
+          name="Welcome"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Auth"
+          component={AuthScreen}
+          options={{ headerShown: false }} // AuthScreenもヘッダーなし
+        />
+        {/* 他のスクリーンもここに追加 */}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }
 
 const styles = StyleSheet.create({

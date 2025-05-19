@@ -10,19 +10,34 @@ import {
   ImageBackground,
   Easing,
 } from 'react-native';
-import LottieView from 'lottie-react-native';
+// import LottieView from 'lottie-react-native'; // アセットがないためコメントアウト
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'; // 追加
+import { RootStackParamList } from '../../../../App'; // App.tsxから型をインポート
 
 // Assuming LocalePicker is a custom component.
 // For now, a placeholder implementation.
 // import LocalePicker from '../../components/LocalePicker'; // Adjust path as needed
 
-const LocalePickerPlaceholder = ({ style, options, defaultValue, onValueChange }) => {
+interface LocalePickerOption {
+  value: string;
+  label: string;
+}
+
+interface LocalePickerPlaceholderProps {
+  style?: any; // ViewStyle や TextStyle を適切に。ひとまずany
+  options: LocalePickerOption[];
+  defaultValue: string;
+  onValueChange?: (value: string) => void;
+  testID?: string; // testID を追加
+}
+
+const LocalePickerPlaceholder = ({ style, options, defaultValue, onValueChange, testID }: LocalePickerPlaceholderProps) => {
   const [selectedValue, setSelectedValue] = useState(defaultValue);
 
   return (
-    <View style={[style, styles.localePickerPlaceholder]}>
-      {options.map((option) => (
+    <View style={[style, styles.localePickerPlaceholder]} testID={testID}>
+      {options.map((option: LocalePickerOption) => (
         <TouchableOpacity
           key={option.value}
           style={[
@@ -68,7 +83,7 @@ const theme = {
 };
 
 const WelcomeScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>(); // 型を指定
 
   const [welcomeElementsVisible, setWelcomeElementsVisible] = useState(false);
 
@@ -125,9 +140,9 @@ const WelcomeScreen = () => {
     showWelcomeTextAndControls();
   };
 
-  const navigateToOnboarding = () => {
+  const navigateToAuth = () => { // 関数名を navigateToAuth に変更
     // As per YAML: onPress: "navigateToOnboarding"
-    navigation.navigate('Onboarding'); // Assuming 'Onboarding' is a valid route name
+    navigation.navigate('Auth'); // Assuming 'Auth' is a valid route name
   };
 
   const logoScale = logoAnim.interpolate({
@@ -147,15 +162,15 @@ const WelcomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ImageBackground
+      {/* <ImageBackground
         source={require('../../../../assets/images/welcome_bg_pattern.png')} // Adjust path as per your project structure
         style={styles.backgroundImage}
         resizeMode="cover"
-      >
+      > */}
         <View style={styles.container}>
           <View style={styles.headerContainer} testID="header-container">
             <Animated.View style={{ opacity: logoAnim, transform: [{ scale: logoScale }] }}>
-              <LottieView
+              {/* <LottieView
                 testID="app-logo-animation"
                 source={require('../../../../assets/animations/plant_pals_logo.json')} // Adjust path
                 style={styles.lottieLogo}
@@ -163,7 +178,8 @@ const WelcomeScreen = () => {
                 loop={false}
                 speed={0.8}
                 onAnimationFinish={handleAnimationFinish}
-              />
+              /> */}
+              <Text style={{textAlign: 'center', fontSize: 20, marginVertical: 20}}>PlantPals Logo (Placeholder)</Text>
             </Animated.View>
           </View>
 
@@ -192,29 +208,28 @@ const WelcomeScreen = () => {
                 { value: "ko", label: "한국어" },
               ]}
               defaultValue="ja"
-              onValueChange={(value) => console.log('Language selected:', value)} // Placeholder action
+              onValueChange={(value: string) => console.log('Language selected:', value)} // Placeholder action, valueに型指定
             />
           </Animated.View>
 
           {/* Start Button - Animated */}
           <Animated.View style={[styles.startButtonContainer, {opacity: startButtonAnim}]} testID="start-button-container">
             <TouchableOpacity
-              testID="start-button"
               style={styles.startButton}
-              onPress={navigateToOnboarding}
-              activeOpacity={0.85}
+              onPress={navigateToAuth} // 修正した関数を呼び出す
+              testID="start-button"
             >
-              <Text style={styles.startButtonText}>はじめる</Text>
+              <Text style={styles.startButtonText}>始める</Text>
             </TouchableOpacity>
           </Animated.View>
 
-          <Image
+          {/* <Image
             testID="decoration-bottom"
             source={require('../../../../assets/images/leaf_decoration.png')} // Adjust path
             style={styles.decorationBottom}
-          />
+          /> */}
         </View>
-      </ImageBackground>
+      {/* </ImageBackground> */}
     </SafeAreaView>
   );
 };

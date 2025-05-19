@@ -1,3 +1,6 @@
+// hermesEnabledの設定
+project.ext.hermesEnabled = true
+
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -73,15 +76,15 @@ def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion "25.1.12112916"
+    compileSdkVersion 34
+    buildToolsVersion "34.0.0"
 
     namespace "com.plantpals"
     defaultConfig {
         applicationId "com.plantpals"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdkVersion 24
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
     }
@@ -116,4 +119,7 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    
+    // React Nativeのautolink機能を通じて自動的に追加される
+    // 明示的に手動で記述しない
 }

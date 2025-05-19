@@ -1,21 +1,52 @@
 buildscript {
     ext {
-        buildToolsVersion = "35.0.0"
+        buildToolsVersion = "34.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 35
-        targetSdkVersion = 35
-        ndkVersion = "27.1.12297006"
-        kotlinVersion = "2.0.21"
+        compileSdkVersion = 34
+        targetSdkVersion = 34
+        ndkVersion = "25.1.12112916"
+        kotlinVersion = "1.8.0"
     }
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url("$rootDir/../node_modules/react-native/android")
+        }
+        maven {
+            url "$rootDir/../node_modules/@react-native/gradle-plugin"
+        }
+        jcenter() // Warning: this repository is going to shut down soon
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
-        classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("com.android.tools.build:gradle:8.0.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
     }
 }
 
-apply plugin: "com.facebook.react.rootproject"
+// React Nativeの新しい方法でGradleプラグインを参照
+apply from: new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../react-native/gradle.properties")
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url("$rootDir/../node_modules/react-native/android")
+        }
+        maven {
+            url "$rootDir/../node_modules/react-native/android"
+            content {
+                includeGroupByRegex("com\\.facebook.*")
+            }
+        }
+        maven {
+            url "$rootDir/../node_modules/jsc-android/dist"
+        }
+    }
+}
