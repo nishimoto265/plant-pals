@@ -73,3 +73,97 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# 環境変数ファイル (機密情報)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+*.env
+
+# API キーとシークレット
+config/secrets.json
+config/keys.json
+config/credentials.json
+secrets/
+credentials/
+
+# Terraform関連 (インフラの機密情報)
+*.tfstate
+*.tfstate.backup
+*.tfvars
+terraform.tfvars
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars.json
+**/terraform/*.tfvars
+**/terraform/terraform.tfstate*
+**/terraform/.terraform/*
+
+# AWS認証情報
+.aws/
+aws-exports.js
+
+# Firebase認証情報
+google-services.json
+GoogleService-Info.plist
+firebase-debug.log
+firestore-debug.log
+
+# Supabase認証情報
+supabase/.env
+supabase/config.toml
+**/supabase/*.env
+
+# React Native関連の追加項目
+.expo/
+.expo-shared/
+expo-env.d.ts
+
+# ログファイル
+*.log
+logs/
+*.log.*
+
+# デバッグファイル
+debug.log
+*.debug
+
+# パッケージ管理
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDEとエディタ設定
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+*.sublime-project
+*.sublime-workspace
+
+# プラットフォーム固有の設定
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 一時ファイル
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# プロダクションビルド
+/build
+/dist
+/out
+
+# キャッシュ
+.next/
+.nuxt/
+.cache/
+.eslintcache
+.stylelintcache
+android/plant-pals/

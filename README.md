@@ -1,97 +1,151 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Plant Pals 🌱
 
-# Getting Started
+植物愛好家のための包括的なプラント管理アプリケーション
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🛡️ セキュリティについて
 
-## Step 1: Start Metro
+**重要: このプロジェクトをフォークまたはクローンする際の注意事項**
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+1. **環境変数ファイル**: `.env`ファイルや機密情報を含むファイルは絶対にGitHubにプッシュしないでください
+2. **APIキー**: すべてのAPIキーは環境変数として管理し、`.env.example`ファイルを参考にしてください
+3. **Terraformファイル**: `*.tfvars`ファイルにはインフラの機密情報が含まれるため、Gitにコミットしないでください
+4. **データベース認証情報**: Supabase、Firebase、その他のサービスの認証情報は環境変数として管理してください
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 🚀 はじめに
 
-```sh
-# Using npm
+このプロジェクトは React Native と TypeScript を使用して構築された植物管理アプリです。
+
+### 前提条件
+
+- Node.js (v16以上)
+- React Native CLI
+- Android Studio (Android開発用)
+- Xcode (iOS開発用、macOSのみ)
+
+### セットアップ
+
+1. プロジェクトのクローン:
+```bash
+git clone https://github.com/your-username/plant-pals.git
+cd plant-pals
+```
+
+2. 依存関係のインストール:
+```bash
+npm install
+# または
+yarn install
+```
+
+3. 環境変数の設定:
+```bash
+cp .env.example .env
+# .envファイルを編集して実際の値を入力
+```
+
+4. iOS依存関係のインストール (macOSのみ):
+```bash
+cd ios && pod install && cd ..
+```
+
+### 開発サーバーの起動
+
+```bash
+# Metroバンドラーの起動
 npm start
-
-# OR using Yarn
+# または
 yarn start
 ```
 
-## Step 2: Build and run your app
+別のターミナルで:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+```bash
+# Android
 npm run android
-
-# OR using Yarn
+# または
 yarn android
-```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# iOS (macOSのみ)
 npm run ios
-
-# OR using Yarn
+# または
 yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 🧪 テスト
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```bash
+# ユニットテストの実行
+npm test
+# または
+yarn test
 
-## Step 3: Modify your app
+# E2Eテストの実行
+npm run test:e2e
+# または
+yarn test:e2e
+```
 
-Now that you have successfully run the app, let's make changes!
+## 📱 機能
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- 植物の登録・管理
+- 水やりスケジュール
+- 植物の成長記録
+- 写真アップロード
+- リマインダー機能
+- コミュニティ機能
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 🏗️ アーキテクチャ
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+- **フロントエンド**: React Native + TypeScript
+- **状態管理**: Context API / Redux Toolkit
+- **バックエンド**: Supabase
+- **認証**: Supabase Auth
+- **データベース**: PostgreSQL (Supabase)
+- **ファイルストレージ**: Supabase Storage
 
-## Congratulations! :tada:
+## 📁 プロジェクト構造
 
-You've successfully run and modified your React Native App. :partying_face:
+```
+PlantPals/
+├── src/
+│   ├── ui/
+│   │   ├── screens/      # 画面コンポーネント
+│   │   │   └── navigation/   # ナビゲーション設定
+│   │   ├── components/   # 再利用可能なコンポーネント
+│   │   └── navigation/   # ナビゲーション設定
+│   ├── services/         # API呼び出し
+│   ├── hooks/           # カスタムフック
+│   ├── utils/           # ユーティリティ関数
+│   └── types/           # TypeScript型定義
+├── config/              # 設定ファイル
+├── tests/               # テストファイル
+└── docs/                # ドキュメント
+```
 
-### Now what?
+## 🤝 コントリビューション
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+1. このリポジトリをフォーク
+2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m '素晴らしい機能を追加'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを開く
 
-# Troubleshooting
+## 📄 ライセンス
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+このプロジェクトは MIT ライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルを参照してください。
 
-# Learn More
+## 📞 サポート
 
-To learn more about React Native, take a look at the following resources:
+問題や質問がある場合は、[Issues](https://github.com/your-username/plant-pals/issues) で報告してください。
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## 📝 更新履歴
+
+### v1.0.0
+- 初期リリース
+- 基本的な植物管理機能
+- ユーザー認証
+- 水やりリマインダー
+
+---
+
+**注意**: 開発環境での実行には適切な環境変数の設定が必要です。本番環境への展開前には、すべてのAPIキーとシークレットが正しく設定されていることを確認してください。
